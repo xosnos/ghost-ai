@@ -767,10 +767,9 @@ it's complete? Be concrete and specific.
 
 _Bad:_ `"Create the auth pages."`
 
-_Good:_ `"Create sign-in and sign-up pages using Clerk
-  components with a two-panel layout on desktop and
-  form-only on mobile. Use proxy.ts for route protection,
-  not middleware.ts."`
+_Good:_ `"Create sign-in and sign-up pages using Supabase Auth
+  with a two-panel layout on desktop and form-only on mobile.
+  Use middleware.ts for route protection."`
 
 **2. Design**
 Visual and structural decisions specific to this unit.

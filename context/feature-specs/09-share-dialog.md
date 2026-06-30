@@ -16,16 +16,16 @@ Collaborators can:
 - view the collaborator list only
 - not invite, remove, or manage access
 
-## Clerk User Data
+## User Data
 
 Collaborators are stored by email in the database.
 
-Use Clerk Backend API to enrich collaborator emails with:
+Use Supabase Auth admin API (service role) to enrich collaborator emails with:
 
 - display name
 - avatar image
 
-If a Clerk user is not found for an email, fall back to showing the email only.
+If a user is not found for an email, fall back to showing the email only.
 
 ## Implementation
 
@@ -44,5 +44,5 @@ Do not add a local user table.
 - share dialog opens from the workspace
 - owners can invite and remove collaborators
 - collaborators see read-only access
-- collaborator names/avatars load from Clerk when available
+- collaborator names/avatars load from Supabase Auth when available
 - `npm run build` passes
