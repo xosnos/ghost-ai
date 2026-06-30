@@ -6,7 +6,7 @@ Build the `/editor/[roomId]` workspace shell with server-side access checks. No 
 
 Before rendering:
 
-- unauthenticated users redirect to `/sign-in`
+- unauthenticated users redirect to `/login`
 - users without project access see `AccessDenied`
 - non-existent projects also show `AccessDenied`
 
@@ -21,7 +21,7 @@ Create `components/editor/access-denied.tsx` with:
 
 Create `lib/project-access.ts` with helpers for:
 
-- getting current Clerk identity: `userId` + primary email
+- getting current Supabase Auth identity: `userId` + email
 - checking project access by owner or collaborator
 
 ## Layout

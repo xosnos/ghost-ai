@@ -6,7 +6,7 @@
 | ---------------- | ----------------------- | -------------------------------------------------------------- |
 | Framework        | Next.js 16 + TypeScript | Full-stack app with server/client boundaries                   |
 | UI               | Tailwind + shadcn/ui    | Component composition and styling                              |
-| Auth             | Clerk                   | User identity and route protection                             |
+| Auth             | Supabase Auth           | User identity and route protection                             |
 | Database         | Prisma + PostgreSQL     | Relational metadata: projects, collaborators, specs, task runs |
 | Canvas           | Liveblocks + React Flow | Real-time collaborative canvas, presence, and cursors          |
 | Background tasks | Trigger.dev             | Durable AI generation workflows                                |
@@ -31,11 +31,14 @@
 
 ## Auth and Collaboration Model
 
-- Every project has a single owner (Clerk user ID).
+- Every project has a single owner (Supabase Auth user ID).
 - Projects can include additional collaborators.
 - Only authenticated users can access protected routes.
 - Only the owner or a collaborator can mutate project resources.
 - Liveblocks room tokens are issued only after verifying project membership.
+- Auth is handled via `@supabase/ssr` with cookie-based sessions and Next.js middleware.
+- Route protection: middleware checks session on every request, redirects unauthenticated users to `/login`.
+- Public routes: `/login`, `/signup`, `/forgot-password`, `/reset-password`.
 
 ## Starter System Designs
 

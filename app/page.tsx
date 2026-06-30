@@ -1,14 +1,12 @@
-import { EditorChrome } from "@/components/editor/editor-chrome";
+import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/supabase/server";
 
-export default function Home() {
-  return (
-    <EditorChrome>
-      <div
-        className="flex flex-1 items-center justify-center"
-        style={{ color: "var(--text-faint)" }}
-      >
-        Canvas goes here
-      </div>
-    </EditorChrome>
-  );
+export default async function Home() {
+  const user = await getCurrentUser();
+
+  if (user) {
+    redirect("/editor");
+  } else {
+    redirect("/login");
+  }
 }
