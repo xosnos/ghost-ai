@@ -3,8 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { AuthField } from "@/components/auth/auth-field";
+import { AuthError } from "@/components/auth/auth-error";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -47,43 +48,31 @@ export default function ResetPasswordPage() {
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="reset-password" className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>
-            New password
-          </label>
-          <Input
-            id="reset-password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter new password (min. 6 characters)"
-            required
-            minLength={6}
-            autoComplete="new-password"
-          />
-        </div>
+        <AuthField
+          id="reset-password"
+          label="New password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Enter new password (min. 6 characters)"
+          required
+          autoComplete="new-password"
+          minLength={6}
+        />
 
-        <div>
-          <label htmlFor="reset-confirm-password" className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>
-            Confirm password
-          </label>
-          <Input
-            id="reset-confirm-password"
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Confirm new password"
-            required
-            minLength={6}
-            autoComplete="new-password"
-          />
-        </div>
+        <AuthField
+          id="reset-confirm-password"
+          label="Confirm password"
+          type="password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          placeholder="Confirm new password"
+          required
+          autoComplete="new-password"
+          minLength={6}
+        />
 
-        {error && (
-          <p className="text-xs" style={{ color: "var(--state-error)" }}>
-            {error}
-          </p>
-        )}
+        <AuthError message={error} />
 
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Updating password..." : "Update password"}

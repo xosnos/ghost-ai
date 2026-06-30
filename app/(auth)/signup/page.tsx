@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { AuthField } from "@/components/auth/auth-field";
+import { AuthError } from "@/components/auth/auth-error";
 
 export default function SignupPage() {
   const [email, setEmail] = useState("");
@@ -73,42 +74,30 @@ export default function SignupPage() {
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="signup-email" className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>
-            Email
-          </label>
-          <Input
-            id="signup-email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            required
-            autoComplete="email"
-          />
-        </div>
+        <AuthField
+          id="signup-email"
+          label="Email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          required
+          autoComplete="email"
+        />
 
-        <div>
-          <label htmlFor="signup-password" className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>
-            Password
-          </label>
-          <Input
-            id="signup-password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Create a password (min. 6 characters)"
-            required
-            minLength={6}
-            autoComplete="new-password"
-          />
-        </div>
+        <AuthField
+          id="signup-password"
+          label="Password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Create a password (min. 6 characters)"
+          required
+          autoComplete="new-password"
+          minLength={6}
+        />
 
-        {error && (
-          <p className="text-xs" style={{ color: "var(--state-error)" }}>
-            {error}
-          </p>
-        )}
+        <AuthError message={error} />
 
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Creating account..." : "Create account"}

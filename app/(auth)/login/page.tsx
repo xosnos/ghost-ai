@@ -4,8 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { AuthField } from "@/components/auth/auth-field";
+import { AuthError } from "@/components/auth/auth-error";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -42,26 +43,27 @@ export default function LoginPage() {
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="login-email" className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>
-            Email
-          </label>
-          <Input
-            id="login-email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            required
-            autoComplete="email"
-          />
-        </div>
+        <AuthField
+          id="login-email"
+          label="Email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          required
+          autoComplete="email"
+        />
 
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label htmlFor="login-password" className="block text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
-              Password
-            </label>
+        <AuthField
+          id="login-password"
+          label="Password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Enter your password"
+          required
+          autoComplete="current-password"
+          labelExtra={
             <Link
               href="/forgot-password"
               className="text-xs hover:underline"
@@ -69,23 +71,10 @@ export default function LoginPage() {
             >
               Forgot password?
             </Link>
-          </div>
-          <Input
-            id="login-password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter your password"
-            required
-            autoComplete="current-password"
-          />
-        </div>
+          }
+        />
 
-        {error && (
-          <p className="text-xs" style={{ color: "var(--state-error)" }}>
-            {error}
-          </p>
-        )}
+        <AuthError message={error} />
 
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Signing in..." : "Sign in"}

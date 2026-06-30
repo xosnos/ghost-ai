@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { AuthField } from "@/components/auth/auth-field";
+import { AuthError } from "@/components/auth/auth-error";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -61,26 +62,18 @@ export default function ForgotPasswordPage() {
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="forgot-email" className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>
-            Email
-          </label>
-          <Input
-            id="forgot-email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            required
-            autoComplete="email"
-          />
-        </div>
+        <AuthField
+          id="forgot-email"
+          label="Email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          required
+          autoComplete="email"
+        />
 
-        {error && (
-          <p className="text-xs" style={{ color: "var(--state-error)" }}>
-            {error}
-          </p>
-        )}
+        <AuthError message={error} />
 
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Sending link..." : "Send reset link"}
