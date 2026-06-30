@@ -1,7 +1,14 @@
+import { EditorChrome } from "@/components/editor/editor-chrome";
+
 export default function Home() {
   return (
-    <div className="flex h-screen items-center justify-center">
-      <span>Ghost AI</span>
-    </div>
+    <EditorChrome>
+      <div
+        className="flex flex-1 items-center justify-center"
+        style={{ color: "var(--text-faint)" }}
+      >
+        Canvas goes here
+      </div>
+    </EditorChrome>
   );
 }
