@@ -24,9 +24,23 @@ export function UserMenu({ email }: UserMenuProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && open) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [open]);
+
   async function handleSignOut() {
     const supabase = createClient();
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error("Sign out failed:", error.message);
+      return;
+    }
     router.push("/login");
     router.refresh();
   }
@@ -36,6 +50,7 @@ export function UserMenu({ email }: UserMenuProps) {
   return (
     <div className="relative" ref={menuRef}>
       <button
+        type="button"
         onClick={() => setOpen(!open)}
         className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium transition-colors hover:opacity-80"
         style={{
@@ -44,6 +59,8 @@ export function UserMenu({ email }: UserMenuProps) {
           border: "1px solid var(--border-subtle)",
         }}
         aria-label="User menu"
+        aria-haspopup="true"
+        aria-expanded={open}
       >
         {initial}
       </button>
@@ -55,6 +72,7 @@ export function UserMenu({ email }: UserMenuProps) {
             backgroundColor: "var(--bg-elevated)",
             border: "1px solid var(--border-default)",
           }}
+          role="menu"
         >
           <div className="px-3 py-2 mb-1" style={{ borderBottom: "1px solid var(--border-default)" }}>
             <p className="text-xs truncate" style={{ color: "var(--text-secondary)" }}>
@@ -63,11 +81,11 @@ export function UserMenu({ email }: UserMenuProps) {
           </div>
 
           <button
+            type="button"
             onClick={handleSignOut}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:opacity-80"
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-(--bg-subtle)"
             style={{ color: "var(--text-secondary)" }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--bg-subtle)")}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+            role="menuitem"
           >
             <LogOut className="h-4 w-4" />
             Sign out

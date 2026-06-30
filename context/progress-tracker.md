@@ -40,4 +40,4 @@ Update this file whenever the current phase, active feature, or implementation s
 ## Session Notes
 
 - All shadcn components use var(--token) inline styles rather than Tailwind aliases, since @theme inline maps are defined but Tailwind v4 utility generation from CSS vars requires the exact variable names.
-- Supabase Auth email confirmation is OFF by default in the provisioned instance.
+- Supabase Auth email confirmation is OFF by default in the provisioned instance. This is intentional for the current development phase. The signup flow handles both cases gracefully (immediate session or "check your email" state). Before implementing the collaborator-by-email sharing feature (spec 09), email confirmation should be re-evaluated to prevent users from claiming collaborator access with unverified emails.

@@ -12,6 +12,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [checkEmail, setCheckEmail] = useState(false);
   const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
@@ -20,7 +21,13 @@ export default function SignupPage() {
     setLoading(true);
 
     const supabase = createClient();
-    const { error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
 
     if (error) {
       setError(error.message);
@@ -28,8 +35,32 @@ export default function SignupPage() {
       return;
     }
 
-    router.push("/editor");
-    router.refresh();
+    if (data.session) {
+      router.push("/editor");
+      router.refresh();
+    } else {
+      setCheckEmail(true);
+      setLoading(false);
+    }
+  }
+
+  if (checkEmail) {
+    return (
+      <div>
+        <h1 className="text-xl font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
+          Check your email
+        </h1>
+        <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>
+          We sent a confirmation link to <strong style={{ color: "var(--text-secondary)" }}>{email}</strong>.
+          Click the link in the email to activate your account.
+        </p>
+        <Link href="/login">
+          <Button variant="ghost" className="w-full">
+            Back to sign in
+          </Button>
+        </Link>
+      </div>
+    );
   }
 
   return (
@@ -43,10 +74,11 @@ export default function SignupPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>
+          <label htmlFor="signup-email" className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>
             Email
           </label>
           <Input
+            id="signup-email"
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -57,10 +89,11 @@ export default function SignupPage() {
         </div>
 
         <div>
-          <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>
+          <label htmlFor="signup-password" className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-secondary)" }}>
             Password
           </label>
           <Input
+            id="signup-password"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
