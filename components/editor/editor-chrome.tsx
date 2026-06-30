@@ -6,9 +6,10 @@ import { ProjectSidebar } from "@/components/editor/project-sidebar";
 
 interface EditorChromeProps {
   children: React.ReactNode;
+  userEmail: string;
 }
 
-export function EditorChrome({ children }: EditorChromeProps) {
+export function EditorChrome({ children, userEmail }: EditorChromeProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -16,6 +17,7 @@ export function EditorChrome({ children }: EditorChromeProps) {
       <EditorNavbar
         sidebarOpen={sidebarOpen}
         onToggleSidebar={() => setSidebarOpen((v) => !v)}
+        userEmail={userEmail}
       />
       <ProjectSidebar
         isOpen={sidebarOpen}

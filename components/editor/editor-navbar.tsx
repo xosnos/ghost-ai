@@ -2,13 +2,15 @@
 
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { UserMenu } from "@/components/editor/user-menu";
 
 interface EditorNavbarProps {
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
+  userEmail: string;
 }
 
-export function EditorNavbar({ sidebarOpen, onToggleSidebar }: EditorNavbarProps) {
+export function EditorNavbar({ sidebarOpen, onToggleSidebar, userEmail }: EditorNavbarProps) {
   return (
     <header
       className="fixed top-0 left-0 right-0 z-40 flex h-12 items-center justify-between px-3"
@@ -29,7 +31,9 @@ export function EditorNavbar({ sidebarOpen, onToggleSidebar }: EditorNavbarProps
 
       <div className="flex items-center" />
 
-      <div className="flex items-center" />
+      <div className="flex items-center">
+        <UserMenu email={userEmail} />
+      </div>
     </header>
   );
 }
