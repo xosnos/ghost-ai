@@ -8,7 +8,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Goal
 
-- Next feature spec (05-prisma).
+- Next feature spec (05-supabase-schema).
 
 ## Completed
 
@@ -24,7 +24,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- 05-prisma
+- 05-supabase-schema
 
 ## Open Questions
 
@@ -38,6 +38,9 @@ Update this file whenever the current phase, active feature, or implementation s
 - Auth uses Supabase Auth (not Clerk). Cookie-based sessions via @supabase/ssr. Middleware at project root handles session refresh and route protection. Public routes: /login, /signup, /forgot-password, /reset-password, /auth/callback.
 - Editor page at /editor is a server component that fetches user then renders client EditorChrome with userEmail prop.
 - Auth route pages (`app/(auth)/*/page.tsx`) are Server Components that render client form components. Avoid `"use client"` on `page.tsx` itself — Next.js wraps client pages in `ClientPageRoot`, which requires `workStore` for `searchParams` instrumentation and can throw in WebContainer environments (Bolt/StackBlitz).
+- Database layer uses Bolt's integrated Supabase database (PostgreSQL) instead of Prisma. Schema is applied via the Supabase migration tool, not a Prisma schema file. All tables use RLS with owner-scoped policies.
+- Artifact storage uses Supabase Storage instead of Vercel Blob. Canvas snapshots and generated specs are stored in Supabase Storage buckets, with the storage path stored as a reference column on the corresponding Supabase table.
+- Background tasks continue to use Trigger.dev (not Supabase Edge Functions). Supabase Edge Functions have a 150s/400s wall clock limit and 2s CPU time limit, which is insufficient for durable multi-step AI generation workflows. Trigger.dev provides retries, realtime status streaming, and run-scoped tokens that would need to be rebuilt.
 
 ## Session Notes
 

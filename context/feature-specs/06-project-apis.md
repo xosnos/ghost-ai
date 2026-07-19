@@ -1,4 +1,4 @@
-The database schema is ready. Build the backend project API routes only.
+The Supabase database schema is ready. Build the backend project API routes only.
 
 ## Routes
 
@@ -16,7 +16,7 @@ Use the authenticated Supabase Auth user ID as `ownerId`.
 When creating:
 
 - default missing project name to `Untitled Project`
-- use the schema’s existing ID strategy, do not add sequential IDs
+- use UUID primary keys with `DEFAULT gen_random_uuid()`, do not add sequential IDs
 
 Security:
 

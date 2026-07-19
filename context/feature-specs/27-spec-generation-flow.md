@@ -57,10 +57,10 @@ Follow the existing Trigger.dev task patterns in the codebase for retries, loggi
 
 - Check `context/project-overview.md` and `context/architecture-context.md` for system alignment before implementing
 - Use Zod for request/task input validation
-- Use Prisma for `TaskRun` persistence
+- Use Supabase for `task_runs` persistence
 - Project access must come from the authenticated user + `roomId`
 - Keep the task output as plain Markdown
-- Reuse existing auth, Prisma, Trigger.dev, and Gemini patterns
+- Reuse existing auth, Supabase, Trigger.dev, and Gemini patterns
 
 ### Check When Done
 
