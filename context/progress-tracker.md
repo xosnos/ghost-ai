@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature 03: Auth (complete)
+- Feature 04: Project Dialogs (complete)
 
 ## Current Goal
 
-- Next feature spec.
+- Next feature spec (05-prisma).
 
 ## Completed
 
@@ -16,6 +16,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - 01-design-system: globals.css tokens, lib/utils.ts cn() helper, shadcn/ui components (Button, Card, Dialog, Input, Tabs, Textarea, ScrollArea), lucide-react, Radix UI primitives
 - 02-editor-chrome: EditorNavbar (fixed top bar, sidebar toggle, PanelLeftOpen/Close), ProjectSidebar (floating overlay, slides in from left, My Projects / Shared tabs, New Project button)
 - 03-auth: Supabase Auth integration — sign-in, sign-up, forgot-password, reset-password pages with two-panel layout; middleware route protection; auth callback handler; UserMenu component in editor navbar; root page redirect logic
+- 04-project-dialogs: EditorHome (heading + New Project button, no card wrapper), Create/Rename/Delete project dialogs, useProjectDialogs hook (dialog/form/loading state), ProjectDialogContext for cross-component wiring, ProjectDialogs switch, slugify helper + live slug preview, sidebar renders mock projects with rename/delete actions on owned items only (shared items have no actions), mobile backdrop scrim + tap-outside-to-close, editor page renders EditorHome as EditorChrome children. Mock data only — no API/persistence. Lint + build pass.
 
 ## In Progress
 
@@ -23,7 +24,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- 04-project-dialogs
+- 05-prisma
 
 ## Open Questions
 
@@ -43,3 +44,4 @@ Update this file whenever the current phase, active feature, or implementation s
 - All shadcn components use var(--token) inline styles rather than Tailwind aliases, since @theme inline maps are defined but Tailwind v4 utility generation from CSS vars requires the exact variable names.
 - Supabase Auth email confirmation is OFF by default in the provisioned instance. This is intentional for the current development phase. The signup flow handles both cases gracefully (immediate session or "check your email" state). Before implementing the collaborator-by-email sharing feature (spec 09), email confirmation should be re-evaluated to prevent users from claiming collaborator access with unverified emails.
 - Fixed Bolt/WebContainer crash: `Invariant: Expected workStore to exist when handling searchParams in a client Page` by converting auth pages from client pages to Server Component shells + client forms (`LoginForm`, `SignupForm`, `ForgotPasswordForm`, `ResetPasswordForm`).
+- Fixed post-auth redirect loop: call `router.refresh()` before `router.push("/editor")` so middleware sees the session cookie; corrected middleware `setAll` to match `@supabase/ssr` (cookies only, no headers arg).
