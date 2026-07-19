@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/supabase/server";
+import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import {
   deleteProject,
   getProject,
@@ -11,7 +11,8 @@ interface RouteContext {
 }
 
 export async function PATCH(req: Request, ctx: RouteContext) {
-  const user = await getCurrentUser();
+  const supabase = await createClient();
+  const user = await getCurrentUser(supabase);
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -33,7 +34,7 @@ export async function PATCH(req: Request, ctx: RouteContext) {
     return NextResponse.json({ error: "Project name cannot be empty" }, { status: 400 });
   }
 
-  const existing = await getProject(projectId);
+  const existing = await getProject(supabase, projectId);
   if (!existing) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
@@ -42,7 +43,7 @@ export async function PATCH(req: Request, ctx: RouteContext) {
   }
 
   try {
-    const project = await renameProject({ projectId, name });
+    const project = await renameProject(supabase, { projectId, name });
     return NextResponse.json({ project });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal server error";
@@ -51,7 +52,8 @@ export async function PATCH(req: Request, ctx: RouteContext) {
 }
 
 export async function DELETE(_req: Request, ctx: RouteContext) {
-  const user = await getCurrentUser();
+  const supabase = await createClient();
+  const user = await getCurrentUser(supabase);
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -61,7 +63,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     return NextResponse.json({ error: "Missing project id" }, { status: 400 });
   }
 
-  const existing = await getProject(projectId);
+  const existing = await getProject(supabase, projectId);
   if (!existing) {
     return NextResponse.json({ error: "Project not found" }, { status: 404 });
   }
@@ -70,7 +72,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
   }
 
   try {
-    await deleteProject(projectId);
+    await deleteProject(supabase, projectId);
     return new NextResponse(null, { status: 204 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal server error";

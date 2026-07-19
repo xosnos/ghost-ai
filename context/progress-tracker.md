@@ -37,6 +37,10 @@ Update this file whenever the current phase, active feature, or implementation s
 - Artifact storage uses Supabase Storage instead of Vercel Blob. Canvas snapshots and generated specs are stored in Supabase Storage buckets, with the storage path stored as a reference column on the corresponding Supabase table.
 - Background tasks continue to use Trigger.dev (not Supabase Edge Functions). Supabase Edge Functions have a 150s/400s wall clock limit and 2s CPU time limit, which is insufficient for durable multi-step AI generation workflows. Trigger.dev provides retries, realtime status streaming, and run-scoped tokens that would need to be rebuilt.
 
+## Bug Fixes
+
+- Fixed `cookies was called outside a request scope` error on `/editor`. Root cause: each query function in `lib/projects/queries.ts` called `createClient()` (which calls `cookies()`) independently, and when `app/editor/page.tsx` ran two queries via `Promise.all`, the concurrent branches lost Next.js's async request-store context (`workUnitAsyncStorage`), so `cookies()` threw `throwForMissingRequestStore`. Fix: call `cookies()` exactly once per request to create a single Supabase client, then pass that client into `getCurrentUser(supabase?)` and all query functions (`listOwnedProjects(supabase, ownerId)`, `createProject(supabase, params)`, etc.). Updated editor page and both API route handlers to use this shared-client pattern. Build passes; `/editor` remains dynamic (`ƒ`).
+
 ## Session Notes
 
 - All shadcn components use var(--token) inline styles rather than Tailwind aliases, since @theme inline maps are defined but Tailwind v4 utility generation from CSS vars requires the exact variable names.

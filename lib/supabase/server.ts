@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export async function createClient() {
   const cookieStore = await cookies();
@@ -22,8 +23,8 @@ export async function createClient() {
   );
 }
 
-export async function getCurrentUser() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+export async function getCurrentUser(supabase?: SupabaseClient) {
+  const client = supabase ?? (await createClient());
+  const { data: { user } } = await client.auth.getUser();
   return user;
 }

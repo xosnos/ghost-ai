@@ -1,11 +1,13 @@
-import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { toProject, type Project } from "@/lib/projects/types";
 
 const PROJECT_SELECT =
   "id, owner_id, name, description, status, canvas_storage_path, created_at, updated_at";
 
-export async function listOwnedProjects(ownerId: string): Promise<Project[]> {
-  const supabase = await createClient();
+export async function listOwnedProjects(
+  supabase: SupabaseClient,
+  ownerId: string
+): Promise<Project[]> {
   const { data, error } = await supabase
     .from("projects")
     .select(PROJECT_SELECT)
@@ -19,12 +21,11 @@ export async function listOwnedProjects(ownerId: string): Promise<Project[]> {
   return (data ?? []).map(toProject);
 }
 
-export async function createProject(params: {
-  ownerId: string;
-  name: string;
-}): Promise<Project> {
+export async function createProject(
+  supabase: SupabaseClient,
+  params: { ownerId: string; name: string }
+): Promise<Project> {
   const trimmed = params.name.trim() || "Untitled Project";
-  const supabase = await createClient();
   const { data, error } = await supabase
     .from("projects")
     .insert({ owner_id: params.ownerId, name: trimmed })
@@ -38,9 +39,11 @@ export async function createProject(params: {
   return toProject(data);
 }
 
-export async function listSharedProjects(userEmail: string): Promise<Project[]> {
+export async function listSharedProjects(
+  supabase: SupabaseClient,
+  userEmail: string
+): Promise<Project[]> {
   if (!userEmail) return [];
-  const supabase = await createClient();
   const { data, error } = await supabase
     .from("project_collaborators")
     .select(`project:${PROJECT_SELECT}`)
@@ -57,8 +60,10 @@ export async function listSharedProjects(userEmail: string): Promise<Project[]> 
     .map((row) => toProject(row as Parameters<typeof toProject>[0]));
 }
 
-export async function getProject(projectId: string): Promise<Project | null> {
-  const supabase = await createClient();
+export async function getProject(
+  supabase: SupabaseClient,
+  projectId: string
+): Promise<Project | null> {
   const { data, error } = await supabase
     .from("projects")
     .select(PROJECT_SELECT)
@@ -72,16 +77,15 @@ export async function getProject(projectId: string): Promise<Project | null> {
   return data ? toProject(data) : null;
 }
 
-export async function renameProject(params: {
-  projectId: string;
-  name: string;
-}): Promise<Project> {
+export async function renameProject(
+  supabase: SupabaseClient,
+  params: { projectId: string; name: string }
+): Promise<Project> {
   const trimmed = params.name.trim();
   if (!trimmed) {
     throw new Error("Project name cannot be empty");
   }
 
-  const supabase = await createClient();
   const { data, error } = await supabase
     .from("projects")
     .update({ name: trimmed, updated_at: new Date().toISOString() })
@@ -96,8 +100,10 @@ export async function renameProject(params: {
   return toProject(data);
 }
 
-export async function deleteProject(projectId: string): Promise<void> {
-  const supabase = await createClient();
+export async function deleteProject(
+  supabase: SupabaseClient,
+  projectId: string
+): Promise<void> {
   const { error } = await supabase
     .from("projects")
     .delete()

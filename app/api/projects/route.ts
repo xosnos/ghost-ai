@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/supabase/server";
+import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import {
   createProject,
   listOwnedProjects,
 } from "@/lib/projects/queries";
 
 export async function GET() {
-  const user = await getCurrentUser();
+  const supabase = await createClient();
+  const user = await getCurrentUser(supabase);
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
-    const projects = await listOwnedProjects(user.id);
+    const projects = await listOwnedProjects(supabase, user.id);
     return NextResponse.json({ projects });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal server error";
@@ -21,7 +22,8 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const user = await getCurrentUser();
+  const supabase = await createClient();
+  const user = await getCurrentUser(supabase);
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -37,7 +39,7 @@ export async function POST(req: Request) {
   const name = rawName.trim() || "Untitled Project";
 
   try {
-    const project = await createProject({ ownerId: user.id, name });
+    const project = await createProject(supabase, { ownerId: user.id, name });
     return NextResponse.json({ project }, { status: 201 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal server error";
