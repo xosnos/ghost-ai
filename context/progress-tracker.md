@@ -36,8 +36,10 @@ Update this file whenever the current phase, active feature, or implementation s
 - ProjectSidebar is a fixed overlay (does not push page content) positioned below the navbar.
 - Auth uses Supabase Auth (not Clerk). Cookie-based sessions via @supabase/ssr. Middleware at project root handles session refresh and route protection. Public routes: /login, /signup, /forgot-password, /reset-password, /auth/callback.
 - Editor page at /editor is a server component that fetches user then renders client EditorChrome with userEmail prop.
+- Auth route pages (`app/(auth)/*/page.tsx`) are Server Components that render client form components. Avoid `"use client"` on `page.tsx` itself — Next.js wraps client pages in `ClientPageRoot`, which requires `workStore` for `searchParams` instrumentation and can throw in WebContainer environments (Bolt/StackBlitz).
 
 ## Session Notes
 
 - All shadcn components use var(--token) inline styles rather than Tailwind aliases, since @theme inline maps are defined but Tailwind v4 utility generation from CSS vars requires the exact variable names.
 - Supabase Auth email confirmation is OFF by default in the provisioned instance. This is intentional for the current development phase. The signup flow handles both cases gracefully (immediate session or "check your email" state). Before implementing the collaborator-by-email sharing feature (spec 09), email confirmation should be re-evaluated to prevent users from claiming collaborator access with unverified emails.
+- Fixed Bolt/WebContainer crash: `Invariant: Expected workStore to exist when handling searchParams in a client Page` by converting auth pages from client pages to Server Component shells + client forms (`LoginForm`, `SignupForm`, `ForgotPasswordForm`, `ResetPasswordForm`).
