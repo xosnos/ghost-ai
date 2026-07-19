@@ -17,6 +17,7 @@ interface CreateProjectDialogProps {
   name: string;
   slug: string;
   loading: boolean;
+  error: string | null;
   onNameChange: (value: string) => void;
   onSubmit: () => void;
   onClose: () => void;
@@ -27,6 +28,7 @@ export function CreateProjectDialog({
   name,
   slug,
   loading,
+  error,
   onNameChange,
   onSubmit,
   onClose,
@@ -82,7 +84,7 @@ export function CreateProjectDialog({
               className="text-xs font-medium"
               style={{ color: "var(--text-secondary)" }}
             >
-              Slug preview
+              Room ID preview
             </span>
             <div
               className="flex h-9 items-center rounded-xl px-3 font-mono text-sm"
@@ -96,6 +98,12 @@ export function CreateProjectDialog({
             </div>
           </div>
         </div>
+
+        {error && (
+          <p className="text-sm" style={{ color: "var(--state-error)" }}>
+            {error}
+          </p>
+        )}
 
         <DialogFooter>
           <Button variant="ghost" onClick={onClose} disabled={loading}>

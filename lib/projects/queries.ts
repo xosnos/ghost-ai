@@ -38,6 +38,25 @@ export async function createProject(params: {
   return toProject(data);
 }
 
+export async function listSharedProjects(userEmail: string): Promise<Project[]> {
+  if (!userEmail) return [];
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("project_collaborators")
+    .select(`project:${PROJECT_SELECT}`)
+    .eq("email", userEmail)
+    .order("created_at", { ascending: false, referencedTable: "project" });
+
+  if (error) {
+    throw new Error(`Failed to list shared projects: ${error.message}`);
+  }
+
+  return (data ?? [])
+    .map((row) => (row as { project: unknown }).project)
+    .filter((p): p is NonNullable<typeof p> => p != null)
+    .map((row) => toProject(row as Parameters<typeof toProject>[0]));
+}
+
 export async function getProject(projectId: string): Promise<Project | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
