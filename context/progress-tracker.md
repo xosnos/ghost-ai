@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature 05: Supabase Schema (complete)
+- Feature 06: Project APIs (complete)
 
 ## Current Goal
 
-- Next feature spec (06-project-apis).
+- Next feature spec (07-wire-editor-home) — wire the editor home sidebar and dialogs to the project API.
 
 ## Completed
 
@@ -17,18 +17,8 @@ Update this file whenever the current phase, active feature, or implementation s
 - 02-editor-chrome: EditorNavbar (fixed top bar, sidebar toggle, PanelLeftOpen/Close), ProjectSidebar (floating overlay, slides in from left, My Projects / Shared tabs, New Project button)
 - 03-auth: Supabase Auth integration — sign-in, sign-up, forgot-password, reset-password pages with two-panel layout; middleware route protection; auth callback handler; UserMenu component in editor navbar; root page redirect logic
 - 04-project-dialogs: EditorHome (heading + New Project button, no card wrapper), Create/Rename/Delete project dialogs, useProjectDialogs hook (dialog/form/loading state), ProjectDialogContext for cross-component wiring, ProjectDialogs switch, slugify helper + live slug preview, sidebar renders mock projects with rename/delete actions on owned items only (shared items have no actions), mobile backdrop scrim + tap-outside-to-close, editor page renders EditorHome as EditorChrome children. Mock data only — no API/persistence. Lint + build pass.
-
-## In Progress
-
-- None.
-
-## Next Up
-
-- 06-project-apis
-
-## Completed
-
 - 05-supabase-schema — `projects` and `project_collaborators` tables created via Supabase migration with owner-scoped RLS, indexes, and `owner_id DEFAULT auth.uid()`.
+- 06-project-apis — backend-only REST routes for projects. `GET /api/projects` lists the signed-in user's owned projects; `POST /api/projects` creates a project (defaults missing/blank name to `Untitled Project`, returns 201). `PATCH /api/projects/[projectId]` renames; `DELETE /api/projects/[projectId]` deletes. Both mutation routes fetch the row first and return 404 if missing, 403 if the caller is not the owner, 401 if unauthenticated. Server helpers live in `lib/projects/queries.ts` (`listOwnedProjects`, `createProject`, `getProject`, `renameProject`, `deleteProject`) and the shared `Project` shape + snake→camel mapper live in `lib/projects/types.ts`. Routes use the cookie-scoped server Supabase client (RLS provides a second layer of enforcement). UI is intentionally untouched — still on mock data until spec 07. `npm run build` passes; both routes register as dynamic (`ƒ /api/projects`, `ƒ /api/projects/[projectId]`).
 
 ## Open Questions
 
