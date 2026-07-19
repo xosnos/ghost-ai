@@ -23,7 +23,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Open Questions
 
-- `listSharedProjects` joins through `project_collaborators`, but the spec-05 RLS policies only let a user SELECT collaborators on projects they own — so shared projects currently return `[]`. This is expected until spec 09 adds collaborator-read policies or a share-by-email flow. The helper is forward-compatible: once RLS permits the read, shared projects populate automatically.
+- (Resolved) `listSharedProjects` RLS access — SELECT policies on `projects` and `project_collaborators` now allow owner OR collaborator (matched by `auth.jwt() ->> 'email'`), so shared projects populate for invited collaborators. Mutations remain owner-only.
 
 ## Architecture Decisions
 
@@ -40,6 +40,7 @@ Update this file whenever the current phase, active feature, or implementation s
 ## Bug Fixes
 
 - Fixed `cookies was called outside a request scope` error on `/editor`. Root cause: each query function in `lib/projects/queries.ts` called `createClient()` (which calls `cookies()`) independently, and when `app/editor/page.tsx` ran two queries via `Promise.all`, the concurrent branches lost Next.js's async request-store context (`workUnitAsyncStorage`), so `cookies()` threw `throwForMissingRequestStore`. Fix: call `cookies()` exactly once per request to create a single Supabase client, then pass that client into `getCurrentUser(supabase?)` and all query functions (`listOwnedProjects(supabase, ownerId)`, `createProject(supabase, params)`, etc.). Updated editor page and both API route handlers to use this shared-client pattern. Build passes; `/editor` remains dynamic (`ƒ`).
+- Fixed `Failed to list shared projects: 'project' is not an embedded resource in this request` error on `/editor`. Two root causes: (1) the `project:...` embedded-resource join syntax in `listSharedProjects` was not recognized by PostgREST; (2) RLS policies on `projects` and `project_collaborators` only allowed project OWNERS to SELECT, so an invited collaborator could never read their shared projects. Fix: rewrote `listSharedProjects` to fetch matching `project_id`s from `project_collaborators` then fetch those project rows via `.in("id", projectIds)` (two simple queries instead of an embedded join); broadened both SELECT policies to allow owner OR collaborator (matched by `auth.jwt() ->> 'email'`) while keeping mutations owner-only. Applied via migration `fix_shared_projects_rls_and_access`. Build passes.
 
 ## Session Notes
 
