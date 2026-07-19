@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { EditorChrome } from "@/components/editor/editor-chrome";
+import { EditorHome } from "@/components/editor/editor-home";
 
 export default async function EditorPage() {
   const user = await getCurrentUser();
@@ -11,12 +12,7 @@ export default async function EditorPage() {
 
   return (
     <EditorChrome userEmail={user.email ?? ""}>
-      <div
-        className="flex flex-1 items-center justify-center"
-        style={{ color: "var(--text-faint)" }}
-      >
-        Canvas goes here
-      </div>
+      <EditorHome />
     </EditorChrome>
   );
 }
