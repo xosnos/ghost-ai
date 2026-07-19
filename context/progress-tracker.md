@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature 04: Project Dialogs (complete)
+- Feature 05: Supabase Schema (complete)
 
 ## Current Goal
 
-- Next feature spec (05-supabase-schema).
+- Next feature spec (06-project-apis).
 
 ## Completed
 
@@ -24,7 +24,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Next Up
 
-- 05-supabase-schema
+- 06-project-apis
+
+## Completed
+
+- 05-supabase-schema — `projects` and `project_collaborators` tables created via Supabase migration with owner-scoped RLS, indexes, and `owner_id DEFAULT auth.uid()`.
 
 ## Open Questions
 
