@@ -57,7 +57,7 @@ export function CreateProjectDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-5 py-4">
+        <div className="flex flex-col gap-5 py-6">
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor="create-project-name"

@@ -8,8 +8,8 @@ export function EditorHome() {
   const { openCreate } = useProjectDialogs();
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-10 px-6 text-center">
-      <div className="flex flex-col gap-4">
+    <div className="flex flex-1 flex-col items-center justify-center gap-8 px-6 pb-16 text-center">
+      <div className="flex flex-col gap-3">
         <h1
           className="text-3xl font-semibold tracking-tight"
           style={{ color: "var(--text-primary)" }}
