@@ -3,7 +3,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { slugify, projectSlug } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
 import type { DialogKind } from "@/components/editor/project-dialog-context";
 
 function unwrapErrorMessage(err: unknown, fallback: string): string {
@@ -166,27 +165,6 @@ export function useProjectActions(): UseProjectActionsResult {
         body: JSON.stringify({}),
       });
       if (!res.ok) throw new Error(await parseJsonError(res));
-      closeDialog();
-      if (isActive) {
-        router.push("/editor");
-      } else {
-        router.refresh();
-      }
-      return;
-    } catch (routeErr) {
-      console.warn(
-        "[useProjectActions] DELETE route failed, falling back to direct Supabase delete",
-        routeErr
-      );
-    }
-
-    try {
-      const supabase = createClient();
-      const { error: deleteError } = await supabase
-        .from("projects")
-        .delete()
-        .eq("id", deleteTarget.projectId);
-      if (deleteError) throw new Error(`Failed to delete project: ${deleteError.message}`);
       closeDialog();
       if (isActive) {
         router.push("/editor");
