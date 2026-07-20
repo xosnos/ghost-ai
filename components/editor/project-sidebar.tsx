@@ -37,7 +37,7 @@ export function ProjectSidebar({
       )}
 
       <aside
-        className="fixed top-12 left-0 z-30 flex h-[calc(100vh-3rem)] w-72 flex-col transition-transform duration-200"
+        className="fixed top-12 left-0 z-30 flex h-[calc(100vh-3rem)] w-80 flex-col transition-transform duration-200"
         style={{
           backgroundColor: "var(--bg-surface)",
           borderRight: "1px solid var(--border-default)",
@@ -176,7 +176,7 @@ function ProjectListItem({ project, currentUserId, onRename, onDelete }: Project
         </div>
 
         {canManage && (
-          <div className="flex shrink-0 items-center gap-0.5 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+          <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
             <Button
               variant="ghost"
               size="icon"
