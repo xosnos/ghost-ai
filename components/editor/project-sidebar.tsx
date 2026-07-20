@@ -176,7 +176,7 @@ function ProjectListItem({ project, currentUserId, onRename, onDelete }: Project
         </div>
 
         {canManage && (
-          <div className="flex items-center gap-0.5 transition-opacity md:opacity-0 md:group-hover:opacity-100">
+          <div className="flex shrink-0 items-center gap-0.5 transition-opacity md:opacity-0 md:group-hover:opacity-100">
             <Button
               variant="ghost"
               size="icon"

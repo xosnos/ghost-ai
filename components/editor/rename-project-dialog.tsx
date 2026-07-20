@@ -16,6 +16,7 @@ interface RenameProjectDialogProps {
   open: boolean;
   currentName: string;
   name: string;
+  slug: string;
   loading: boolean;
   error: string | null;
   onNameChange: (value: string) => void;
@@ -27,6 +28,7 @@ export function RenameProjectDialog({
   open,
   currentName,
   name,
+  slug,
   loading,
   error,
   onNameChange,
@@ -58,24 +60,45 @@ export function RenameProjectDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex flex-col gap-1.5 py-2">
-          <label
-            htmlFor="rename-project-name"
-            className="text-xs font-medium"
-            style={{ color: "var(--text-secondary)" }}
-          >
-            New project name
-          </label>
-          <Input
-            id="rename-project-name"
-            ref={inputRef}
-            value={name}
-            onChange={(e) => onNameChange(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Project name"
-            autoComplete="off"
-            disabled={loading}
-          />
+        <div className="flex flex-col gap-5 py-2">
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="rename-project-name"
+              className="text-xs font-medium"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              New project name
+            </label>
+            <Input
+              id="rename-project-name"
+              ref={inputRef}
+              value={name}
+              onChange={(e) => onNameChange(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Project name"
+              autoComplete="off"
+              disabled={loading}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <span
+              className="text-xs font-medium"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              Slug preview
+            </span>
+            <div
+              className="flex h-9 items-center rounded-xl px-3 font-mono text-sm"
+              style={{
+                backgroundColor: "var(--bg-elevated)",
+                border: "1px solid var(--border-default)",
+                color: slug ? "var(--text-secondary)" : "var(--text-faint)",
+              }}
+            >
+              {slug || "untitled"}
+            </div>
+          </div>
         </div>
 
         {error && (

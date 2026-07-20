@@ -14,9 +14,16 @@ export async function createClient() {
           return cookieStore.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          } catch {
+            // The `setAll` method was called from a Server Component or Route
+            // Handler where cookies cannot be set (e.g. DELETE/PATCH handlers
+            // in Next.js 15). The session refresh is best-effort; the next
+            // request will retry with the existing (still-valid) token.
+          }
         },
       },
     }

@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { slugify } from "@/lib/utils";
+import { slugify, projectSlug } from "@/lib/utils";
 import type { DialogKind } from "@/components/editor/project-dialog-context";
 
 export interface RenameTarget {
@@ -21,6 +21,7 @@ export interface UseProjectActionsResult {
   createSlug: string;
   renameTarget: RenameTarget | null;
   renameName: string;
+  renameSlug: string;
   deleteTarget: DeleteTarget | null;
   loading: boolean;
   error: string | null;
@@ -60,6 +61,11 @@ export function useProjectActions(): UseProjectActionsResult {
     if (!createSuffix) return base;
     return `${base}-${createSuffix}`;
   }, [createName, createSuffix]);
+
+  const renameSlug = useMemo(() => {
+    if (!renameTarget) return "";
+    return projectSlug(renameName, renameTarget.projectId);
+  }, [renameName, renameTarget]);
 
   const openCreate = useCallback(() => {
     setCreateName("");
@@ -156,6 +162,7 @@ export function useProjectActions(): UseProjectActionsResult {
     createSlug,
     renameTarget,
     renameName,
+    renameSlug,
     deleteTarget,
     loading,
     error,

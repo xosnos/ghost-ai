@@ -27,6 +27,7 @@ export function ProjectDialogs({ dialogs }: ProjectDialogsProps) {
         open={dialogs.openDialog === "rename"}
         currentName={dialogs.renameTarget?.currentName ?? ""}
         name={dialogs.renameName}
+        slug={dialogs.renameSlug}
         loading={dialogs.loading}
         error={dialogs.error}
         onNameChange={dialogs.setRenameName}
