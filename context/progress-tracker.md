@@ -25,6 +25,13 @@ Update this file whenever the current phase, active feature, or implementation s
 
 - (Resolved) `listSharedProjects` RLS access — SELECT policies on `projects` and `project_collaborators` now allow owner OR collaborator (matched by `auth.jwt() ->> 'email'`), so shared projects populate for invited collaborators. Mutations remain owner-only.
 
+## Design Decisions
+
+- **Project routing stays UUID-based** per spec 07 ("project ID and room ID stay aligned"). The `/editor/[roomId]` route resolves projects by UUID; `POST /api/projects` returns the UUID and the client navigates to `/editor/<uuid>`. The slug shown in the Create dialog preview is **display-only** and is not persisted or used for routing.
+- **Sidebar shows a derived slug, not the UUID.** `ProjectSidebar` renders `slugify(project.name)` (or `untitled` when empty) as the secondary line under each project name. The real `project.id` is still used as the React key and for rename/delete callbacks.
+- **Rename/delete buttons: hover-reveal on desktop, always visible on mobile.** Root cause of the "missing buttons" report: the action container used `opacity-0 group-hover:opacity-100` with no touch fallback, so on mobile/touch the buttons stayed at `opacity:0` permanently. Fix: `md:opacity-0 md:group-hover:opacity-100` — buttons are always visible below the `md` breakpoint and reveal on hover above it. The Tailwind v4 `group-hover` variant generates the expected `.group-hover\:opacity-100:is(:where(.group):hover *)` rule, so desktop hover works.
+- **Create dialog label corrected** from "Room ID preview" to "Slug preview" to stop implying the slug is the URL/Liveblocks room ID. The `createSlug` is now plain `slugify(createName)` (no random suffix) so it matches the sidebar's derived slug exactly.
+
 ## Architecture Decisions
 
 - Tailwind v4 CSS-first config — design tokens defined as CSS custom properties in globals.css, mapped to Tailwind via @theme inline.

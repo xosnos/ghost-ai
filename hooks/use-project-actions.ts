@@ -35,10 +35,6 @@ export interface UseProjectActionsResult {
   submitDelete: () => Promise<void>;
 }
 
-function generateShortSuffix(): string {
-  return Math.random().toString(36).slice(2, 8);
-}
-
 async function parseJsonError(res: Response): Promise<string> {
   const body = await res.json().catch(() => ({}));
   if (body && typeof body.error === "string") return body.error;
@@ -50,21 +46,16 @@ export function useProjectActions(): UseProjectActionsResult {
   const pathname = usePathname();
   const [openDialog, setOpenDialog] = useState<DialogKind>(null);
   const [createName, setCreateName] = useState("");
-  const [createSuffix, setCreateSuffix] = useState("");
   const [renameTarget, setRenameTarget] = useState<RenameTarget | null>(null);
   const [renameName, setRenameName] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createSlug = useMemo(() => {
-    const slug = slugify(createName);
-    return slug ? `${slug}-${createSuffix}` : createSuffix;
-  }, [createName, createSuffix]);
+  const createSlug = useMemo(() => slugify(createName), [createName]);
 
   const openCreate = useCallback(() => {
     setCreateName("");
-    setCreateSuffix(generateShortSuffix());
     setError(null);
     setOpenDialog("create");
   }, []);

@@ -84,7 +84,7 @@ export function CreateProjectDialog({
               className="text-xs font-medium"
               style={{ color: "var(--text-secondary)" }}
             >
-              Room ID preview
+              Slug preview
             </span>
             <div
               className="flex h-9 items-center rounded-xl px-3 font-mono text-sm"
@@ -94,7 +94,7 @@ export function CreateProjectDialog({
                 color: slug ? "var(--text-secondary)" : "var(--text-faint)",
               }}
             >
-              {slug || "payments-service"}
+              {slug || "untitled"}
             </div>
           </div>
         </div>

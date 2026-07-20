@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useProjectDialogs } from "@/components/editor/project-dialog-context";
+import { slugify } from "@/lib/utils";
 import type { Project } from "@/lib/projects/types";
 
 interface ProjectSidebarProps {
@@ -170,12 +171,12 @@ function ProjectListItem({ project, currentUserId, onRename, onDelete }: Project
             className="truncate font-mono text-xs"
             style={{ color: "var(--text-faint)" }}
           >
-            {project.id}
+            {slugify(project.name) || "untitled"}
           </span>
         </div>
 
         {canManage && (
-          <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          <div className="flex items-center gap-0.5 transition-opacity md:opacity-0 md:group-hover:opacity-100">
             <Button
               variant="ghost"
               size="icon"
