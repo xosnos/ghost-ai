@@ -46,16 +46,24 @@ export function useProjectActions(): UseProjectActionsResult {
   const pathname = usePathname();
   const [openDialog, setOpenDialog] = useState<DialogKind>(null);
   const [createName, setCreateName] = useState("");
+  const [createSuffix, setCreateSuffix] = useState("");
   const [renameTarget, setRenameTarget] = useState<RenameTarget | null>(null);
   const [renameName, setRenameName] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const createSlug = useMemo(() => slugify(createName), [createName]);
+  const createSlug = useMemo(() => {
+    const base = slugify(createName);
+    if (!base && !createSuffix) return "untitled";
+    if (!base) return createSuffix;
+    if (!createSuffix) return base;
+    return `${base}-${createSuffix}`;
+  }, [createName, createSuffix]);
 
   const openCreate = useCallback(() => {
     setCreateName("");
+    setCreateSuffix(Math.random().toString(36).slice(2, 8));
     setError(null);
     setOpenDialog("create");
   }, []);
@@ -128,7 +136,7 @@ export function useProjectActions(): UseProjectActionsResult {
       const res = await fetch(`/api/projects/${deleteTarget.projectId}`, {
         method: "DELETE",
       });
-      if (!res.ok && res.status !== 204) throw new Error(await parseJsonError(res));
+      if (!res.ok) throw new Error(await parseJsonError(res));
       const isActive = pathname === `/editor/${deleteTarget.projectId}`;
       closeDialog();
       if (isActive) {

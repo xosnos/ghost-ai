@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useProjectDialogs } from "@/components/editor/project-dialog-context";
-import { slugify } from "@/lib/utils";
+import { projectSlug } from "@/lib/utils";
 import type { Project } from "@/lib/projects/types";
 
 interface ProjectSidebarProps {
@@ -171,7 +171,7 @@ function ProjectListItem({ project, currentUserId, onRename, onDelete }: Project
             className="truncate font-mono text-xs"
             style={{ color: "var(--text-faint)" }}
           >
-            {slugify(project.name) || "untitled"}
+            {projectSlug(project.name, project.id)}
           </span>
         </div>
 

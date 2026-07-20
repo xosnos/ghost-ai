@@ -73,7 +73,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
 
   try {
     await deleteProject(supabase, projectId);
-    return new NextResponse(null, { status: 204 });
+    return NextResponse.json({ ok: true }, { status: 200 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Internal server error";
     return NextResponse.json({ error: message }, { status: 500 });
