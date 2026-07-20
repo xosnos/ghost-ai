@@ -3,7 +3,27 @@
 import { useCallback, useMemo, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { slugify, projectSlug } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 import type { DialogKind } from "@/components/editor/project-dialog-context";
+
+function unwrapErrorMessage(err: unknown, fallback: string): string {
+  let current: unknown = err;
+  let message = fallback;
+  for (let depth = 0; depth < 5 && current instanceof Error; depth++) {
+    if (current.message && current.message !== "fetch failed") {
+      message = current.message;
+      break;
+    }
+    current = (current as Error & { cause?: unknown }).cause;
+  }
+  if (current instanceof Error && current.message && current.message !== "fetch failed") {
+    message = current.message;
+  }
+  if (err instanceof Error) {
+    console.error("[useProjectActions]", err.message, err.cause, err.stack);
+  }
+  return message;
+}
 
 export interface RenameTarget {
   projectId: string;
@@ -110,7 +130,7 @@ export function useProjectActions(): UseProjectActionsResult {
       closeDialog();
       router.push(`/editor/${projectId}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create project");
+      setError(unwrapErrorMessage(err, "Failed to create project"));
       setLoading(false);
     }
   }, [createName, closeDialog, router]);
@@ -129,7 +149,7 @@ export function useProjectActions(): UseProjectActionsResult {
       closeDialog();
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to rename project");
+      setError(unwrapErrorMessage(err, "Failed to rename project"));
       setLoading(false);
     }
   }, [renameTarget, renameName, closeDialog, router]);
@@ -138,12 +158,35 @@ export function useProjectActions(): UseProjectActionsResult {
     if (!deleteTarget) return;
     setLoading(true);
     setError(null);
+    const isActive = pathname === `/editor/${deleteTarget.projectId}`;
     try {
       const res = await fetch(`/api/projects/${deleteTarget.projectId}`, {
         method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
       });
       if (!res.ok) throw new Error(await parseJsonError(res));
-      const isActive = pathname === `/editor/${deleteTarget.projectId}`;
+      closeDialog();
+      if (isActive) {
+        router.push("/editor");
+      } else {
+        router.refresh();
+      }
+      return;
+    } catch (routeErr) {
+      console.warn(
+        "[useProjectActions] DELETE route failed, falling back to direct Supabase delete",
+        routeErr
+      );
+    }
+
+    try {
+      const supabase = createClient();
+      const { error: deleteError } = await supabase
+        .from("projects")
+        .delete()
+        .eq("id", deleteTarget.projectId);
+      if (deleteError) throw new Error(`Failed to delete project: ${deleteError.message}`);
       closeDialog();
       if (isActive) {
         router.push("/editor");
@@ -151,7 +194,7 @@ export function useProjectActions(): UseProjectActionsResult {
         router.refresh();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to delete project");
+      setError(unwrapErrorMessage(err, "Failed to delete project"));
       setLoading(false);
     }
   }, [deleteTarget, closeDialog, router, pathname]);
