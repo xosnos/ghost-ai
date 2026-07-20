@@ -14,17 +14,19 @@ This unit handles triggering background jobs, tracking runs, and issuing tokens.
 
 2. Add task run tracking.
 
-   Create a `TaskRun` model in Prisma to track Trigger.dev runs and verify ownership.
+   Create a `task_runs` table in Supabase to track Trigger.dev runs and verify ownership.
 
    It should include:
-   - `runId` (unique)
-   - `projectId`
-   - `userId`
-   - `createdAt`
+   - `id` (uuid, primary key)
+   - `runId` (text, unique)
+   - `projectId` (uuid, foreign key to `projects`)
+   - `userId` (uuid, not null, defaults to `auth.uid()`)
+   - `createdAt` (timestamp)
 
    Add:
-   - an index on `runId`
+   - a unique index on `runId`
    - a compound index on `userId` and `projectId`
+   - RLS policies scoped to `auth.uid() = userId` for all CRUD operations
 
 3. Add the token route.
 
@@ -55,7 +57,7 @@ This unit handles triggering background jobs, tracking runs, and issuing tokens.
 ## Check When Done
 
 - `POST /api/ai/design` triggers a background task.
-- Task runs are stored in Prisma.
+- Task runs are stored in Supabase.
 - `POST /api/ai/design/token` returns a run-scoped token.
 - Design task exists and is callable.
 - `npm run build` passes.

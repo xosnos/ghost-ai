@@ -5,17 +5,25 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useProjectDialogs } from "@/components/editor/project-dialog-context";
-import { mockProjects, type Project } from "@/lib/projects/mock-data";
+import { projectSlug } from "@/lib/utils";
+import type { Project } from "@/lib/projects/types";
 
 interface ProjectSidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  currentUserId: string;
+  ownedProjects: Project[];
+  sharedProjects: Project[];
 }
 
-export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
+export function ProjectSidebar({
+  isOpen,
+  onClose,
+  currentUserId,
+  ownedProjects,
+  sharedProjects,
+}: ProjectSidebarProps) {
   const dialogs = useProjectDialogs();
-  const ownedProjects = mockProjects.filter((p) => p.owner);
-  const sharedProjects = mockProjects.filter((p) => !p.owner);
 
   return (
     <>
@@ -29,7 +37,7 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
       )}
 
       <aside
-        className="fixed top-12 left-0 z-30 flex h-[calc(100vh-3rem)] w-72 flex-col transition-transform duration-200"
+        className="fixed top-12 left-0 z-30 flex h-[calc(100vh-3rem)] w-80 flex-col transition-transform duration-200"
         style={{
           backgroundColor: "var(--bg-surface)",
           borderRight: "1px solid var(--border-default)",
@@ -67,6 +75,7 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
             <TabsContent value="my-projects" className="flex flex-1 flex-col">
               <ProjectList
                 projects={ownedProjects}
+                currentUserId={currentUserId}
                 emptyMessage="No projects yet."
                 onRename={dialogs.openRename}
                 onDelete={dialogs.openDelete}
@@ -74,7 +83,11 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
             </TabsContent>
 
             <TabsContent value="shared" className="flex flex-1 flex-col">
-              <ProjectList projects={sharedProjects} emptyMessage="No shared projects." />
+              <ProjectList
+                projects={sharedProjects}
+                currentUserId={currentUserId}
+                emptyMessage="No shared projects."
+              />
             </TabsContent>
           </Tabs>
         </div>
@@ -93,12 +106,13 @@ export function ProjectSidebar({ isOpen, onClose }: ProjectSidebarProps) {
 
 interface ProjectListProps {
   projects: Project[];
+  currentUserId: string;
   emptyMessage: string;
   onRename?: (projectId: string, currentName: string) => void;
   onDelete?: (projectId: string, projectName: string) => void;
 }
 
-function ProjectList({ projects, emptyMessage, onRename, onDelete }: ProjectListProps) {
+function ProjectList({ projects, currentUserId, emptyMessage, onRename, onDelete }: ProjectListProps) {
   if (projects.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center py-8">
@@ -116,6 +130,7 @@ function ProjectList({ projects, emptyMessage, onRename, onDelete }: ProjectList
           <ProjectListItem
             key={project.id}
             project={project}
+            currentUserId={currentUserId}
             onRename={onRename}
             onDelete={onDelete}
           />
@@ -127,12 +142,14 @@ function ProjectList({ projects, emptyMessage, onRename, onDelete }: ProjectList
 
 interface ProjectListItemProps {
   project: Project;
+  currentUserId: string;
   onRename?: (projectId: string, currentName: string) => void;
   onDelete?: (projectId: string, projectName: string) => void;
 }
 
-function ProjectListItem({ project, onRename, onDelete }: ProjectListItemProps) {
-  const canManage = project.owner && Boolean(onRename && onDelete);
+function ProjectListItem({ project, currentUserId, onRename, onDelete }: ProjectListItemProps) {
+  const isOwner = project.ownerId === currentUserId;
+  const canManage = isOwner && Boolean(onRename && onDelete);
 
   return (
     <li>
@@ -154,12 +171,12 @@ function ProjectListItem({ project, onRename, onDelete }: ProjectListItemProps) 
             className="truncate font-mono text-xs"
             style={{ color: "var(--text-faint)" }}
           >
-            {project.slug}
+            {projectSlug(project.name, project.id)}
           </span>
         </div>
 
         {canManage && (
-          <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
             <Button
               variant="ghost"
               size="icon"

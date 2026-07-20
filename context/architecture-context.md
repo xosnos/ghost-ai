@@ -7,27 +7,26 @@
 | Framework        | Next.js 16 + TypeScript | Full-stack app with server/client boundaries                   |
 | UI               | Tailwind + shadcn/ui    | Component composition and styling                              |
 | Auth             | Supabase Auth           | User identity and route protection                             |
-| Database         | Prisma + PostgreSQL     | Relational metadata: projects, collaborators, specs, task runs |
+| Database         | Supabase (PostgreSQL)   | Relational metadata: projects, collaborators, specs, task runs |
 | Canvas           | Liveblocks + React Flow | Real-time collaborative canvas, presence, and cursors          |
 | Background tasks | Trigger.dev             | Durable AI generation workflows                                |
-| Artifact storage | Vercel Blob             | Canvas snapshots and generated Markdown specs                  |
+| Artifact storage | Supabase Storage        | Canvas snapshots and generated Markdown specs                  |
 
 ## System Boundaries
 
 - `app/api` — Authenticated request handlers: input validation, ownership checks, task triggering, and persistence.
 - `trigger` — Long-running background jobs: AI design generation and spec generation.
-- `lib` — Shared infrastructure: Prisma client, access control helpers, and utilities.
+- `lib` — Shared infrastructure: Supabase client, access control helpers, and utilities.
 - `components` — UI composition: canvas surfaces, sidebars, dialogs, and interactive elements.
-- `prisma` — Database schema and generated client output.
 - `data` — Legacy local directory. Not used for new artifacts.
 
 ## Storage Model
 
 - **Database**: metadata, ownership, relationships, and task run records.
-- **Vercel Blob**: generated artifacts — canvas snapshots at `canvas/{projectId}.json` and specs at `specs/{projectId}/{specId}.md`.
+- **Supabase Storage**: generated artifacts — canvas snapshots at `canvas/{projectId}.json` and specs at `specs/{projectId}/{specId}.md`.
 - Project records, spec records, and task run records belong in PostgreSQL.
-- Canvas content and Markdown output are stored in and retrieved from Vercel Blob.
-- The blob URL is stored in the database (`canvasJsonPath`, `filePath`) as the reference to the artifact.
+- Canvas content and Markdown output are stored in and retrieved from Supabase Storage.
+- The storage path is stored in the database (`canvasStoragePath`, `filePath`) as the reference to the artifact.
 
 ## Auth and Collaboration Model
 
@@ -60,7 +59,7 @@
 
 - Input: current canvas graph and project context.
 - Execution: durable background task via Trigger.dev.
-- Output: Markdown technical spec saved to the filesystem and linked to the project in the database.
+- Output: Markdown technical spec saved to Supabase Storage and linked to the project in the database.
 
 ## Invariants
 

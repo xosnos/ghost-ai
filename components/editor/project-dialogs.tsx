@@ -3,10 +3,10 @@
 import { CreateProjectDialog } from "@/components/editor/create-project-dialog";
 import { RenameProjectDialog } from "@/components/editor/rename-project-dialog";
 import { DeleteProjectDialog } from "@/components/editor/delete-project-dialog";
-import type { UseProjectDialogsResult } from "@/hooks/use-project-dialogs";
+import type { UseProjectActionsResult } from "@/hooks/use-project-actions";
 
 interface ProjectDialogsProps {
-  dialogs: UseProjectDialogsResult;
+  dialogs: UseProjectActionsResult;
 }
 
 export function ProjectDialogs({ dialogs }: ProjectDialogsProps) {
@@ -17,6 +17,7 @@ export function ProjectDialogs({ dialogs }: ProjectDialogsProps) {
         name={dialogs.createName}
         slug={dialogs.createSlug}
         loading={dialogs.loading}
+        error={dialogs.error}
         onNameChange={dialogs.setCreateName}
         onSubmit={dialogs.submitCreate}
         onClose={dialogs.closeDialog}
@@ -26,7 +27,9 @@ export function ProjectDialogs({ dialogs }: ProjectDialogsProps) {
         open={dialogs.openDialog === "rename"}
         currentName={dialogs.renameTarget?.currentName ?? ""}
         name={dialogs.renameName}
+        slug={dialogs.renameSlug}
         loading={dialogs.loading}
+        error={dialogs.error}
         onNameChange={dialogs.setRenameName}
         onSubmit={dialogs.submitRename}
         onClose={dialogs.closeDialog}
@@ -36,6 +39,7 @@ export function ProjectDialogs({ dialogs }: ProjectDialogsProps) {
         open={dialogs.openDialog === "delete"}
         projectName={dialogs.deleteTarget?.projectName ?? ""}
         loading={dialogs.loading}
+        error={dialogs.error}
         onSubmit={dialogs.submitDelete}
         onClose={dialogs.closeDialog}
       />

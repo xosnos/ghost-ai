@@ -8,16 +8,26 @@ import {
   ProjectDialogContext,
   type ProjectDialogContextValue,
 } from "@/components/editor/project-dialog-context";
-import { useProjectDialogs } from "@/hooks/use-project-dialogs";
+import { useProjectActions } from "@/hooks/use-project-actions";
+import type { Project } from "@/lib/projects/types";
 
 interface EditorChromeProps {
   children: React.ReactNode;
   userEmail: string;
+  currentUserId: string;
+  ownedProjects: Project[];
+  sharedProjects: Project[];
 }
 
-export function EditorChrome({ children, userEmail }: EditorChromeProps) {
+export function EditorChrome({
+  children,
+  userEmail,
+  currentUserId,
+  ownedProjects,
+  sharedProjects,
+}: EditorChromeProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const dialogs = useProjectDialogs();
+  const dialogs = useProjectActions();
 
   const contextValue: ProjectDialogContextValue = {
     openCreate: dialogs.openCreate,
@@ -36,6 +46,9 @@ export function EditorChrome({ children, userEmail }: EditorChromeProps) {
         <ProjectSidebar
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
+          currentUserId={currentUserId}
+          ownedProjects={ownedProjects}
+          sharedProjects={sharedProjects}
         />
         <main className="flex flex-1 overflow-hidden pt-12">{children}</main>
       </div>

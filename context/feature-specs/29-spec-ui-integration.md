@@ -35,7 +35,7 @@ Integrate spec generation results into the editor so users can view, preview, an
 ### Scope Limits
 
 - do not implement backend logic
-- do not fetch Blob URLs directly in the client
+- do not fetch from Supabase Storage directly in the client
 - do not store spec content in frontend state long-term
 - do not redesign the sidebar or tabs
 - do not add new global state
@@ -43,7 +43,7 @@ Integrate spec generation results into the editor so users can view, preview, an
 ### Notes
 
 - reuse existing fetch patterns used in the app
-- assume ProjectSpec only provides metadata, content must be fetched separately
+- assume the `project_specs` table only provides metadata, content must be fetched separately
 
 ### Check When Done
 
