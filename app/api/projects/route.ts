@@ -3,6 +3,7 @@ import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import {
   createProject,
   listOwnedProjects,
+  errorResponse,
 } from "@/lib/projects/queries";
 
 export async function GET() {
@@ -16,8 +17,7 @@ export async function GET() {
     const projects = await listOwnedProjects(supabase, user.id);
     return NextResponse.json({ projects });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Internal server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return errorResponse(err);
   }
 }
 
@@ -42,7 +42,6 @@ export async function POST(req: Request) {
     const project = await createProject(supabase, { ownerId: user.id, name });
     return NextResponse.json({ project }, { status: 201 });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Internal server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return errorResponse(err);
   }
 }

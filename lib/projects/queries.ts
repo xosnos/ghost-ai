@@ -1,8 +1,30 @@
+import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { toProject, type Project } from "@/lib/projects/types";
 
 const PROJECT_SELECT =
   "id, owner_id, name, description, status, canvas_storage_path, created_at, updated_at";
+
+export class ProjectQueryError extends Error {
+  constructor(
+    message: string,
+    readonly operation: string,
+    readonly detail: string
+  ) {
+    super(message);
+    this.name = "ProjectQueryError";
+  }
+}
+
+export function errorResponse(err: unknown) {
+  if (err instanceof ProjectQueryError) {
+    console.error(`[projects] ${err.operation}: ${err.detail}`);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+  const message = err instanceof Error ? err.message : "Internal server error";
+  console.error("[projects] unexpected error:", err);
+  return NextResponse.json({ error: message }, { status: 500 });
+}
 
 export async function listOwnedProjects(
   supabase: SupabaseClient,
@@ -15,7 +37,11 @@ export async function listOwnedProjects(
     .order("created_at", { ascending: false });
 
   if (error) {
-    throw new Error(`Failed to list projects: ${error.message}`);
+    throw new ProjectQueryError(
+      "Failed to list projects",
+      "list_owned_projects",
+      error.message
+    );
   }
 
   return (data ?? []).map(toProject);
@@ -33,7 +59,11 @@ export async function createProject(
     .single();
 
   if (error) {
-    throw new Error(`Failed to create project: ${error.message}`);
+    throw new ProjectQueryError(
+      "Failed to create project",
+      "create_project",
+      error.message
+    );
   }
 
   return toProject(data);
@@ -51,7 +81,11 @@ export async function listSharedProjects(
     .eq("email", userEmail);
 
   if (collabError) {
-    throw new Error(`Failed to list shared projects: ${collabError.message}`);
+    throw new ProjectQueryError(
+      "Failed to list shared projects",
+      "list_shared_collaborators",
+      collabError.message
+    );
   }
 
   const projectIds = (collaboratorRows ?? [])
@@ -67,7 +101,11 @@ export async function listSharedProjects(
     .order("created_at", { ascending: false });
 
   if (projectError) {
-    throw new Error(`Failed to list shared projects: ${projectError.message}`);
+    throw new ProjectQueryError(
+      "Failed to list shared projects",
+      "list_shared_projects",
+      projectError.message
+    );
   }
 
   return (projectRows ?? []).map(toProject);
@@ -84,7 +122,11 @@ export async function getProject(
     .maybeSingle();
 
   if (error) {
-    throw new Error(`Failed to fetch project: ${error.message}`);
+    throw new ProjectQueryError(
+      "Failed to fetch project",
+      "get_project",
+      error.message
+    );
   }
 
   return data ? toProject(data) : null;
@@ -107,7 +149,11 @@ export async function renameProject(
     .single();
 
   if (error) {
-    throw new Error(`Failed to rename project: ${error.message}`);
+    throw new ProjectQueryError(
+      "Failed to rename project",
+      "rename_project",
+      error.message
+    );
   }
 
   return toProject(data);
@@ -123,6 +169,10 @@ export async function deleteProject(
     .eq("id", projectId);
 
   if (error) {
-    throw new Error(`Failed to delete project: ${error.message}`);
+    throw new ProjectQueryError(
+      "Failed to delete project",
+      "delete_project",
+      error.message
+    );
   }
 }

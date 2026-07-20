@@ -4,6 +4,7 @@ import {
   deleteProject,
   getProject,
   renameProject,
+  errorResponse,
 } from "@/lib/projects/queries";
 
 interface RouteContext {
@@ -46,8 +47,7 @@ export async function PATCH(req: Request, ctx: RouteContext) {
     const project = await renameProject(supabase, { projectId, name });
     return NextResponse.json({ project });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Internal server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return errorResponse(err);
   }
 }
 
@@ -75,7 +75,6 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
     await deleteProject(supabase, projectId);
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Internal server error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return errorResponse(err);
   }
 }
