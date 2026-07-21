@@ -4,6 +4,7 @@ import { useState } from "react";
 import { EditorNavbar } from "@/components/editor/editor-navbar";
 import { ProjectSidebar } from "@/components/editor/project-sidebar";
 import { ProjectDialogs } from "@/components/editor/project-dialogs";
+import { AiSidebarPlaceholder } from "@/components/editor/ai-sidebar-placeholder";
 import {
   ProjectDialogContext,
   type ProjectDialogContextValue,
@@ -17,6 +18,8 @@ interface EditorChromeProps {
   currentUserId: string;
   ownedProjects: Project[];
   sharedProjects: Project[];
+  project?: Project;
+  currentRoomId?: string;
 }
 
 export function EditorChrome({
@@ -25,8 +28,11 @@ export function EditorChrome({
   currentUserId,
   ownedProjects,
   sharedProjects,
+  project,
+  currentRoomId,
 }: EditorChromeProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [aiSidebarOpen, setAiSidebarOpen] = useState(false);
   const dialogs = useProjectActions();
 
   const contextValue: ProjectDialogContextValue = {
@@ -42,6 +48,10 @@ export function EditorChrome({
           sidebarOpen={sidebarOpen}
           onToggleSidebar={() => setSidebarOpen((v) => !v)}
           userEmail={userEmail}
+          projectName={project?.name}
+          aiSidebarOpen={aiSidebarOpen}
+          onToggleAiSidebar={() => setAiSidebarOpen((v) => !v)}
+          onShare={() => {}}
         />
         <ProjectSidebar
           isOpen={sidebarOpen}
@@ -49,8 +59,15 @@ export function EditorChrome({
           currentUserId={currentUserId}
           ownedProjects={ownedProjects}
           sharedProjects={sharedProjects}
+          currentRoomId={currentRoomId}
         />
         <main className="flex flex-1 overflow-hidden pt-12">{children}</main>
+        {project && (
+          <AiSidebarPlaceholder
+            isOpen={aiSidebarOpen}
+            onClose={() => setAiSidebarOpen(false)}
+          />
+        )}
       </div>
 
       <ProjectDialogs dialogs={dialogs} />

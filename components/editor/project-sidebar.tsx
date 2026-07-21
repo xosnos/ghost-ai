@@ -1,11 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { X, Plus, Pencil, Trash2, Folder } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useProjectDialogs } from "@/components/editor/project-dialog-context";
-import { projectSlug } from "@/lib/utils";
+import { cn, projectSlug } from "@/lib/utils";
 import type { Project } from "@/lib/projects/types";
 
 interface ProjectSidebarProps {
@@ -14,6 +15,7 @@ interface ProjectSidebarProps {
   currentUserId: string;
   ownedProjects: Project[];
   sharedProjects: Project[];
+  currentRoomId?: string;
 }
 
 export function ProjectSidebar({
@@ -22,6 +24,7 @@ export function ProjectSidebar({
   currentUserId,
   ownedProjects,
   sharedProjects,
+  currentRoomId,
 }: ProjectSidebarProps) {
   const dialogs = useProjectDialogs();
 
@@ -76,6 +79,7 @@ export function ProjectSidebar({
               <ProjectList
                 projects={ownedProjects}
                 currentUserId={currentUserId}
+                currentRoomId={currentRoomId}
                 emptyMessage="No projects yet."
                 onRename={dialogs.openRename}
                 onDelete={dialogs.openDelete}
@@ -86,6 +90,7 @@ export function ProjectSidebar({
               <ProjectList
                 projects={sharedProjects}
                 currentUserId={currentUserId}
+                currentRoomId={currentRoomId}
                 emptyMessage="No shared projects."
               />
             </TabsContent>
@@ -107,12 +112,20 @@ export function ProjectSidebar({
 interface ProjectListProps {
   projects: Project[];
   currentUserId: string;
+  currentRoomId?: string;
   emptyMessage: string;
   onRename?: (projectId: string, currentName: string) => void;
   onDelete?: (projectId: string, projectName: string) => void;
 }
 
-function ProjectList({ projects, currentUserId, emptyMessage, onRename, onDelete }: ProjectListProps) {
+function ProjectList({
+  projects,
+  currentUserId,
+  currentRoomId,
+  emptyMessage,
+  onRename,
+  onDelete,
+}: ProjectListProps) {
   if (projects.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center py-8">
@@ -131,6 +144,7 @@ function ProjectList({ projects, currentUserId, emptyMessage, onRename, onDelete
             key={project.id}
             project={project}
             currentUserId={currentUserId}
+            isActive={project.id === currentRoomId}
             onRename={onRename}
             onDelete={onDelete}
           />
@@ -143,40 +157,55 @@ function ProjectList({ projects, currentUserId, emptyMessage, onRename, onDelete
 interface ProjectListItemProps {
   project: Project;
   currentUserId: string;
+  isActive?: boolean;
   onRename?: (projectId: string, currentName: string) => void;
   onDelete?: (projectId: string, projectName: string) => void;
 }
 
-function ProjectListItem({ project, currentUserId, onRename, onDelete }: ProjectListItemProps) {
+function ProjectListItem({
+  project,
+  currentUserId,
+  isActive,
+  onRename,
+  onDelete,
+}: ProjectListItemProps) {
   const isOwner = project.ownerId === currentUserId;
   const canManage = isOwner && Boolean(onRename && onDelete);
 
   return (
     <li>
       <div
-        className="group flex items-center gap-2 rounded-xl px-2 py-2 transition-colors hover:bg-[var(--bg-elevated)]"
+        className={cn(
+          "group flex items-center gap-2 rounded-xl px-2 py-2 transition-colors hover:bg-[var(--bg-elevated)]",
+          isActive && "bg-[var(--accent-primary-dim)]"
+        )}
       >
-        <Folder
-          className="h-4 w-4 shrink-0"
-          style={{ color: "var(--text-muted)" }}
-        />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <span
-            className="truncate text-sm"
-            style={{ color: "var(--text-primary)" }}
-          >
-            {project.name}
-          </span>
-          <span
-            className="truncate font-mono text-xs"
-            style={{ color: "var(--text-faint)" }}
-          >
-            {projectSlug(project.name, project.id)}
-          </span>
-        </div>
+        <Link
+          href={`/editor/${project.id}`}
+          className="flex min-w-0 flex-1 items-center gap-2"
+        >
+          <Folder
+            className="h-4 w-4 shrink-0"
+            style={{ color: isActive ? "var(--accent-primary)" : "var(--text-muted)" }}
+          />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <span
+              className="truncate text-sm"
+              style={{ color: isActive ? "var(--accent-primary)" : "var(--text-primary)" }}
+            >
+              {project.name}
+            </span>
+            <span
+              className="truncate font-mono text-xs"
+              style={{ color: "var(--text-faint)" }}
+            >
+              {projectSlug(project.name, project.id)}
+            </span>
+          </div>
+        </Link>
 
         {canManage && (
-          <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          <div className="flex shrink-0 items-center gap-0.5 opacity-100 transition-opacity md:opacity-0 md:group-hover:opacity-100">
             <Button
               variant="ghost"
               size="icon"
