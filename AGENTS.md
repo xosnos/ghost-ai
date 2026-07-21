@@ -29,9 +29,9 @@ The VM image already has the Docker engine and the Supabase CLI installed; the u
 
 1. Ensure the Docker daemon is running (run `docker ps`; if it fails, start it with `sudo dockerd &` and wait a few seconds). `/etc/docker/daemon.json` is pre-configured for `fuse-overlayfs` with the containerd-snapshotter feature disabled, and `iptables` is set to the legacy backend — this is required for Docker to work in this VM.
 2. From `/workspace`, run `supabase start`. This launches the local Supabase containers, applies everything in `supabase/migrations/`, and runs `supabase/seed.sql`. Get the local URL/keys anytime with `supabase status`.
-3. Create `.env.local` (gitignored) if it is missing, pointing at the local stack. The local anon key is the standard Supabase demo JWT and is stable across restarts:
-   - `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0`
+3. Create `.env.local` (gitignored) if it is missing, pointing at the local stack. Do not hardcode keys here — read the current values from `supabase status` (fields `API URL` and `anon key`) and write them in:
+   - `NEXT_PUBLIC_SUPABASE_URL` — the `API URL` (local default `http://127.0.0.1:54321`)
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — the `anon key` (the standard, non-secret local demo JWT, stable across restarts)
 4. `npm run dev` → http://localhost:3000. Unauthenticated visits redirect to `/login`; sign up/in creates a real Supabase Auth user (email confirmation is off locally).
 
 Non-obvious gotchas:
