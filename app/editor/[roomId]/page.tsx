@@ -11,8 +11,8 @@ interface EditorWorkspacePageProps {
 }
 
 export default async function EditorWorkspacePage({ params }: EditorWorkspacePageProps) {
-  const { roomId } = await params;
   const supabase = await createClient();
+  const { roomId } = await params;
   const identity = await getAuthIdentity(supabase);
 
   if (!identity) {
