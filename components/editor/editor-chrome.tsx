@@ -4,12 +4,14 @@ import { useState } from "react";
 import { EditorNavbar } from "@/components/editor/editor-navbar";
 import { ProjectSidebar } from "@/components/editor/project-sidebar";
 import { ProjectDialogs } from "@/components/editor/project-dialogs";
+import { ShareProjectDialog } from "@/components/editor/share-project-dialog";
 import { AiSidebarPlaceholder } from "@/components/editor/ai-sidebar-placeholder";
 import {
   ProjectDialogContext,
   type ProjectDialogContextValue,
 } from "@/components/editor/project-dialog-context";
 import { useProjectActions } from "@/hooks/use-project-actions";
+import { useShareDialog } from "@/hooks/use-share-dialog";
 import type { Project } from "@/lib/projects/types";
 
 interface EditorChromeProps {
@@ -34,6 +36,10 @@ export function EditorChrome({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [aiSidebarOpen, setAiSidebarOpen] = useState(false);
   const dialogs = useProjectActions();
+  const isProjectOwner = Boolean(
+    project && project.ownerId === currentUserId
+  );
+  const share = useShareDialog(project?.id, isProjectOwner);
 
   const contextValue: ProjectDialogContextValue = {
     openCreate: dialogs.openCreate,
@@ -51,7 +57,7 @@ export function EditorChrome({
           projectName={project?.name}
           aiSidebarOpen={aiSidebarOpen}
           onToggleAiSidebar={() => setAiSidebarOpen((v) => !v)}
-          onShare={() => {}}
+          onShare={project ? share.openShare : undefined}
         />
         <ProjectSidebar
           isOpen={sidebarOpen}
@@ -71,6 +77,27 @@ export function EditorChrome({
       </div>
 
       <ProjectDialogs dialogs={dialogs} />
+
+      {project && (
+        <ShareProjectDialog
+          open={share.open}
+          projectName={project.name}
+          isOwner={share.isOwner}
+          collaborators={share.collaborators}
+          inviteEmail={share.inviteEmail}
+          loading={share.loading}
+          inviting={share.inviting}
+          removingEmail={share.removingEmail}
+          error={share.error}
+          copied={share.copied}
+          projectLink={share.projectLink}
+          onInviteEmailChange={share.setInviteEmail}
+          onInvite={share.submitInvite}
+          onRemove={share.removeCollaborator}
+          onCopyLink={share.copyLink}
+          onClose={share.closeShare}
+        />
+      )}
     </ProjectDialogContext.Provider>
   );
 }
