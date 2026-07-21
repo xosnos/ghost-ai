@@ -159,23 +159,6 @@ export async function renameProject(
   return toProject(data);
 }
 
-export async function deleteProjectCollaborators(
-  supabase: SupabaseClient,
-  projectId: string
-): Promise<void> {
-  const { error } = await supabase.rpc("delete_project_collaborators", {
-    project_uuid: projectId,
-  });
-
-  if (error) {
-    throw new ProjectQueryError(
-      "Failed to delete project collaborators",
-      "delete_project_collaborators",
-      error.message
-    );
-  }
-}
-
 export async function deleteProject(
   supabase: SupabaseClient,
   projectId: string
