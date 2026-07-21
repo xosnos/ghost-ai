@@ -40,7 +40,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const collaborators = await listCollaborators(projectId);
+    const collaborators = await listCollaborators(supabase, projectId);
     const isOwner = project.ownerId === user.id;
 
     return NextResponse.json({ collaborators, isOwner });
