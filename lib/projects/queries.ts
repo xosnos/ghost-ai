@@ -163,10 +163,9 @@ export async function deleteProjectCollaborators(
   supabase: SupabaseClient,
   projectId: string
 ): Promise<void> {
-  const { error } = await supabase
-    .from("project_collaborators")
-    .delete()
-    .eq("project_id", projectId);
+  const { error } = await supabase.rpc("delete_project_collaborators", {
+    project_uuid: projectId,
+  });
 
   if (error) {
     throw new ProjectQueryError(

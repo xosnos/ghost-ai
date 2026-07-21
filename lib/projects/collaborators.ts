@@ -111,12 +111,10 @@ export async function removeCollaborator(
     throw new Error("Enter a valid email address");
   }
 
-  const { data, error } = await supabase
-    .from("project_collaborators")
-    .delete()
-    .eq("project_id", params.projectId)
-    .ilike("email", email)
-    .select("id");
+  const { data, error } = await supabase.rpc("remove_project_collaborator", {
+    project_uuid: params.projectId,
+    collaborator_email: email,
+  });
 
   if (error) {
     throw new ProjectQueryError(
@@ -126,7 +124,8 @@ export async function removeCollaborator(
     );
   }
 
-  if (!data || data.length === 0) {
+  const deletedCount = (data as number) ?? 0;
+  if (deletedCount === 0) {
     throw new Error("Collaborator not found");
   }
 }
