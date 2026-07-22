@@ -87,6 +87,7 @@ export async function POST(req: Request, ctx: RouteContext) {
         projectId,
         email,
         ownerEmail: user.email ?? undefined,
+        ownerId: user.id,
       });
       return NextResponse.json({ collaborator }, { status: 201 });
     } catch (err) {
@@ -139,7 +140,7 @@ export async function DELETE(req: Request, ctx: RouteContext) {
     }
 
     try {
-      await removeCollaborator(supabase, { projectId, email });
+      await removeCollaborator(supabase, { projectId, email, ownerId: user.id });
       return NextResponse.json({ ok: true });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Remove failed";
