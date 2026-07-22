@@ -74,14 +74,13 @@ export async function inviteCollaborator(
     throw new Error("You already own this project");
   }
 
-  const { data, error } = await supabase
-    .from("project_collaborators")
-    .insert({ project_id: params.projectId, email })
-    .select("id, project_id, email, created_at")
-    .single();
+  const { data, error } = await supabase.rpc("add_project_collaborator", {
+    project_uuid: params.projectId,
+    collaborator_email: email,
+  });
 
   if (error) {
-    if (error.code === "23505") {
+    if (error.message === "That email is already a collaborator") {
       throw new Error("That email is already a collaborator");
     }
     throw new ProjectQueryError(
@@ -91,7 +90,15 @@ export async function inviteCollaborator(
     );
   }
 
-  const row = data as CollaboratorInsertRow;
+  const rows = (data as unknown) as CollaboratorInsertRow[];
+  const row = Array.isArray(rows) ? rows[0] : undefined;
+  if (!row) {
+    throw new ProjectQueryError(
+      "Failed to invite collaborator",
+      "invite_collaborator",
+      "No row returned from add_project_collaborator"
+    );
+  }
   return {
     id: row.id,
     projectId: row.project_id,
