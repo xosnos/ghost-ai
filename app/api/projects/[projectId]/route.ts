@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import {
   deleteProject,
-  deleteProjectCollaborators,
   getProject,
   renameProject,
   errorResponse,
@@ -73,8 +72,7 @@ export async function DELETE(_req: Request, ctx: RouteContext) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    await deleteProjectCollaborators(supabase, projectId);
-    await deleteProject(supabase, projectId);
+    await deleteProject(supabase, projectId, user.id);
     return NextResponse.json({ ok: true }, { status: 200 });
   } catch (err) {
     return errorResponse(err);
