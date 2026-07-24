@@ -29,13 +29,14 @@ The VM image already has the Docker engine and the Supabase CLI installed; the u
 
 1. Ensure the Docker daemon is running (run `docker ps`; if it fails, start it with `sudo dockerd &` and wait a few seconds). `/etc/docker/daemon.json` is pre-configured for `fuse-overlayfs` with the containerd-snapshotter feature disabled, and `iptables` is set to the legacy backend — this is required for Docker to work in this VM.
 2. From `/workspace`, run `supabase start`. This launches the local Supabase containers, applies everything in `supabase/migrations/`, and runs `supabase/seed.sql`. Get the local URL/keys anytime with `supabase status`.
-3. Create `.env.local` (gitignored) if it is missing, pointing at the local stack. Do not hardcode keys here — read the current values from `supabase status` (fields `API URL` and `anon key`) and write them in:
-   - `NEXT_PUBLIC_SUPABASE_URL` — the `API URL` (local default `http://127.0.0.1:54321`)
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — the `anon key` (the standard, non-secret local demo JWT, stable across restarts)
+3. Create `.env.local` (gitignored) if it is missing, pointing at the local stack. Do not hardcode keys here — read the current values from `supabase status` (fields `API URL`, `anon key`, and `service_role key`) and write them in:
+ - `NEXT_PUBLIC_SUPABASE_URL` — the `API URL` (local default `http://127.0.0.1:54321`)
+ - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — the `anon key` (the standard, non-secret local demo JWT, stable across restarts)
+ - `SUPABASE_SERVICE_ROLE_KEY` — the `service_role key` (server-only; required for collaborator listing and Auth admin enrichment in spec 09). Never expose this to the browser.
 4. `npm run dev` → http://localhost:3000. Unauthenticated visits redirect to `/login`; sign up/in creates a real Supabase Auth user (email confirmation is off locally).
 
 Non-obvious gotchas:
 
 - **`supabase/seed.sql` is load-bearing locally, not just sample data.** Hosted Supabase auto-grants DML on `public` tables to the `anon`/`authenticated` roles; the local CLI does not, so without the seed's `GRANT`s every query fails with `permission denied for table projects` and `/editor` shows "Application error: a server-side exception". If you recreate the DB, re-run `supabase start`/`supabase db reset` so the seed re-applies (or apply `supabase/seed.sql` manually).
-- **`/editor/[id]` returns 404 by design.** The per-project workspace route (spec 08) is not built yet; project creation still succeeds and the project appears in the `/editor` sidebar. This 404 is expected scope, not a regression.
+- **`/editor/[roomId]` is implemented** (spec 08). Share dialog (spec 09) opens from the workspace navbar Share button. Collaborator list enrichment needs `SUPABASE_SERVICE_ROLE_KEY` in `.env.local`.
 - **Lint has a pre-existing failure.** `npm run lint` reports a `prefer-const` error in `middleware.ts` that predates environment setup; `npm run build` passes cleanly.
