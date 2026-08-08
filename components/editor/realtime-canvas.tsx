@@ -138,6 +138,3 @@ export function RealtimeCanvas({ channel }: RealtimeCanvasProps) {
 }
 
 export type { CanvasNode, CanvasEdge };
-
-
-export { RealtimeCanvas }
