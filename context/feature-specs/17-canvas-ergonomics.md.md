@@ -16,8 +16,8 @@ Add a floating control bar for zoom and undo/redo, then wire the same actions to
    - fit view
    - use a short animation so the movement feels smooth
 
-3. Wire undo and redo to Liveblocks history.
-   - use the existing Liveblocks undo/redo hooks
+3. Wire undo and redo to the Realtime-synced canvas history.
+   - implement undo/redo using the existing Realtime canvas state hook (track a local history stack of node/edge snapshots)
    - disable undo when there is nothing to undo
    - disable redo when there is nothing to redo
    - keep disabled buttons visually dimmed
@@ -48,7 +48,7 @@ Add a floating control bar for zoom and undo/redo, then wire the same actions to
 
 - Control bar is added to the canvas.
 - Zoom actions use the React Flow instance.
-- Undo and redo use Liveblocks history.
+- Undo and redo use the Realtime-synced canvas history.
 - Keyboard shortcuts are handled in `hooks/useKeyboardShortcuts`.
 - Shortcut handling skips editable fields.
 - `npm run build` passes.

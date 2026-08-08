@@ -21,7 +21,7 @@ Create a hook in `hooks/` that manages dialog state and project mutations.
 - call `POST /api/projects`
 - navigate to the new workspace
 
-The project ID and Liveblocks room ID should stay aligned.
+The project ID and Realtime channel name should stay aligned.
 
 **Rename**
 

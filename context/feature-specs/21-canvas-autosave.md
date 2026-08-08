@@ -31,9 +31,9 @@ Add autosave and loading for the collaborative canvas so project state is persis
    - track save status: saving, saved, error
 
 4. Load saved canvas state in the editor.
-   - when the editor loads, check if the Liveblocks room has any existing nodes or edges
-   - if the room is empty and the project has a saved canvas storage path, fetch and load the saved canvas state
-   - if the room already has nodes or edges, skip the load entirely to avoid overwriting active collaboration
+   - when the editor loads, check if the Realtime channel has any existing nodes or edges
+   - if the channel is empty and the project has a saved canvas storage path, fetch and load the saved canvas state
+   - if the channel already has nodes or edges, skip the load entirely to avoid overwriting active collaboration
 
 5. Add a small save status indicator in the editor Save button.
    - show saving, saved, or error states
@@ -50,6 +50,6 @@ Add autosave and loading for the collaborative canvas so project state is persis
 - Save/load routes use Supabase for metadata and Supabase Storage for canvas JSON.
 - Autosave hook debounces canvas saves.
 - Editor shows save status.
-- Saved canvas does not load if the room already has
+- Saved canvas does not load if the channel already has
   active nodes or edges
 - `npm run build` passes.

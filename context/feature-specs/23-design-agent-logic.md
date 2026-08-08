@@ -6,9 +6,9 @@ Implement the full AI design agent so a user prompt results in real-time updates
 
    Before implementing:
    - check `context/project-overview.md` and `context/architecture-context.md` for product behavior and system rules
-     -Before implementing, check Liveblocks and Trigger.dev agent skills for current patterns on canvas mutation and background task execution.
+     -Before implementing, check Supabase Realtime and Trigger.dev agent skills for current patterns on canvas mutation and background task execution.
    - follow the existing Trigger.dev setup and agent patterns already in the project
-   - reuse existing Liveblocks flow and presence patterns instead of creating new ones
+   - reuse existing Supabase Realtime broadcast and presence patterns instead of creating new ones
 
    Then implement:
    - use Gemini (`@ai-sdk/google`) to interpret the user prompt
@@ -41,7 +41,7 @@ All packages are already installed.`GOOGLE_AI_API_KEY` is already in `.env.local
 ## Scope Limits
 
 - don’t change canvas architecture
-- don’t introduce a new state system outside Liveblocks
+- don’t introduce a new state system outside Supabase Realtime
 - don’t bypass existing collaborative flow utilities
 
 ## Check When Done

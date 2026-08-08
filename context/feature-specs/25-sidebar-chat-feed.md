@@ -1,18 +1,18 @@
-Add real-time room chat to the AI sidebar using a separate Liveblocks `ai-chat` feed.
+Add real-time room chat to the AI sidebar using a separate Supabase Realtime Broadcast channel for `ai-chat`.
 
-This is only for chat messages. Keep it separate from `ai-status-feed`, which handles AI progress and presence updates.
+This is only for chat messages. Keep it separate from the `ai-status` broadcast channel, which handles AI progress and presence updates.
 
 ## Implementation
 
-1. Add the `ai-chat` feed.
+1. Add the `ai-chat` broadcast channel.
 
-   Before implementing, check the existing Liveblocks setup and follow the same feed patterns already used in the project.
-   - create or reuse a Liveblocks feed named `ai-chat`
+   Before implementing, check the existing Supabase Realtime setup and follow the same broadcast patterns already used in the project.
+   - create or reuse a Realtime Broadcast channel named `ai-chat` on the project channel
    - keep it room-scoped
-   - do not mix it with `ai-status-feed`
+   - do not mix it with the `ai-status` broadcast channel
 
-2. Wire the chat feed into the sidebar.
-   - subscribe to `ai-chat` in the sidebar chat area
+2. Wire the chat broadcast into the sidebar.
+   - subscribe to `ai-chat` broadcast events in the sidebar chat area
    - render chat messages in order
    - show sender, timestamp, and message content
    - keep the styling consistent with the existing sidebar UI
@@ -27,20 +27,20 @@ This is only for chat messages. Keep it separate from `ai-status-feed`, which ha
 4. Add message validation.
    - define or reuse a Zod schema in `types/tasks.ts`
    - message shape should include sender, role, content, and timestamp
-   - validate feed messages before rendering them
+   - validate broadcast messages before rendering them
 
 ## Scope Limits
 
-- don’t add AI-generated replies yet
-- don’t trigger backend AI tasks
-- don’t mix chat messages with status messages
-- don’t create a parallel realtime system outside Liveblocks
+- don't add AI-generated replies yet
+- don't trigger backend AI tasks
+- don't mix chat messages with status messages
+- don't create a parallel realtime system outside Supabase Realtime
 - keep this focused on collaborative sidebar chat only
 
 ## Check When Done
 
-- Sidebar subscribes to the `ai-chat` feed.
+- Sidebar subscribes to the `ai-chat` broadcast channel.
 - Users can send chat messages through the existing sidebar input.
 - Chat messages are validated before rendering.
-- `ai-chat` remains separate from `ai-status-feed`.
+- `ai-chat` remains separate from `ai-status`.
 - `npm run build` passes.

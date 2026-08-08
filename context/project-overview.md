@@ -36,7 +36,7 @@ Ghost AI is a real-time collaborative system design workspace. Users describe a 
 
 ### Collaborative Canvas
 
-- Shared real-time canvas using Liveblocks and React Flow.
+- Shared real-time canvas using Supabase Realtime and React Flow.
 - Live cursors, presence indicators, and node/edge editing.
 - Canvas snapshots persisted to Supabase Storage.
 
@@ -50,7 +50,7 @@ Ghost AI is a real-time collaborative system design workspace. Users describe a 
 ### AI Architecture Generation
 
 - AI generates a system design from a user-supplied prompt.
-- Output is structured as canvas nodes and edges written into the shared room.
+- Output is structured as canvas nodes and edges written into the shared canvas via Realtime broadcast.
 - Generation runs as a durable background task.
 
 ### Spec Generation

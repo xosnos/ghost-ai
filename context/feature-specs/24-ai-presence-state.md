@@ -10,12 +10,12 @@ Add shared AI activity indicators so everyone in the room can see when generatio
    - keep the rest of the sidebar usable
 
 2. Add a shared AI status feed.
-   - check the existing Liveblocks setup and installed agent-related features first
-   - follow Liveblocks best practices for feeds/presence instead of creating parallel realtime state
-   - create or reuse a Liveblocks feed named `ai-status-feed`
-   - subscribe to the latest feed message in the sidebar
+   - check the existing Supabase Realtime setup and installed agent-related features first
+   - follow Realtime best practices for broadcast/presence instead of creating parallel realtime state
+   - create or reuse a Realtime Broadcast channel named `ai-status` on the project channel
+   - subscribe to the latest broadcast message in the sidebar
    - show only the most recent status message
-   - keep the feed generic enough for design and spec generation later
+   - keep the broadcast generic enough for design and spec generation later
 
 3. Add status message validation.
    - define the feed payload schema in `types/tasks.ts`
@@ -36,7 +36,7 @@ Add shared AI activity indicators so everyone in the room can see when generatio
 
 ## Check When Done
 
-- Sidebar can render shared AI status from `ai-status-feed`.
+- Sidebar can render shared AI status from the `ai-status` broadcast channel.
 - Chat input and send button respond to active generation state.
 - Cursor badges read `thinking` from presence.
 - Feed messages are validated through the task schema.

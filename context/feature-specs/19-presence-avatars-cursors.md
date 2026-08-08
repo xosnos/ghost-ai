@@ -14,12 +14,12 @@ without changing the editor home navbar.
    - position it in the top-right corner of the editor canvas view
    - keep it visually separate from the main navbar actions
    - get the current user's ID from the active Supabase Auth session
-   - filter the Liveblocks presence list to exclude any entry
+   - filter the Supabase Realtime Presence list to exclude any entry
      whose user ID matches the current Supabase Auth user ID
    - render the filtered list as collaborator avatars only
    - render the current user separately using the existing
      UserMenu component — do not render a second avatar for them from
-     the Liveblocks presence list
+     the Realtime Presence list
    - keep collaborator avatars and the UserMenu the same
      size so the group looks visually consistent
    - collaborator avatars are display-only, not interactive
@@ -38,7 +38,7 @@ without changing the editor home navbar.
 4. Add live cursors to the canvas.
    - render cursors for other participants only, never the
      current user
-   - use the existing Liveblocks presence state to broadcast
+   - use the existing Supabase Realtime Presence state to broadcast
      cursor position
    - update cursor position on React Flow's onMouseMove event
    - clear cursor to null on mouse leave
@@ -46,7 +46,7 @@ without changing the editor home navbar.
    - match the pointer and badge color to the participant's
      presence color
 
-5. Define the shared presence type in `liveblocks.config.ts`.
+5. Define the shared presence type in `types/realtime.ts`.
 
    Presence should include:
    - `cursor`: `{ x: number; y: number } | null`
@@ -68,7 +68,7 @@ without changing the editor home navbar.
 - Current user is resolved from the active Supabase Auth session.
 - Collaborator avatars exclude the current user.
 - Divider only appears when collaborators exist.
-- Cursor position is broadcast via Liveblocks presence on
+- Cursor position is broadcast via Supabase Realtime Presence on
   React Flow mouse events.
 - Canvas renders live cursors for other participants only.
 - `npm run build` passes.

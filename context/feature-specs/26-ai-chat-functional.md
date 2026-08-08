@@ -1,12 +1,12 @@
 Wire up the AI sidebar so users can submit design prompts, track AI run status
-in real time, and reflect AI-driven canvas updates through Liveblocks.
+in real time, and reflect AI-driven canvas updates through Supabase Realtime.
 
 ### Implementation
 
 1. Submit from AI sidebar
 
 - On submit:
-  - push the user message to the `ai-chat` feed
+  - push the user message to the `ai-chat` broadcast channel
   - call `POST /api/ai/design` with `{ prompt, roomId }`
   - read `{ runId, publicToken }` from the response
 - store `runId` and `publicToken` in local state
@@ -24,12 +24,12 @@ in real time, and reflect AI-driven canvas updates through Liveblocks.
 3. Canvas updates (realtime)
 
 - Do not manually update nodes/edges
-- Rely on Liveblocks (`useLiveblocksFlow`) to reflect changes in real time
-- AI updates to nodes, edges, and presence should appear automatically
+- Rely on the Supabase Realtime canvas sync hook (e.g. `useRealtimeFlow`) to reflect changes in real time
+- AI updates to nodes, edges, and presence should appear automatically via Broadcast events
 
 4. Status display
 
-- Read the latest message from `ai-status-feed`
+- Read the latest message from the `ai-status` broadcast channel
 - Show a compact status strip above the input only when a run is active
 
 ### UI Details
@@ -72,7 +72,7 @@ General
 
 ### Notes
 
-- Follow Liveblocks best practices for feeds (`ai-chat`, `ai-status-feed`)
+- Follow Supabase Realtime best practices for broadcast channels (`ai-chat`, `ai-status`)
 - Keep everything collaborative, all updates should be visible across clients
 
 ---
