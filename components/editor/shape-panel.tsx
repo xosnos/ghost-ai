@@ -1,6 +1,7 @@
 "use client";
 
 import { Square, Diamond, Circle, Pill, Cylinder, Hexagon } from "lucide-react";
+import { Panel } from "@xyflow/react";
 import { NODE_SHAPES, SHAPE_DEFAULT_SIZES, type NodeShape } from "@/types/canvas";
 
 const SHAPE_ICONS: Record<NodeShape, typeof Square> = {
@@ -21,8 +22,9 @@ export function ShapePanel() {
   };
 
   return (
-    <div
-      className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full px-2 py-1.5"
+    <Panel
+      position="bottom-center"
+      className="m-0 flex items-center gap-1 rounded-full px-2 py-1.5"
       style={{
         backgroundColor: "var(--bg-elevated)",
         border: "1px solid var(--border-default)",
@@ -45,6 +47,6 @@ export function ShapePanel() {
           </button>
         );
       })}
-    </div>
+    </Panel>
   );
 }

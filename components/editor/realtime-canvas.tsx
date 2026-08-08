@@ -123,8 +123,8 @@ function FlowCanvas({ channel }: RealtimeCanvasProps) {
             border: "1px solid var(--border-default)",
           }}
         />
+        <ShapePanel />
       </ReactFlow>
-      <ShapePanel />
     </div>
   );
 }
