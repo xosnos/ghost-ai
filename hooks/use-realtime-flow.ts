@@ -18,7 +18,8 @@ import type { CanvasNode, CanvasEdge } from "@/types/canvas";
 type BroadcastEvent =
   | { type: "nodes:change"; changes: NodeChange[] }
   | { type: "edges:change"; changes: EdgeChange[] }
-  | { type: "edges:connect"; edge: CanvasEdge };
+  | { type: "edges:connect"; edge: CanvasEdge }
+  | { type: "nodes:add"; node: CanvasNode };
 
 export interface UseRealtimeFlowReturn {
   nodes: CanvasNode[];
@@ -26,6 +27,7 @@ export interface UseRealtimeFlowReturn {
   onNodesChange: OnNodesChange;
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
+  addNode: (node: CanvasNode) => void;
 }
 
 export function useRealtimeFlow(
@@ -55,6 +57,8 @@ export function useRealtimeFlow(
         setEdges((prev) => applyEdgeChanges(event.changes, prev) as CanvasEdge[]);
       } else if (event.type === "edges:connect") {
         setEdges((prev) => addEdge(event.edge, prev) as CanvasEdge[]);
+      } else if (event.type === "nodes:add") {
+        setNodes((prev) => [...prev, event.node]);
       }
     };
 
@@ -96,5 +100,13 @@ export function useRealtimeFlow(
     [send],
   );
 
-  return { nodes, edges, onNodesChange, onEdgesChange, onConnect };
+  const addNode = useCallback(
+    (node: CanvasNode) => {
+      setNodes((prev) => [...prev, node]);
+      send({ type: "nodes:add", node });
+    },
+    [send],
+  );
+
+  return { nodes, edges, onNodesChange, onEdgesChange, onConnect, addNode };
 }

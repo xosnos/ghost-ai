@@ -39,6 +39,15 @@ export interface CanvasNodeData {
 export type CanvasNode = Node<CanvasNodeData, "canvasNode">;
 export type CanvasEdge = Edge<{}, "canvasEdge">;
 
+export const SHAPE_DEFAULT_SIZES: Record<NodeShape, { width: number; height: number }> = {
+  rectangle: { width: 176, height: 64 },
+  diamond: { width: 200, height: 160 },
+  circle: { width: 120, height: 120 },
+  pill: { width: 160, height: 56 },
+  cylinder: { width: 140, height: 100 },
+  hexagon: { width: 160, height: 120 },
+};
+
 export type CanvasNodeType = "canvasNode";
 export type CanvasEdgeType = "canvasEdge";
 

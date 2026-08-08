@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature 11: Base Canvas (complete)
+- Feature 12: Shape Panel (complete)
 
 ## Current Goal
 
-- Next feature spec (12-shape-panel) — add the shape panel UI for creating nodes on the canvas.
+- Next feature spec (13-node-shape) — render shape-specific visuals for each node type.
 
 ## Completed
 
