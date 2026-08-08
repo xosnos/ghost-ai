@@ -53,7 +53,7 @@ Complete the existing AI sidebar placeholder and turn it into a proper floating 
 
 - don’t rebuild the existing sidebar open/close behavior
 - don’t add backend logic
-- don’t add Liveblocks or AI generation logic yet
+- don’t add AI generation logic yet
 - keep this focused on the sidebar UI structure
 
 ## Check When Done
