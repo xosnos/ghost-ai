@@ -8,7 +8,7 @@
 | UI               | Tailwind + shadcn/ui    | Component composition and styling                              |
 | Auth             | Supabase Auth           | User identity and route protection                             |
 | Database         | Supabase (PostgreSQL)   | Relational metadata: projects, collaborators, specs, task runs |
-| Canvas           | Liveblocks + React Flow | Real-time collaborative canvas, presence, and cursors          |
+| Canvas           | Supabase Realtime + React Flow | Real-time collaborative canvas, presence, and cursors          |
 | Background tasks | Trigger.dev             | Durable AI generation workflows                                |
 | Artifact storage | Supabase Storage        | Canvas snapshots and generated Markdown specs                  |
 
@@ -34,7 +34,7 @@
 - Projects can include additional collaborators.
 - Only authenticated users can access protected routes.
 - Only the owner or a collaborator can mutate project resources.
-- Liveblocks room tokens are issued only after verifying project membership.
+- Realtime channel access is gated by the existing Supabase Auth session and `hasProjectAccess` verification — no separate token flow is needed.
 - Auth is handled via `@supabase/ssr` with cookie-based sessions and Next.js middleware.
 - Route protection: middleware checks session on every request, redirects unauthenticated users to `/login`.
 - Public routes: `/login`, `/signup`, `/forgot-password`, `/reset-password`.
@@ -43,7 +43,7 @@
 ## Starter System Designs
 
 - Prebuilt templates are static canvas snapshots stored in the codebase.
-- Templates are loaded into the active Liveblocks room when a user imports one.
+- Templates are loaded into the active Realtime channel when a user imports one.
 - Import can occur on canvas creation or from within the editor at any time.
 - Template data follows the same node/edge schema as user-created canvas content.
 - Templates do not require a separate database record; they are resolved by template ID at import time.
@@ -54,7 +54,7 @@
 
 - Input: user prompt, project context, and current canvas state.
 - Execution: durable background task via Trigger.dev.
-- Output: structured node and edge updates written into the shared Liveblocks room.
+- Output: structured node and edge updates written into the shared Realtime channel via Broadcast.
 
 ### Spec Generation
 

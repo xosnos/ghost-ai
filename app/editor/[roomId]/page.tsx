@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getCurrentUser } from "@/lib/supabase/server";
 import { listOwnedProjects, listSharedProjects, getProject } from "@/lib/projects/queries";
-import { getAuthIdentity, hasProjectAccess } from "@/lib/project-access";
+import { hasProjectAccess } from "@/lib/project-access";
 import { EditorChrome } from "@/components/editor/editor-chrome";
 import { AccessDenied } from "@/components/editor/access-denied";
-import { CanvasPlaceholder } from "@/components/editor/canvas-placeholder";
+import { CanvasWrapper } from "@/components/editor/canvas-wrapper";
 
 interface EditorWorkspacePageProps {
   params: Promise<{ roomId: string }>;
@@ -13,11 +13,13 @@ interface EditorWorkspacePageProps {
 export default async function EditorWorkspacePage({ params }: EditorWorkspacePageProps) {
   const supabase = await createClient();
   const { roomId } = await params;
-  const identity = await getAuthIdentity(supabase);
+  const user = await getCurrentUser(supabase);
 
-  if (!identity) {
+  if (!user) {
     redirect("/login");
   }
+
+  const identity = { userId: user.id, email: user.email ?? "" };
 
   const [ownedProjects, sharedProjects, project] = await Promise.all([
     listOwnedProjects(supabase, identity.userId),
@@ -49,7 +51,14 @@ export default async function EditorWorkspacePage({ params }: EditorWorkspacePag
       project={project}
       currentRoomId={roomId}
     >
-      <CanvasPlaceholder />
+      <CanvasWrapper
+        projectId={project.id}
+        user={{
+          id: user.id,
+          email: user.email ?? undefined,
+          user_metadata: user.user_metadata,
+        }}
+      />
     </EditorChrome>
   );
 }
