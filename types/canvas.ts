@@ -1,3 +1,5 @@
+import type { Node, Edge } from "@xyflow/react";
+
 export interface NodeColor {
   fill: string;
   text: string;
@@ -26,3 +28,18 @@ export const NODE_SHAPES = [
 ] as const;
 
 export type NodeShape = (typeof NODE_SHAPES)[number];
+
+export interface CanvasNodeData {
+  label: string;
+  color: NodeColor;
+  shape: NodeShape;
+  [key: string]: unknown;
+}
+
+export type CanvasNode = Node<CanvasNodeData, "canvasNode">;
+export type CanvasEdge = Edge<{}, "canvasEdge">;
+
+export type CanvasNodeType = "canvasNode";
+export type CanvasEdgeType = "canvasEdge";
+
+
