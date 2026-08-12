@@ -163,12 +163,22 @@ function CanvasNodeInner({ data, selected, width, height }: NodeProps) {
         position={Position.Top}
         className="!z-20 !h-3 !w-3 !border !bg-[var(--accent-primary)] !border-[var(--bg-elevated)] opacity-0 transition-opacity duration-150 group-hover:opacity-100"
       />
-      {content}
       <Handle
         type="source"
         position={Position.Bottom}
         className="!z-20 !h-3 !w-3 !border !bg-[var(--accent-primary)] !border-[var(--bg-elevated)] opacity-0 transition-opacity duration-150 group-hover:opacity-100"
       />
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="!z-20 !h-3 !w-3 !border !bg-[var(--accent-primary)] !border-[var(--bg-elevated)] opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="!z-20 !h-3 !w-3 !border !bg-[var(--accent-primary)] !border-[var(--bg-elevated)] opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+      />
+      {content}
     </div>
   );
 }
