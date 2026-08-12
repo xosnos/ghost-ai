@@ -75,12 +75,6 @@ function FlowCanvas({ channel }: RealtimeCanvasProps) {
           color: DEFAULT_NODE_COLOR,
           shape: payload.shape,
         },
-        style: {
-          width: payload.width,
-          height: payload.height,
-          backgroundColor: DEFAULT_NODE_COLOR.fill,
-          color: DEFAULT_NODE_COLOR.text,
-        },
       } as unknown as CanvasNode;
 
       addNode(newNode);

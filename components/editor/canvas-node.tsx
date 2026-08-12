@@ -102,12 +102,12 @@ function SvgShape({
   );
 }
 
-function CanvasNodeInner({ data, selected }: NodeProps) {
+function CanvasNodeInner({ data, selected, width, height }: NodeProps) {
   const nodeData = data as CanvasNodeData;
   const color = nodeData.color ?? DEFAULT_NODE_COLOR;
   const shape = nodeData.shape ?? "rectangle";
-  const width = (data as { width?: number }).width ?? 176;
-  const height = (data as { height?: number }).height ?? 64;
+  const w = width ?? 176;
+  const h = height ?? 64;
 
   const stroke = selected ? color.text : "var(--border-default)";
   const strokeWidth = selected ? 1.5 : 1;
@@ -142,8 +142,8 @@ function CanvasNodeInner({ data, selected }: NodeProps) {
       <div className="relative flex h-full w-full items-center justify-center">
         <SvgShape
           shape={shape}
-          width={width}
-          height={height}
+          width={w}
+          height={h}
           fill={color.fill}
           stroke={stroke}
           strokeWidth={strokeWidth}
@@ -154,10 +154,21 @@ function CanvasNodeInner({ data, selected }: NodeProps) {
   }
 
   return (
-    <div className="relative flex items-center justify-center" style={{ width, height }}>
-      <Handle type="target" position={Position.Top} className="opacity-0" />
+    <div
+      className="group relative flex items-center justify-center"
+      style={{ width: w, height: h }}
+    >
+      <Handle
+        type="target"
+        position={Position.Top}
+        className="!h-2.5 !w-2.5 !border !bg-[var(--accent-primary)] !border-[var(--bg-elevated)] opacity-0 transition-opacity group-hover:opacity-100"
+      />
       {content}
-      <Handle type="source" position={Position.Bottom} className="opacity-0" />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        className="!h-2.5 !w-2.5 !border !bg-[var(--accent-primary)] !border-[var(--bg-elevated)] opacity-0 transition-opacity group-hover:opacity-100"
+      />
     </div>
   );
 }
