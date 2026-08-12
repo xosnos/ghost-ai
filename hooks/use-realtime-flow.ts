@@ -92,7 +92,6 @@ export function useRealtimeFlow(
       const edge: CanvasEdge = {
         ...connection,
         id: `${connection.source}-${connection.target}-${Date.now()}`,
-        type: "canvasEdge",
       };
       setEdges((prev) => addEdge(edge, prev) as CanvasEdge[]);
       send({ type: "edges:connect", edge });

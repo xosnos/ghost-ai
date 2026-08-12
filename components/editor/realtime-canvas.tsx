@@ -41,6 +41,14 @@ function FlowCanvas({ channel }: RealtimeCanvasProps) {
   );
   const edgeTypes = useMemo<EdgeTypes>(() => ({}), []);
 
+  const defaultEdgeOptions = useMemo(
+    () => ({
+      type: "default",
+      style: { stroke: "var(--text-muted)", strokeWidth: 2 },
+    }),
+    [],
+  );
+
   const onDragOver = useCallback((event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
@@ -97,6 +105,7 @@ function FlowCanvas({ channel }: RealtimeCanvasProps) {
         onConnect={onConnect}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
+        defaultEdgeOptions={defaultEdgeOptions}
         fitView
         proOptions={{ hideAttribution: true }}
         style={{ backgroundColor: "var(--bg-base)" }}

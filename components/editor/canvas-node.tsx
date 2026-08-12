@@ -41,7 +41,7 @@ function SvgShape({
         width={width}
         height={height}
         viewBox={`0 0 ${width} ${height}`}
-        className="absolute inset-0"
+        className="pointer-events-none absolute inset-0"
       >
         <polygon
           points={`${hw},0 ${width},${hh} ${hw},${height} 0,${hh}`}
@@ -61,7 +61,7 @@ function SvgShape({
         width={width}
         height={height}
         viewBox={`0 0 ${width} ${height}`}
-        className="absolute inset-0"
+        className="pointer-events-none absolute inset-0"
       >
         <polygon
           points={`${inset},0 ${width - inset},0 ${width},${hh} ${width - inset},${height} ${inset},${height} 0,${hh}`}
@@ -81,7 +81,7 @@ function SvgShape({
       width={width}
       height={height}
       viewBox={`0 0 ${width} ${height}`}
-      className="absolute inset-0"
+      className="pointer-events-none absolute inset-0"
     >
       <path
         d={`M 0 ${ry} A ${width / 2} ${ry} 0 0 1 ${width} ${ry} L ${width} ${height - ry} A ${width / 2} ${ry} 0 0 1 0 ${height - ry} Z`}
@@ -127,7 +127,7 @@ function CanvasNodeInner({ data, selected, width, height }: NodeProps) {
   if (isCssShape(shape)) {
     content = (
       <div
-        className="relative flex h-full w-full items-center justify-center"
+        className="pointer-events-none relative flex h-full w-full items-center justify-center"
         style={{
           backgroundColor: color.fill,
           border: `${strokeWidth}px solid ${stroke}`,
@@ -139,7 +139,7 @@ function CanvasNodeInner({ data, selected, width, height }: NodeProps) {
     );
   } else {
     content = (
-      <div className="relative flex h-full w-full items-center justify-center">
+      <div className="pointer-events-none relative flex h-full w-full items-center justify-center">
         <SvgShape
           shape={shape}
           width={w}
@@ -161,13 +161,13 @@ function CanvasNodeInner({ data, selected, width, height }: NodeProps) {
       <Handle
         type="target"
         position={Position.Top}
-        className="!h-2.5 !w-2.5 !border !bg-[var(--accent-primary)] !border-[var(--bg-elevated)] opacity-0 transition-opacity group-hover:opacity-100"
+        className="!z-20 !h-3 !w-3 !border !bg-[var(--accent-primary)] !border-[var(--bg-elevated)] opacity-0 transition-opacity duration-150 group-hover:opacity-100"
       />
       {content}
       <Handle
         type="source"
         position={Position.Bottom}
-        className="!h-2.5 !w-2.5 !border !bg-[var(--accent-primary)] !border-[var(--bg-elevated)] opacity-0 transition-opacity group-hover:opacity-100"
+        className="!z-20 !h-3 !w-3 !border !bg-[var(--accent-primary)] !border-[var(--bg-elevated)] opacity-0 transition-opacity duration-150 group-hover:opacity-100"
       />
     </div>
   );
