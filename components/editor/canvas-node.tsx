@@ -158,6 +158,7 @@ function CanvasNodeInner({ data, selected, width, height }: NodeProps) {
       className="group relative flex items-center justify-center"
       style={{ width: w, height: h }}
     >
+      {content}
       <Handle
         type="target"
         position={Position.Top}
@@ -178,7 +179,6 @@ function CanvasNodeInner({ data, selected, width, height }: NodeProps) {
         position={Position.Right}
         className="!z-20 !h-3 !w-3 !border !bg-[var(--accent-primary)] !border-[var(--bg-elevated)] opacity-0 transition-opacity duration-150 group-hover:opacity-100"
       />
-      {content}
     </div>
   );
 }

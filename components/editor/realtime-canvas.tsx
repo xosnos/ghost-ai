@@ -8,6 +8,7 @@ import {
   MiniMap,
   ReactFlowProvider,
   useReactFlow,
+  ConnectionMode,
   type NodeTypes,
   type EdgeTypes,
 } from "@xyflow/react";
@@ -106,6 +107,7 @@ function FlowCanvas({ channel }: RealtimeCanvasProps) {
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
+        connectionMode={ConnectionMode.Loose}
         fitView
         proOptions={{ hideAttribution: true }}
         style={{ backgroundColor: "var(--bg-base)" }}
