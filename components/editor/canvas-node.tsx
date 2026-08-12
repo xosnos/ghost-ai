@@ -1,7 +1,13 @@
 "use client";
 
-import { memo } from "react";
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
+import {
+  Handle,
+  Position,
+  NodeResizer,
+  useReactFlow,
+  type NodeProps,
+} from "@xyflow/react";
 import {
   DEFAULT_NODE_COLOR,
   type CanvasNodeData,
@@ -75,7 +81,6 @@ function SvgShape({
 
   // cylinder
   const ry = height * 0.12;
-  const bodyHeight = height - ry * 2;
   return (
     <svg
       width={width}
@@ -102,23 +107,74 @@ function SvgShape({
   );
 }
 
-function CanvasNodeInner({ data, selected, width, height }: NodeProps) {
+const MIN_NODE_WIDTH = 60;
+const MIN_NODE_HEIGHT = 40;
+
+function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
   const nodeData = data as CanvasNodeData;
   const color = nodeData.color ?? DEFAULT_NODE_COLOR;
   const shape = nodeData.shape ?? "rectangle";
   const w = width ?? 176;
   const h = height ?? 64;
+  const { updateNodeData } = useReactFlow();
+
+  const [editing, setEditing] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const stroke = selected ? color.text : "var(--border-default)";
   const strokeWidth = selected ? 1.5 : 1;
   const labelColor = color.text;
 
-  const sharedLabel = (
+  const startEditing = useCallback(() => {
+    setEditing(true);
+  }, []);
+
+  const stopEditing = useCallback(() => {
+    setEditing(false);
+  }, []);
+
+  const handleLabelChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      updateNodeData(id, { label: e.target.value });
+    },
+    [id, updateNodeData],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === "Escape") {
+        stopEditing();
+      }
+    },
+    [stopEditing],
+  );
+
+  useEffect(() => {
+    if (editing && textareaRef.current) {
+      textareaRef.current.focus();
+      textareaRef.current.select();
+    }
+  }, [editing]);
+
+  const label = editing ? (
+    <textarea
+      ref={textareaRef}
+      value={nodeData.label}
+      onChange={handleLabelChange}
+      onBlur={stopEditing}
+      onKeyDown={handleKeyDown}
+      rows={1}
+      className="nodrag nopan nowheel relative z-10 w-full resize-none border-0 bg-transparent px-3 text-center text-sm font-medium outline-none"
+      style={{ color: labelColor }}
+    />
+  ) : (
     <span
       className="pointer-events-none relative z-10 px-3 text-center text-sm font-medium"
       style={{ color: labelColor }}
     >
-      {nodeData.label}
+      {nodeData.label || (
+        <span style={{ color: labelColor, opacity: 0.4 }}>Label</span>
+      )}
     </span>
   );
 
@@ -127,19 +183,23 @@ function CanvasNodeInner({ data, selected, width, height }: NodeProps) {
   if (isCssShape(shape)) {
     content = (
       <div
-        className="pointer-events-none relative flex h-full w-full items-center justify-center"
+        className="relative flex h-full w-full items-center justify-center"
         style={{
           backgroundColor: color.fill,
           border: `${strokeWidth}px solid ${stroke}`,
           borderRadius: CSS_SHAPE_RADIUS[shape],
         }}
+        onDoubleClick={startEditing}
       >
-        {sharedLabel}
+        {label}
       </div>
     );
   } else {
     content = (
-      <div className="pointer-events-none relative flex h-full w-full items-center justify-center">
+      <div
+        className="relative flex h-full w-full items-center justify-center"
+        onDoubleClick={startEditing}
+      >
         <SvgShape
           shape={shape}
           width={w}
@@ -148,7 +208,7 @@ function CanvasNodeInner({ data, selected, width, height }: NodeProps) {
           stroke={stroke}
           strokeWidth={strokeWidth}
         />
-        {sharedLabel}
+        {label}
       </div>
     );
   }
@@ -158,8 +218,17 @@ function CanvasNodeInner({ data, selected, width, height }: NodeProps) {
       className="group relative flex items-center justify-center"
       style={{ width: w, height: h }}
     >
+      <NodeResizer
+        minWidth={MIN_NODE_WIDTH}
+        minHeight={MIN_NODE_HEIGHT}
+        isVisible={!!selected}
+        lineClassName="!border-[var(--accent-primary)]"
+        handleClassName="!h-2 !w-2 !rounded-sm !border-[var(--accent-primary)] !bg-[var(--bg-elevated)]"
+      />
       {content}
-      {([Position.Top, Position.Right, Position.Bottom, Position.Left] as const).map((pos) => (
+      {(
+        [Position.Top, Position.Right, Position.Bottom, Position.Left] as const
+      ).map((pos) => (
         <span key={pos}>
           <Handle
             type="source"
