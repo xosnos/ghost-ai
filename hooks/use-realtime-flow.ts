@@ -19,7 +19,8 @@ type BroadcastEvent =
   | { type: "nodes:change"; changes: NodeChange[] }
   | { type: "edges:change"; changes: EdgeChange[] }
   | { type: "edges:connect"; edge: CanvasEdge }
-  | { type: "nodes:add"; node: CanvasNode };
+  | { type: "nodes:add"; node: CanvasNode }
+  | { type: "edges:label"; edgeId: string; label: string };
 
 export interface UseRealtimeFlowReturn {
   nodes: CanvasNode[];
@@ -28,6 +29,7 @@ export interface UseRealtimeFlowReturn {
   onEdgesChange: OnEdgesChange;
   onConnect: OnConnect;
   addNode: (node: CanvasNode) => void;
+  updateEdgeLabel: (edgeId: string, label: string) => void;
 }
 
 export function useRealtimeFlow(
@@ -57,6 +59,14 @@ export function useRealtimeFlow(
         setEdges((prev) => applyEdgeChanges(event.changes, prev) as CanvasEdge[]);
       } else if (event.type === "edges:connect") {
         setEdges((prev) => addEdge(event.edge, prev) as CanvasEdge[]);
+      } else if (event.type === "edges:label") {
+        setEdges((prev) =>
+          prev.map((e) =>
+            e.id === event.edgeId
+              ? { ...e, data: { ...e.data, label: event.label } }
+              : e,
+          ) as CanvasEdge[],
+        );
       } else if (event.type === "nodes:add") {
         setNodes((prev) => [...prev, event.node]);
       }
@@ -107,5 +117,19 @@ export function useRealtimeFlow(
     [send],
   );
 
-  return { nodes, edges, onNodesChange, onEdgesChange, onConnect, addNode };
+  const updateEdgeLabel = useCallback(
+    (edgeId: string, label: string) => {
+      setEdges((prev) =>
+        prev.map((e) =>
+          e.id === edgeId
+            ? { ...e, data: { ...e.data, label } }
+            : e,
+        ) as CanvasEdge[],
+      );
+      send({ type: "edges:label", edgeId, label });
+    },
+    [send],
+  );
+
+  return { nodes, edges, onNodesChange, onEdgesChange, onConnect, addNode, updateEdgeLabel };
 }

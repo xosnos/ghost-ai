@@ -236,13 +236,13 @@ function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
             type="source"
             position={pos}
             id={`${pos}-source`}
-            className="!z-20 !h-3 !w-3 !border !bg-[var(--accent-primary)] !border-[var(--bg-elevated)] opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+            className="!z-20 !h-2.5 !w-2.5 !rounded-full !border !bg-white !border-[var(--bg-base)] opacity-0 transition-opacity duration-150 group-hover:opacity-100"
           />
           <Handle
             type="target"
             position={pos}
             id={`${pos}-target`}
-            className="!z-20 !h-3 !w-3 !border !bg-[var(--accent-primary)] !border-[var(--bg-elevated)] opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+            className="!z-20 !h-2.5 !w-2.5 !rounded-full !border !bg-white !border-[var(--bg-base)] opacity-0 transition-opacity duration-150 group-hover:opacity-100"
           />
         </span>
       ))}

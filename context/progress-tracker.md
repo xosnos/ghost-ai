@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature 15: Node Color Toolbar (complete)
+- Feature 16: Edge Behavior (complete)
 
 ## Current Goal
 
-- Next feature spec (16-edge-behavior) — define edge connection and interaction behavior on the canvas.
+- Next feature spec (17-canvas-ergonomics) — improve canvas interaction ergonomics.
 
 ## Completed
 
@@ -27,6 +27,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - 12-shape-panel — Shape selector toolbar rendered as an xyflow `<Panel>` at the bottom-center of the canvas. `components/editor/shape-panel.tsx` renders one draggable button per shape type (rectangle, diamond, circle, pill, cylinder, hexagon) using lucide-react icons. Drag start serializes `{ shape, width, height }` into the `application/reactflow-shape` dataTransfer key using `SHAPE_DEFAULT_SIZES` from `types/canvas.ts`. `components/editor/realtime-canvas.tsx` handles `onDrop` by deserializing the payload, converting the screen position to flow coordinates via `screenToFlowPosition`, and calling `addNode` with the shape/color/size — node creation and realtime sync are unchanged. `npm run build` passes.
 - 14-node-editing — Added resize handles (visible on selected nodes, with min-size enforcement) and inline label editing (double-click to edit, blur/Escape to close, updates propagate through realtime collaborative state). Uses React Flow NodeResizer. Textarea has `nodrag nopan nowheel` classes to prevent editing from triggering canvas interactions.
 - 13-node-shape — Shape-variant node rendering plus drag ghost preview. `components/editor/canvas-node.tsx` rewritten: rectangle/pill/circle render via CSS `border-radius` on a filled div; diamond/hexagon/cylinder render as inline SVG (`SvgShape` component) that scales to the node's width/height. Borders are subtle (`--border-default`) at rest and brighter (node text color) when selected, with a 1→1.5px width bump. Labels render centered with the node's text color. `components/editor/shape-panel.tsx` extended with `buildDragPreview` — on drag start, a temporary DOM element matching the dragged shape type and `SHAPE_DEFAULT_SIZES` default dimensions is created off-screen, set as the drag image via `setDragImage`, and removed on the next tick. Node creation, drop handling, and realtime sync are unchanged. `npm run build` passes.
+- 16-edge-behavior — Custom canvas edges with right-angle routing, hover/selection states, and inline label editing. New files: `components/editor/canvas-edge.tsx` (`CanvasEdgeComponent` — uses `getSmoothStepPath` with `borderRadius: 8` for clean right-angle routing; invisible wide hit-path (16px padding) for easy hover/click without increasing visible thickness; edges dimmed at rest (55% opacity) and brightened on hover/selection; arrowhead via `MarkerType.ArrowClosed`; inline label editing via `EdgeLabelRenderer` positioned at path midpoint coordinates from `getSmoothStepPath` — no manual midpoint calculation; input grows with text via `ch` units; saves on blur/Enter, cancels on Escape; saved labels shown as pill badges, unlabeled edges show faint "+ label" hint on hover; `nodrag nopan nowheel` classes prevent canvas interactions during editing), `components/editor/edge-label-context.tsx` (React context that passes the `updateEdgeLabel` callback from the realtime hook through React Flow's internal edge rendering to the custom edge component). `hooks/use-realtime-flow.ts` extended: new `edges:label` broadcast event and `updateEdgeLabel(edgeId, label)` function that updates local state and broadcasts to all collaborators. `components/editor/realtime-canvas.tsx` updated: `edgeTypes` now registers `canvasEdge`, `defaultEdgeOptions` uses `type: "canvasEdge"` with arrow marker, `EdgeLabelContext.Provider` wraps the `ReactFlow` to pass `updateEdgeLabel` down. `components/editor/canvas-node.tsx` handle styling updated to small white dots with dark border (`!bg-white !border-[var(--bg-base)]`, 2.5px size), hidden by default and faded in on node hover. `npm run build` passes.
 
 ## Open Questions
 

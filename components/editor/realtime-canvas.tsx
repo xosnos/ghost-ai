@@ -9,6 +9,7 @@ import {
   ReactFlowProvider,
   useReactFlow,
   ConnectionMode,
+  MarkerType,
   type NodeTypes,
   type EdgeTypes,
 } from "@xyflow/react";
@@ -17,6 +18,8 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useRealtimeFlow } from "@/hooks/use-realtime-flow";
 import { ShapePanel } from "@/components/editor/shape-panel";
 import { CanvasNodeComponent } from "@/components/editor/canvas-node";
+import { CanvasEdgeComponent } from "@/components/editor/canvas-edge";
+import { EdgeLabelContext } from "@/components/editor/edge-label-context";
 import { DEFAULT_NODE_COLOR, type CanvasNode, type CanvasEdge, type NodeShape } from "@/types/canvas";
 
 interface RealtimeCanvasProps {
@@ -31,7 +34,7 @@ function generateNodeId(shape: NodeShape): string {
 }
 
 function FlowCanvas({ channel }: RealtimeCanvasProps) {
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, addNode } =
+  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, addNode, updateEdgeLabel } =
     useRealtimeFlow(channel);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition } = useReactFlow();
@@ -40,12 +43,12 @@ function FlowCanvas({ channel }: RealtimeCanvasProps) {
     () => ({ canvasNode: CanvasNodeComponent }),
     [],
   );
-  const edgeTypes = useMemo<EdgeTypes>(() => ({}), []);
+  const edgeTypes = useMemo<EdgeTypes>(() => ({ canvasEdge: CanvasEdgeComponent }), []);
 
   const defaultEdgeOptions = useMemo(
     () => ({
-      type: "default",
-      style: { stroke: "var(--text-muted)", strokeWidth: 2 },
+      type: "canvasEdge",
+      markerEnd: { type: MarkerType.ArrowClosed, color: "var(--text-muted)", width: 16, height: 16 },
     }),
     [],
   );
@@ -98,6 +101,7 @@ function FlowCanvas({ channel }: RealtimeCanvasProps) {
       onDragOver={onDragOver}
       onDrop={onDrop}
     >
+      <EdgeLabelContext.Provider value={updateEdgeLabel}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -130,6 +134,7 @@ function FlowCanvas({ channel }: RealtimeCanvasProps) {
         />
         <ShapePanel />
       </ReactFlow>
+      </EdgeLabelContext.Provider>
     </div>
   );
 }
