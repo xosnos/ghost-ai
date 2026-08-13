@@ -341,6 +341,3 @@ export function StarterTemplatesModal({
     </Dialog>
   );
 }
-
-
-export { StarterTemplatesModal }
