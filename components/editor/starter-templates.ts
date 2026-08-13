@@ -52,7 +52,7 @@ export const CANVAS_TEMPLATES: CanvasTemplate[] = [
     id: "microservices",
     name: "Microservices Architecture",
     description:
-      "An API gateway routing requests to independent backend services with a shared database layer.",
+      "API Gateway routes traffic to isolated services, each backed by a dedicated database and connected via a shared message bus.",
     nodes: [
       node("client", 60, 220, "pill", C[1], "Client"),
       node("gateway", 340, 220, "hexagon", C[0], "API Gateway", 180, 100),
@@ -77,7 +77,7 @@ export const CANVAS_TEMPLATES: CanvasTemplate[] = [
     id: "ci-cd",
     name: "CI/CD Pipeline",
     description:
-      "From source commit through build, test, and deploy stages with approval gates.",
+      "End-to-end delivery from source commit through build, test, containerisation, and staged deployment to production.",
     nodes: [
       node("commit", 60, 200, "circle", C[1], "Commit", 120, 120),
       node("build", 280, 200, "rectangle", C[0], "Build"),
@@ -98,7 +98,7 @@ export const CANVAS_TEMPLATES: CanvasTemplate[] = [
     id: "event-driven",
     name: "Event-Driven System",
     description:
-      "Producers emit events to a message broker; consumers react and persist to independent stores.",
+      "Producers publish events to a central bus. Independent consumers handle emails, push notifications, analytics, and error queues.",
     nodes: [
       node("api", 60, 60, "pill", C[1], "REST API"),
       node("webhook", 60, 320, "pill", C[5], "Webhook"),

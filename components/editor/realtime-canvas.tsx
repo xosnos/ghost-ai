@@ -46,7 +46,7 @@ function FlowCanvas({ channel }: RealtimeCanvasProps) {
     onConnect,
     addNode,
     updateEdgeLabel,
-    loadTemplate,
+    appendTemplate,
     undo,
     redo,
     canUndo,
@@ -62,10 +62,27 @@ function FlowCanvas({ channel }: RealtimeCanvasProps) {
 
   const handleImportTemplate = useCallback(
     (template: CanvasTemplate) => {
-      loadTemplate(template.nodes, template.edges);
+      const suffix = `${Date.now()}`;
+      const idMap = new Map<string, string>();
+      const newNodes = template.nodes.map((n) => {
+        const newId = `${n.id}-${suffix}`;
+        idMap.set(n.id, newId);
+        return { ...n, id: newId, data: { ...n.data } } as unknown as CanvasNode;
+      });
+      const newEdges = template.edges.map((e) => {
+        const newId = `${e.id}-${suffix}`;
+        return {
+          ...e,
+          id: newId,
+          source: idMap.get(e.source) ?? e.source,
+          target: idMap.get(e.target) ?? e.target,
+          data: { ...e.data },
+        } as unknown as CanvasEdge;
+      });
+      appendTemplate(newNodes, newEdges);
       requestAnimationFrame(() => fitView({ duration: 400, padding: 0.2 }));
     },
-    [loadTemplate, fitView],
+    [appendTemplate, fitView],
   );
 
   useEffect(() => {
