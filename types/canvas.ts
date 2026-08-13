@@ -37,7 +37,7 @@ export interface CanvasNodeData {
 }
 
 export type CanvasNode = Node<CanvasNodeData, "canvasNode">;
-export type CanvasEdge = Edge<{}, "canvasEdge">;
+export type CanvasEdge = Edge;
 
 export const SHAPE_DEFAULT_SIZES: Record<NodeShape, { width: number; height: number }> = {
   rectangle: { width: 176, height: 64 },
@@ -49,6 +49,5 @@ export const SHAPE_DEFAULT_SIZES: Record<NodeShape, { width: number; height: num
 };
 
 export type CanvasNodeType = "canvasNode";
-export type CanvasEdgeType = "canvasEdge";
 
 

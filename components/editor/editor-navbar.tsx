@@ -1,6 +1,6 @@
 "use client";
 
-import { PanelLeftClose, PanelLeftOpen, Share2, Bot } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen, Share2, Bot, LayoutTemplate } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "@/components/editor/user-menu";
 
@@ -12,6 +12,7 @@ interface EditorNavbarProps {
   aiSidebarOpen?: boolean;
   onToggleAiSidebar?: () => void;
   onShare?: () => void;
+  onOpenTemplates?: () => void;
 }
 
 export function EditorNavbar({
@@ -22,6 +23,7 @@ export function EditorNavbar({
   aiSidebarOpen,
   onToggleAiSidebar,
   onShare,
+  onOpenTemplates,
 }: EditorNavbarProps) {
   const isWorkspace = Boolean(projectName);
 
@@ -57,6 +59,12 @@ export function EditorNavbar({
             <Share2 className="h-4 w-4" />
             Share
           </Button>
+          {onOpenTemplates && (
+            <Button variant="ghost" size="sm" className="gap-2" onClick={onOpenTemplates}>
+              <LayoutTemplate className="h-4 w-4" />
+              Templates
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { EditorNavbar } from "@/components/editor/editor-navbar";
 import { ProjectSidebar } from "@/components/editor/project-sidebar";
 import { ProjectDialogs } from "@/components/editor/project-dialogs";
 import { ShareProjectDialog } from "@/components/editor/share-project-dialog";
+import { StarterTemplatesModal } from "@/components/editor/starter-templates-modal";
+import { TemplateImportProvider } from "@/components/editor/template-import-context";
 import { AiSidebarPlaceholder } from "@/components/editor/ai-sidebar-placeholder";
 import {
   ProjectDialogContext,
@@ -13,6 +15,7 @@ import {
 import { useProjectActions } from "@/hooks/use-project-actions";
 import { useShareDialog } from "@/hooks/use-share-dialog";
 import type { Project } from "@/lib/projects/types";
+import type { CanvasTemplate } from "@/components/editor/starter-templates";
 
 interface EditorChromeProps {
   children: React.ReactNode;
@@ -35,11 +38,16 @@ export function EditorChrome({
 }: EditorChromeProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [aiSidebarOpen, setAiSidebarOpen] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   const dialogs = useProjectActions();
   const isProjectOwner = Boolean(
     project && project.ownerId === currentUserId
   );
   const share = useShareDialog(project?.id, isProjectOwner);
+
+  const templateImportRef = useRef<
+    ((template: CanvasTemplate) => void) | null
+  >(null);
 
   const contextValue: ProjectDialogContextValue = {
     openCreate: dialogs.openCreate,
@@ -49,55 +57,69 @@ export function EditorChrome({
 
   return (
     <ProjectDialogContext.Provider value={contextValue}>
-      <div className="relative flex h-screen flex-col overflow-hidden">
-        <EditorNavbar
-          sidebarOpen={sidebarOpen}
-          onToggleSidebar={() => setSidebarOpen((v) => !v)}
-          userEmail={userEmail}
-          projectName={project?.name}
-          aiSidebarOpen={aiSidebarOpen}
-          onToggleAiSidebar={() => setAiSidebarOpen((v) => !v)}
-          onShare={project ? share.openShare : undefined}
-        />
-        <ProjectSidebar
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          currentUserId={currentUserId}
-          ownedProjects={ownedProjects}
-          sharedProjects={sharedProjects}
-          currentRoomId={currentRoomId}
-        />
-        <main className="flex flex-1 overflow-hidden pt-12">{children}</main>
+      <TemplateImportProvider value={templateImportRef}>
+        <div className="relative flex h-screen flex-col overflow-hidden">
+          <EditorNavbar
+            sidebarOpen={sidebarOpen}
+            onToggleSidebar={() => setSidebarOpen((v) => !v)}
+            userEmail={userEmail}
+            projectName={project?.name}
+            aiSidebarOpen={aiSidebarOpen}
+            onToggleAiSidebar={() => setAiSidebarOpen((v) => !v)}
+            onShare={project ? share.openShare : undefined}
+            onOpenTemplates={project ? () => setTemplatesOpen(true) : undefined}
+          />
+          <ProjectSidebar
+            isOpen={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+            currentUserId={currentUserId}
+            ownedProjects={ownedProjects}
+            sharedProjects={sharedProjects}
+            currentRoomId={currentRoomId}
+          />
+          <main className="flex flex-1 overflow-hidden pt-12">{children}</main>
+          {project && (
+            <AiSidebarPlaceholder
+              isOpen={aiSidebarOpen}
+              onClose={() => setAiSidebarOpen(false)}
+            />
+          )}
+        </div>
+
+        <ProjectDialogs dialogs={dialogs} />
+
         {project && (
-          <AiSidebarPlaceholder
-            isOpen={aiSidebarOpen}
-            onClose={() => setAiSidebarOpen(false)}
+          <ShareProjectDialog
+            open={share.open}
+            projectName={project.name}
+            isOwner={share.isOwner}
+            collaborators={share.collaborators}
+            inviteEmail={share.inviteEmail}
+            loading={share.loading}
+            inviting={share.inviting}
+            removingEmail={share.removingEmail}
+            error={share.error}
+            copied={share.copied}
+            projectLink={share.projectLink}
+            onInviteEmailChange={share.setInviteEmail}
+            onInvite={share.submitInvite}
+            onRemove={share.removeCollaborator}
+            onCopyLink={share.copyLink}
+            onClose={share.closeShare}
           />
         )}
-      </div>
 
-      <ProjectDialogs dialogs={dialogs} />
-
-      {project && (
-        <ShareProjectDialog
-          open={share.open}
-          projectName={project.name}
-          isOwner={share.isOwner}
-          collaborators={share.collaborators}
-          inviteEmail={share.inviteEmail}
-          loading={share.loading}
-          inviting={share.inviting}
-          removingEmail={share.removingEmail}
-          error={share.error}
-          copied={share.copied}
-          projectLink={share.projectLink}
-          onInviteEmailChange={share.setInviteEmail}
-          onInvite={share.submitInvite}
-          onRemove={share.removeCollaborator}
-          onCopyLink={share.copyLink}
-          onClose={share.closeShare}
-        />
-      )}
+        {project && (
+          <StarterTemplatesModal
+            open={templatesOpen}
+            onImport={(template) => {
+              templateImportRef.current?.(template);
+              setTemplatesOpen(false);
+            }}
+            onClose={() => setTemplatesOpen(false)}
+          />
+        )}
+      </TemplateImportProvider>
     </ProjectDialogContext.Provider>
   );
 }
