@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
   ReactFlow,
   Background,
@@ -22,7 +22,9 @@ import { CanvasControlBar } from "@/components/editor/canvas-control-bar";
 import { CanvasNodeComponent } from "@/components/editor/canvas-node";
 import { CanvasEdgeComponent } from "@/components/editor/canvas-edge";
 import { EdgeLabelContext } from "@/components/editor/edge-label-context";
+import { useTemplateImportRef } from "@/components/editor/template-import-context";
 import { DEFAULT_NODE_COLOR, type CanvasNode, type CanvasEdge, type NodeShape } from "@/types/canvas";
+import type { CanvasTemplate } from "@/components/editor/starter-templates";
 
 interface RealtimeCanvasProps {
   channel: RealtimeChannel;
@@ -44,6 +46,7 @@ function FlowCanvas({ channel }: RealtimeCanvasProps) {
     onConnect,
     addNode,
     updateEdgeLabel,
+    loadTemplate,
     undo,
     redo,
     canUndo,
@@ -51,10 +54,27 @@ function FlowCanvas({ channel }: RealtimeCanvasProps) {
   } = useRealtimeFlow(channel);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition, zoomIn, zoomOut, fitView } = useReactFlow();
+  const importRef = useTemplateImportRef();
 
   const handleZoomIn = useCallback(() => zoomIn({ duration: 300 }), [zoomIn]);
   const handleZoomOut = useCallback(() => zoomOut({ duration: 300 }), [zoomOut]);
   const handleFitView = useCallback(() => fitView({ duration: 300 }), [fitView]);
+
+  const handleImportTemplate = useCallback(
+    (template: CanvasTemplate) => {
+      loadTemplate(template.nodes, template.edges);
+      requestAnimationFrame(() => fitView({ duration: 400, padding: 0.2 }));
+    },
+    [loadTemplate, fitView],
+  );
+
+  useEffect(() => {
+    if (!importRef) return;
+    importRef.current = handleImportTemplate;
+    return () => {
+      importRef.current = null;
+    };
+  }, [importRef, handleImportTemplate]);
 
   useKeyboardShortcuts({
     zoomIn: handleZoomIn,

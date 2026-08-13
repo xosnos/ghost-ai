@@ -20,7 +20,8 @@ type BroadcastEvent =
   | { type: "edges:change"; changes: EdgeChange[] }
   | { type: "edges:connect"; edge: CanvasEdge }
   | { type: "nodes:add"; node: CanvasNode }
-  | { type: "edges:label"; edgeId: string; label: string };
+  | { type: "edges:label"; edgeId: string; label: string }
+  | { type: "canvas:replace"; nodes: CanvasNode[]; edges: CanvasEdge[] };
 
 interface HistorySnapshot {
   nodes: CanvasNode[];
@@ -37,6 +38,7 @@ export interface UseRealtimeFlowReturn {
   onConnect: OnConnect;
   addNode: (node: CanvasNode) => void;
   updateEdgeLabel: (edgeId: string, label: string) => void;
+  loadTemplate: (nodes: CanvasNode[], edges: CanvasEdge[]) => void;
   undo: () => void;
   redo: () => void;
   canUndo: boolean;
@@ -102,6 +104,9 @@ export function useRealtimeFlow(
         );
       } else if (event.type === "nodes:add") {
         setNodes((prev) => [...prev, event.node]);
+      } else if (event.type === "canvas:replace") {
+        setNodes(event.nodes);
+        setEdges(event.edges);
       }
     };
 
@@ -208,6 +213,20 @@ export function useRealtimeFlow(
     [send, pushHistory],
   );
 
+  const loadTemplate = useCallback(
+    (newNodes: CanvasNode[], newEdges: CanvasEdge[]) => {
+      pushHistory(snapshotRef.current);
+      setNodes(newNodes);
+      setEdges(newEdges);
+      snapshotRef.current = {
+        nodes: newNodes.map((n) => ({ ...n, data: { ...n.data } })),
+        edges: newEdges.map((e) => ({ ...e, data: { ...e.data } })),
+      };
+      send({ type: "canvas:replace", nodes: newNodes, edges: newEdges });
+    },
+    [send, pushHistory],
+  );
+
   const undo = useCallback(() => {
     if (past.current.length === 0) return;
     const previous = past.current[past.current.length - 1];
@@ -236,5 +255,5 @@ export function useRealtimeFlow(
     setCanRedo(future.current.length > 0);
   }, []);
 
-  return { nodes, edges, onNodesChange, onEdgesChange, onConnect, addNode, updateEdgeLabel, undo, redo, canUndo, canRedo };
+  return { nodes, edges, onNodesChange, onEdgesChange, onConnect, addNode, updateEdgeLabel, loadTemplate, undo, redo, canUndo, canRedo };
 }
