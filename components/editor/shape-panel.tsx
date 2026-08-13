@@ -94,6 +94,7 @@ export function ShapePanel() {
         return (
           <button
             key={shape}
+            type="button"
             draggable
             onDragStart={(e) => onDragStart(e, shape)}
             className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-[var(--bg-subtle)]"

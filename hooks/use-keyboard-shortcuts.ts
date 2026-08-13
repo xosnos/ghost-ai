@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import type { ReactFlowInstance } from "@xyflow/react";
-
 interface UseKeyboardShortcutsOptions {
   zoomIn: () => void;
   zoomOut: () => void;
