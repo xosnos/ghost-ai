@@ -4,11 +4,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
-- Feature 14: Node Editing (complete)
+- Feature 15: Node Color Toolbar (complete)
 
 ## Current Goal
 
-- Next feature spec (15-node-color-toolbar) — add color selection toolbar for canvas nodes.
+- Next feature spec (16-edge-behavior) — define edge connection and interaction behavior on the canvas.
 
 ## Completed
 

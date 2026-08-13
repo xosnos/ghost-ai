@@ -13,6 +13,7 @@ import {
   type CanvasNodeData,
   type NodeShape,
 } from "@/types/canvas";
+import { NodeColorToolbar } from "@/components/editor/node-color-toolbar";
 
 const CSS_SHAPE_RADIUS: Partial<Record<NodeShape, string>> = {
   rectangle: "12px",
@@ -226,6 +227,7 @@ function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
         handleClassName="!h-2 !w-2 !rounded-sm !border-[var(--accent-primary)] !bg-[var(--bg-elevated)]"
       />
       {content}
+      <NodeColorToolbar id={id} data={nodeData} selected={!!selected} width={width} height={height} />
       {(
         [Position.Top, Position.Right, Position.Bottom, Position.Left] as const
       ).map((pos) => (
