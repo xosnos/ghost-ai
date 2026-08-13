@@ -16,7 +16,9 @@ import {
 import "@xyflow/react/dist/style.css";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useRealtimeFlow } from "@/hooks/use-realtime-flow";
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { ShapePanel } from "@/components/editor/shape-panel";
+import { CanvasControlBar } from "@/components/editor/canvas-control-bar";
 import { CanvasNodeComponent } from "@/components/editor/canvas-node";
 import { CanvasEdgeComponent } from "@/components/editor/canvas-edge";
 import { EdgeLabelContext } from "@/components/editor/edge-label-context";
@@ -34,10 +36,32 @@ function generateNodeId(shape: NodeShape): string {
 }
 
 function FlowCanvas({ channel }: RealtimeCanvasProps) {
-  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, addNode, updateEdgeLabel } =
-    useRealtimeFlow(channel);
+  const {
+    nodes,
+    edges,
+    onNodesChange,
+    onEdgesChange,
+    onConnect,
+    addNode,
+    updateEdgeLabel,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  } = useRealtimeFlow(channel);
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, zoomIn, zoomOut, fitView } = useReactFlow();
+
+  const handleZoomIn = useCallback(() => zoomIn({ duration: 300 }), [zoomIn]);
+  const handleZoomOut = useCallback(() => zoomOut({ duration: 300 }), [zoomOut]);
+  const handleFitView = useCallback(() => fitView({ duration: 300 }), [fitView]);
+
+  useKeyboardShortcuts({
+    zoomIn: handleZoomIn,
+    zoomOut: handleZoomOut,
+    undo,
+    redo,
+  });
 
   const nodeTypes = useMemo<NodeTypes>(
     () => ({ canvasNode: CanvasNodeComponent }),
@@ -133,6 +157,15 @@ function FlowCanvas({ channel }: RealtimeCanvasProps) {
           }}
         />
         <ShapePanel />
+        <CanvasControlBar
+          onZoomIn={handleZoomIn}
+          onZoomOut={handleZoomOut}
+          onFitView={handleFitView}
+          onUndo={undo}
+          onRedo={redo}
+          canUndo={canUndo}
+          canRedo={canRedo}
+        />
       </ReactFlow>
       </EdgeLabelContext.Provider>
     </div>
