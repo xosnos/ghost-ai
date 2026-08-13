@@ -164,8 +164,8 @@ function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
       onBlur={stopEditing}
       onKeyDown={handleKeyDown}
       rows={1}
-      className="nodrag nopan nowheel relative z-10 w-full resize-none border-0 bg-transparent px-3 text-center text-sm font-medium outline-none"
-      style={{ color: labelColor }}
+      className="nodrag nopan nowheel absolute inset-0 z-10 h-full w-full resize-none appearance-none overflow-hidden border-0 bg-transparent p-3 text-center text-sm font-medium leading-[1.5] outline-none shadow-none ring-0 focus:border-transparent focus:outline-none focus:ring-0"
+      style={{ color: labelColor, alignContent: "center" }}
     />
   ) : (
     <span
