@@ -278,8 +278,8 @@ export function StarterTemplatesModal({
 }: StarterTemplatesModalProps) {
   return (
     <Dialog open={open} onOpenChange={(value) => !value && onClose()}>
-      <DialogContent className="max-w-5xl gap-0 overflow-hidden p-0">
-        <DialogHeader className="px-7 pb-5 pt-7 sm:px-8 sm:pt-8">
+      <DialogContent className="flex max-h-[85vh] max-w-5xl flex-col gap-0 overflow-hidden p-0">
+        <DialogHeader className="shrink-0 px-7 pb-5 pt-7 sm:px-8 sm:pt-8">
           <DialogTitle className="text-2xl tracking-tight">
             Import Template
           </DialogTitle>
@@ -288,7 +288,7 @@ export function StarterTemplatesModal({
             nodes and edges will stay in place.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="max-h-[70vh] px-7 pb-7 sm:px-8 sm:pb-8">
+        <ScrollArea className="flex-1 px-7 pb-7 sm:px-8 sm:pb-8">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             {CANVAS_TEMPLATES.map((template) => (
               <article
@@ -341,3 +341,5 @@ export function StarterTemplatesModal({
     </Dialog>
   );
 }
+
+export { StarterTemplatesModal }
