@@ -39,7 +39,7 @@
 - Auth is handled via `@supabase/ssr` with cookie-based sessions and Next.js middleware.
 - Route protection: middleware checks session on every request, redirects unauthenticated users to `/login`.
 - Public routes: `/login`, `/signup`, `/forgot-password`, `/reset-password`.
-- Collaborator management (`/api/projects/[projectId]/collaborators`): invite/remove are owner-only (enforced in the route handler). Listing requires project membership. Full collaborator lists and Auth profile enrichment use the server-only service role client (`lib/supabase/admin.ts` + `SUPABASE_SERVICE_ROLE_KEY`) because RLS on `project_collaborators` is self-row SELECT only.
+- Collaborator management (`/api/projects/[projectId]/collaborators`): invite/remove are owner-only (enforced in the route handler). Listing requires project membership. `get_project_collaborators` returns the owner first (from `projects.owner_id`) then invited collaborators, with Auth profile enrichment. The owner is not a `project_collaborators` row and cannot be removed.
 
 ## Starter System Designs
 

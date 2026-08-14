@@ -1,5 +1,5 @@
-import type { RealtimeChannel } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/client";
+import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
+import { createRealtimeBrowserClient } from "@/lib/supabase/client";
 import { NODE_COLORS } from "@/types/canvas";
 import type { PresencePayload, PresenceState, UserMeta } from "@/types/realtime";
 
@@ -13,14 +13,26 @@ export function getUserCursorColor(userId: string): string {
   return NODE_COLORS[index].text;
 }
 
-export function createRealtimeChannel(projectId: string, userId: string) {
-  const supabase = createClient();
-  return supabase.channel(`project:${projectId}`, {
+export async function connectRealtimeChannel(
+  projectId: string,
+  userId: string,
+): Promise<{ supabase: SupabaseClient; channel: RealtimeChannel }> {
+  const supabase = createRealtimeBrowserClient();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  if (session?.access_token) {
+    await supabase.realtime.setAuth(session.access_token);
+  }
+
+  const channel = supabase.channel(`project:${projectId}`, {
     config: {
-      presence: { key: userId },
-      broadcast: { self: false },
+      presence: { key: userId, enabled: true },
+      broadcast: { self: false, ack: false },
     },
   });
+
+  return { supabase, channel };
 }
 
 export function buildUserMeta(user: {
@@ -91,6 +103,19 @@ export function attachPresenceListeners(
   channel.on("presence", { event: "sync" }, emit);
   channel.on("presence", { event: "join" }, emit);
   channel.on("presence", { event: "leave" }, emit);
+}
+
+export function attachCanvasSyncListener(
+  channel: RealtimeChannel,
+  onEvent: (payload: unknown) => void,
+) {
+  channel.on(
+    "broadcast",
+    { event: "canvas:sync" },
+    (message: { payload?: unknown }) => {
+      onEvent(message?.payload);
+    },
+  );
 }
 
 export type { PresencePayload, PresenceState, UserMeta };

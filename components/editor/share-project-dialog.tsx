@@ -188,7 +188,7 @@ export function ShareProjectDialog({
               className="text-xs font-medium"
               style={{ color: "var(--text-secondary)" }}
             >
-              Collaborators
+              People with access
             </span>
 
             {loading ? (
@@ -199,61 +199,74 @@ export function ShareProjectDialog({
               <p className="text-sm" style={{ color: "var(--text-muted)" }}>
                 {isOwner
                   ? "No collaborators yet. Invite someone by email."
-                  : "No other collaborators on this project."}
+                  : "No other people with access on this project."}
               </p>
             ) : (
               <ScrollArea className="max-h-56">
                 <ul className="flex flex-col gap-1 pr-2">
-                  {collaborators.map((c) => (
-                    <li
-                      key={c.id}
-                      className="flex items-center gap-3 rounded-xl px-2 py-2"
-                      style={{ backgroundColor: "var(--bg-elevated)" }}
-                    >
-                      <CollaboratorAvatar
-                        email={c.email}
-                        displayName={c.displayName}
-                        avatarUrl={c.avatarUrl}
-                      />
-                      <div className="min-w-0 flex-1">
-                        {c.displayName ? (
-                          <>
+                  {collaborators.map((c) => {
+                    const isProjectOwner = c.role === "owner";
+                    return (
+                      <li
+                        key={c.id}
+                        className="flex items-center gap-3 rounded-xl px-2 py-2"
+                        style={{ backgroundColor: "var(--bg-elevated)" }}
+                      >
+                        <CollaboratorAvatar
+                          email={c.email}
+                          displayName={c.displayName}
+                          avatarUrl={c.avatarUrl}
+                        />
+                        <div className="min-w-0 flex-1">
+                          {c.displayName ? (
+                            <>
+                              <p
+                                className="truncate text-sm font-medium"
+                                style={{ color: "var(--text-primary)" }}
+                              >
+                                {c.displayName}
+                              </p>
+                              <p
+                                className="truncate text-xs"
+                                style={{ color: "var(--text-muted)" }}
+                              >
+                                {c.email}
+                              </p>
+                            </>
+                          ) : (
                             <p
-                              className="truncate text-sm font-medium"
+                              className="truncate text-sm"
                               style={{ color: "var(--text-primary)" }}
                             >
-                              {c.displayName}
+                              {c.email || (isProjectOwner ? "Owner" : "")}
                             </p>
-                            <p
-                              className="truncate text-xs"
-                              style={{ color: "var(--text-muted)" }}
-                            >
-                              {c.email}
-                            </p>
-                          </>
-                        ) : (
-                          <p
-                            className="truncate text-sm"
-                            style={{ color: "var(--text-primary)" }}
+                          )}
+                        </div>
+                        {isProjectOwner ? (
+                          <span
+                            className="shrink-0 rounded-xl px-2 py-0.5 text-[11px] font-medium"
+                            style={{
+                              backgroundColor: "var(--accent-primary-dim)",
+                              color: "var(--accent-primary)",
+                            }}
                           >
-                            {c.email}
-                          </p>
-                        )}
-                      </div>
-                      {isOwner && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          aria-label={`Remove ${c.email}`}
-                          disabled={removingEmail === c.email}
-                          onClick={() => onRemove(c.email)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </li>
-                  ))}
+                            Owner
+                          </span>
+                        ) : isOwner ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Remove ${c.email}`}
+                            disabled={removingEmail === c.email}
+                            onClick={() => onRemove(c.email)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        ) : null}
+                      </li>
+                    );
+                  })}
                 </ul>
               </ScrollArea>
             )}

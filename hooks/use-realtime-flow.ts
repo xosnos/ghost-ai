@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type MutableRefObject } from "react";
 import {
   addEdge,
   applyEdgeChanges,
@@ -15,13 +15,26 @@ import {
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import type { CanvasNode, CanvasEdge } from "@/types/canvas";
 
-type BroadcastEvent =
+export type BroadcastEvent =
   | { type: "nodes:change"; changes: NodeChange[] }
   | { type: "edges:change"; changes: EdgeChange[] }
   | { type: "edges:connect"; edge: CanvasEdge }
   | { type: "nodes:add"; node: CanvasNode }
   | { type: "edges:label"; edgeId: string; label: string }
   | { type: "canvas:append"; nodes: CanvasNode[]; edges: CanvasEdge[] };
+
+function isBroadcastEvent(value: unknown): value is BroadcastEvent {
+  if (!value || typeof value !== "object" || !("type" in value)) return false;
+  const type = (value as { type: unknown }).type;
+  return (
+    type === "nodes:change" ||
+    type === "edges:change" ||
+    type === "edges:connect" ||
+    type === "nodes:add" ||
+    type === "edges:label" ||
+    type === "canvas:append"
+  );
+}
 
 interface HistorySnapshot {
   nodes: CanvasNode[];
@@ -47,6 +60,7 @@ export interface UseRealtimeFlowReturn {
 
 export function useRealtimeFlow(
   channel: RealtimeChannel | null,
+  incomingRef?: MutableRefObject<((event: unknown) => void) | null>,
 ): UseRealtimeFlowReturn {
   const [nodes, setNodes] = useState<CanvasNode[]>([]);
   const [edges, setEdges] = useState<CanvasEdge[]>([]);
@@ -82,36 +96,45 @@ export function useRealtimeFlow(
   }, [nodes, edges]);
 
   useEffect(() => {
-    if (!channel) return;
-
-    const handler = (payload: { payload: BroadcastEvent }) => {
-      const event = payload.payload;
+    const applyRemote = (raw: unknown) => {
+      if (!isBroadcastEvent(raw)) return;
       skipBroadcast.current = true;
       skipHistory.current = true;
-      if (event.type === "nodes:change") {
-        setNodes((prev) => applyNodeChanges(event.changes, prev) as CanvasNode[]);
-      } else if (event.type === "edges:change") {
-        setEdges((prev) => applyEdgeChanges(event.changes, prev) as CanvasEdge[]);
-      } else if (event.type === "edges:connect") {
-        setEdges((prev) => addEdge(event.edge, prev) as CanvasEdge[]);
-      } else if (event.type === "edges:label") {
+      if (raw.type === "nodes:change") {
+        setNodes((prev) => applyNodeChanges(raw.changes, prev) as CanvasNode[]);
+      } else if (raw.type === "edges:change") {
+        setEdges((prev) => applyEdgeChanges(raw.changes, prev) as CanvasEdge[]);
+      } else if (raw.type === "edges:connect") {
+        setEdges((prev) => addEdge(raw.edge, prev) as CanvasEdge[]);
+      } else if (raw.type === "edges:label") {
         setEdges((prev) =>
           prev.map((e) =>
-            e.id === event.edgeId
-              ? { ...e, data: { ...e.data, label: event.label } }
+            e.id === raw.edgeId
+              ? { ...e, data: { ...e.data, label: raw.label } }
               : e,
           ) as CanvasEdge[],
         );
-      } else if (event.type === "nodes:add") {
-        setNodes((prev) => [...prev, event.node]);
-      } else if (event.type === "canvas:append") {
-        setNodes((prev) => [...prev, ...event.nodes]);
-        setEdges((prev) => [...prev, ...event.edges]);
+      } else if (raw.type === "nodes:add") {
+        setNodes((prev) => [...prev, raw.node]);
+      } else if (raw.type === "canvas:append") {
+        setNodes((prev) => [...prev, ...raw.nodes]);
+        setEdges((prev) => [...prev, ...raw.edges]);
       }
     };
 
+    if (incomingRef) {
+      incomingRef.current = applyRemote;
+      return () => {
+        incomingRef.current = null;
+      };
+    }
+
+    if (!channel) return;
+    const handler = (payload: { payload?: unknown }) => {
+      applyRemote(payload.payload);
+    };
     channel.on("broadcast", { event: "canvas:sync" }, handler);
-  }, [channel]);
+  }, [channel, incomingRef]);
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {

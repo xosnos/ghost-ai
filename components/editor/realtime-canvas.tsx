@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import {
   ReactFlow,
   Background,
@@ -39,6 +39,7 @@ interface RealtimeCanvasProps {
   channel: RealtimeChannel;
   user: CanvasUser;
   presenceEntries: PresencePayload[];
+  incomingBroadcastRef: MutableRefObject<((event: unknown) => void) | null>;
 }
 
 let nodeIdCounter = 0;
@@ -48,7 +49,12 @@ function generateNodeId(shape: NodeShape): string {
   return `${shape}-${Date.now()}-${nodeIdCounter}`;
 }
 
-function FlowCanvas({ channel, user, presenceEntries }: RealtimeCanvasProps) {
+function FlowCanvas({
+  channel,
+  user,
+  presenceEntries,
+  incomingBroadcastRef,
+}: RealtimeCanvasProps) {
   const {
     nodes,
     edges,
@@ -62,7 +68,7 @@ function FlowCanvas({ channel, user, presenceEntries }: RealtimeCanvasProps) {
     redo,
     canUndo,
     canRedo,
-  } = useRealtimeFlow(channel);
+  } = useRealtimeFlow(channel, incomingBroadcastRef);
   const { others, updateCursor } = useRealtimePresence(
     channel,
     user,
@@ -202,6 +208,7 @@ function FlowCanvas({ channel, user, presenceEntries }: RealtimeCanvasProps) {
         onConnect={onConnect}
         onMouseMove={onMouseMove}
         onMouseLeave={onMouseLeave}
+        onPaneMouseMove={onMouseMove}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
@@ -247,13 +254,19 @@ function FlowCanvas({ channel, user, presenceEntries }: RealtimeCanvasProps) {
   );
 }
 
-export function RealtimeCanvas({ channel, user, presenceEntries }: RealtimeCanvasProps) {
+export function RealtimeCanvas({
+  channel,
+  user,
+  presenceEntries,
+  incomingBroadcastRef,
+}: RealtimeCanvasProps) {
   return (
     <ReactFlowProvider>
       <FlowCanvas
         channel={channel}
         user={user}
         presenceEntries={presenceEntries}
+        incomingBroadcastRef={incomingBroadcastRef}
       />
     </ReactFlowProvider>
   );
