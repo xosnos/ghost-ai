@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import { createRealtimeChannel, buildUserMeta } from "@/lib/realtime";
+import { createRealtimeChannel, buildUserMeta, attachPresenceListeners } from "@/lib/realtime";
 import { RealtimeCanvas } from "@/components/editor/realtime-canvas";
+import type { PresencePayload } from "@/types/realtime";
 
 interface CanvasWrapperProps {
   projectId: string;
@@ -19,9 +20,11 @@ type Status = "connecting" | "connected" | "error";
 export function CanvasWrapper({ projectId, user }: CanvasWrapperProps) {
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
   const [status, setStatus] = useState<Status>("connecting");
+  const [presenceEntries, setPresenceEntries] = useState<PresencePayload[]>([]);
 
   useEffect(() => {
     const ch = createRealtimeChannel(projectId, user.id);
+    attachPresenceListeners(ch, setPresenceEntries);
     setChannel(ch);
 
     ch.subscribe(async (state) => {
@@ -39,6 +42,7 @@ export function CanvasWrapper({ projectId, user }: CanvasWrapperProps) {
 
     return () => {
       ch.unsubscribe();
+      setPresenceEntries([]);
     };
   }, [projectId, user]);
 
@@ -70,7 +74,11 @@ export function CanvasWrapper({ projectId, user }: CanvasWrapperProps) {
 
   return (
     <div className="flex flex-1">
-      <RealtimeCanvas channel={channel} user={user} />
+      <RealtimeCanvas
+        channel={channel}
+        user={user}
+        presenceEntries={presenceEntries}
+      />
     </div>
   );
 }

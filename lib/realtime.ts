@@ -1,3 +1,4 @@
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { NODE_COLORS } from "@/types/canvas";
 import type { PresencePayload, PresenceState, UserMeta } from "@/types/realtime";
@@ -70,6 +71,26 @@ export function parsePresencePayload(value: unknown): PresencePayload | null {
     thinking: record.thinking === true,
     cursor: parsedCursor,
   };
+}
+
+export function readPresenceEntries(channel: RealtimeChannel): PresencePayload[] {
+  const flattened = Object.values(channel.presenceState()).flat();
+  const parsed: PresencePayload[] = [];
+  for (const entry of flattened) {
+    const payload = parsePresencePayload(entry);
+    if (payload) parsed.push(payload);
+  }
+  return parsed;
+}
+
+export function attachPresenceListeners(
+  channel: RealtimeChannel,
+  onChange: (entries: PresencePayload[]) => void,
+) {
+  const emit = () => onChange(readPresenceEntries(channel));
+  channel.on("presence", { event: "sync" }, emit);
+  channel.on("presence", { event: "join" }, emit);
+  channel.on("presence", { event: "leave" }, emit);
 }
 
 export type { PresencePayload, PresenceState, UserMeta };

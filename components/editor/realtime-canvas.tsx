@@ -27,6 +27,7 @@ import { EdgeLabelContext } from "@/components/editor/edge-label-context";
 import { useTemplateImportRef } from "@/components/editor/template-import-context";
 import { DEFAULT_NODE_COLOR, type CanvasNode, type CanvasEdge, type NodeShape } from "@/types/canvas";
 import type { CanvasTemplate } from "@/components/editor/starter-templates";
+import type { PresencePayload } from "@/types/realtime";
 
 interface CanvasUser {
   id: string;
@@ -37,6 +38,7 @@ interface CanvasUser {
 interface RealtimeCanvasProps {
   channel: RealtimeChannel;
   user: CanvasUser;
+  presenceEntries: PresencePayload[];
 }
 
 let nodeIdCounter = 0;
@@ -46,7 +48,7 @@ function generateNodeId(shape: NodeShape): string {
   return `${shape}-${Date.now()}-${nodeIdCounter}`;
 }
 
-function FlowCanvas({ channel, user }: RealtimeCanvasProps) {
+function FlowCanvas({ channel, user, presenceEntries }: RealtimeCanvasProps) {
   const {
     nodes,
     edges,
@@ -61,7 +63,11 @@ function FlowCanvas({ channel, user }: RealtimeCanvasProps) {
     canUndo,
     canRedo,
   } = useRealtimeFlow(channel);
-  const { others, updateCursor } = useRealtimePresence(channel, user);
+  const { others, updateCursor } = useRealtimePresence(
+    channel,
+    user,
+    presenceEntries,
+  );
   const wrapperRef = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition, zoomIn, zoomOut, fitView } = useReactFlow();
   const importRef = useTemplateImportRef();
@@ -241,10 +247,14 @@ function FlowCanvas({ channel, user }: RealtimeCanvasProps) {
   );
 }
 
-export function RealtimeCanvas({ channel, user }: RealtimeCanvasProps) {
+export function RealtimeCanvas({ channel, user, presenceEntries }: RealtimeCanvasProps) {
   return (
     <ReactFlowProvider>
-      <FlowCanvas channel={channel} user={user} />
+      <FlowCanvas
+        channel={channel}
+        user={user}
+        presenceEntries={presenceEntries}
+      />
     </ReactFlowProvider>
   );
 }

@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
-import { buildUserMeta, parsePresencePayload } from "@/lib/realtime";
+import { buildUserMeta } from "@/lib/realtime";
 import type { PresencePayload } from "@/types/realtime";
 
 interface PresenceUser {
@@ -29,30 +29,15 @@ function dedupeByUserId(entries: PresencePayload[]): PresencePayload[] {
 export function useRealtimePresence(
   channel: RealtimeChannel,
   user: PresenceUser,
+  presenceEntries: PresencePayload[],
 ): UseRealtimePresenceReturn {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [others, setOthers] = useState<PresencePayload[]>([]);
   const metaRef = useRef(buildUserMeta(user));
   const thinkingRef = useRef(false);
   const rafRef = useRef<number | null>(null);
   const pendingCursorRef = useRef<{ x: number; y: number } | null>(null);
-  const selfIdRef = useRef(user.id);
 
   metaRef.current = buildUserMeta(user);
-  selfIdRef.current = currentUserId ?? user.id;
-
-  const syncOthers = useCallback(() => {
-    const flattened = Object.values(channel.presenceState()).flat();
-    const parsed = flattened.flatMap((entry) => {
-      const payload = parsePresencePayload(entry);
-      return payload ? [payload] : [];
-    });
-    setOthers(
-      dedupeByUserId(
-        parsed.filter((entry) => entry.userId !== selfIdRef.current),
-      ),
-    );
-  }, [channel]);
 
   useEffect(() => {
     const supabase = createClient();
@@ -68,16 +53,12 @@ export function useRealtimePresence(
     };
   }, []);
 
-  useEffect(() => {
-    channel.on("presence", { event: "sync" }, syncOthers);
-    channel.on("presence", { event: "join" }, syncOthers);
-    channel.on("presence", { event: "leave" }, syncOthers);
-    syncOthers();
-  }, [channel, syncOthers]);
-
-  useEffect(() => {
-    syncOthers();
-  }, [currentUserId, syncOthers]);
+  const others = useMemo(() => {
+    const selfId = currentUserId ?? user.id;
+    return dedupeByUserId(
+      presenceEntries.filter((entry) => entry.userId !== selfId),
+    );
+  }, [currentUserId, presenceEntries, user.id]);
 
   const updateCursor = useCallback(
     (cursor: { x: number; y: number } | null) => {
