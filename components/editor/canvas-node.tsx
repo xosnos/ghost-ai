@@ -14,6 +14,7 @@ import {
   type NodeShape,
 } from "@/types/canvas";
 import { NodeColorToolbar } from "@/components/editor/node-color-toolbar";
+import { useRemoteHighlights } from "@/components/editor/remote-selection-context";
 
 const CSS_SHAPE_RADIUS: Partial<Record<NodeShape, string>> = {
   rectangle: "12px",
@@ -111,6 +112,74 @@ function SvgShape({
 const MIN_NODE_WIDTH = 60;
 const MIN_NODE_HEIGHT = 40;
 
+function RemoteSelectionRings({
+  shape,
+  width,
+  height,
+  highlights,
+}: {
+  shape: NodeShape;
+  width: number;
+  height: number;
+  highlights: { userId: string; color: string; name: string }[];
+}) {
+  if (highlights.length === 0) return null;
+
+  return (
+    <>
+      {highlights.map((person, index) => {
+        const pad = 4 + index * 3;
+        const ringWidth = width + pad * 2;
+        const ringHeight = height + pad * 2;
+        const names = highlights.map((h) => h.name).join(", ");
+
+        if (isCssShape(shape)) {
+          return (
+            <div
+              key={person.userId}
+              className="pointer-events-none absolute"
+              title={names}
+              aria-hidden="true"
+              style={{
+                left: -pad,
+                top: -pad,
+                width: ringWidth,
+                height: ringHeight,
+                border: `2px solid ${person.color}`,
+                borderRadius: CSS_SHAPE_RADIUS[shape],
+              }}
+            />
+          );
+        }
+
+        return (
+          <div
+            key={person.userId}
+            className="pointer-events-none absolute"
+            title={names}
+            aria-hidden="true"
+            style={{
+              left: -pad,
+              top: -pad,
+              width: ringWidth,
+              height: ringHeight,
+            }}
+          >
+            <SvgShape
+              shape={shape}
+              width={ringWidth}
+              height={ringHeight}
+              fill="none"
+              stroke={person.color}
+              strokeWidth={2}
+            />
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
   const nodeData = data as CanvasNodeData;
   const color = nodeData.color ?? DEFAULT_NODE_COLOR;
@@ -118,6 +187,7 @@ function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
   const w = width ?? 176;
   const h = height ?? 64;
   const { updateNodeData } = useReactFlow();
+  const remoteHighlights = useRemoteHighlights(id);
 
   const [editing, setEditing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -216,9 +286,15 @@ function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
 
   return (
     <div
-      className="group relative flex items-center justify-center"
+      className="group relative flex items-center justify-center overflow-visible"
       style={{ width: w, height: h }}
     >
+      <RemoteSelectionRings
+        shape={shape}
+        width={w}
+        height={h}
+        highlights={remoteHighlights}
+      />
       <NodeResizer
         minWidth={MIN_NODE_WIDTH}
         minHeight={MIN_NODE_HEIGHT}

@@ -1,7 +1,13 @@
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import { createRealtimeBrowserClient } from "@/lib/supabase/client";
 import { NODE_COLORS } from "@/types/canvas";
-import type { PresencePayload, PresenceState, UserMeta } from "@/types/realtime";
+import type {
+  CursorMovePayload,
+  PresencePayload,
+  PresenceState,
+  SelectionChangePayload,
+  UserMeta,
+} from "@/types/realtime";
 
 export function getUserCursorColor(userId: string): string {
   let hash = 0;
@@ -118,4 +124,77 @@ export function attachCanvasSyncListener(
   );
 }
 
-export type { PresencePayload, PresenceState, UserMeta };
+export function parseCursorMovePayload(value: unknown): CursorMovePayload | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  if (typeof record.userId !== "string") return null;
+
+  const cursor = record.cursor;
+  if (cursor === null) {
+    return { userId: record.userId, cursor: null };
+  }
+  if (
+    typeof cursor === "object" &&
+    typeof (cursor as { x?: unknown }).x === "number" &&
+    typeof (cursor as { y?: unknown }).y === "number"
+  ) {
+    return {
+      userId: record.userId,
+      cursor: {
+        x: (cursor as { x: number }).x,
+        y: (cursor as { y: number }).y,
+      },
+    };
+  }
+  return null;
+}
+
+export function attachCursorMoveListener(
+  channel: RealtimeChannel,
+  onEvent: (payload: CursorMovePayload) => void,
+) {
+  channel.on(
+    "broadcast",
+    { event: "cursor:move" },
+    (message: { payload?: unknown }) => {
+      const parsed = parseCursorMovePayload(message?.payload);
+      if (parsed) onEvent(parsed);
+    },
+  );
+}
+
+export function parseSelectionChangePayload(
+  value: unknown,
+): SelectionChangePayload | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  if (typeof record.userId !== "string" || !Array.isArray(record.nodeIds)) {
+    return null;
+  }
+  const nodeIds = record.nodeIds.filter(
+    (id): id is string => typeof id === "string",
+  );
+  return { userId: record.userId, nodeIds };
+}
+
+export function attachSelectionChangeListener(
+  channel: RealtimeChannel,
+  onEvent: (payload: SelectionChangePayload) => void,
+) {
+  channel.on(
+    "broadcast",
+    { event: "selection:change" },
+    (message: { payload?: unknown }) => {
+      const parsed = parseSelectionChangePayload(message?.payload);
+      if (parsed) onEvent(parsed);
+    },
+  );
+}
+
+export type {
+  CursorMovePayload,
+  PresencePayload,
+  PresenceState,
+  SelectionChangePayload,
+  UserMeta,
+};

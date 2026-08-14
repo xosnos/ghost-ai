@@ -13,6 +13,7 @@ import {
   type OnNodesChange,
 } from "@xyflow/react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import { asUnselected, withoutSharedSelection } from "@/lib/canvas-sync";
 import type { CanvasNode, CanvasEdge } from "@/types/canvas";
 
 export type BroadcastEvent =
@@ -91,11 +92,15 @@ export function useRealtimeFlow(
     const applyRemote = (raw: unknown) => {
       if (!isBroadcastEvent(raw)) return;
       if (raw.type === "nodes:change") {
-        setNodes((prev) => applyNodeChanges(raw.changes, prev) as CanvasNode[]);
+        const changes = withoutSharedSelection(raw.changes);
+        if (changes.length === 0) return;
+        setNodes((prev) => applyNodeChanges(changes, prev) as CanvasNode[]);
       } else if (raw.type === "edges:change") {
-        setEdges((prev) => applyEdgeChanges(raw.changes, prev) as CanvasEdge[]);
+        const changes = withoutSharedSelection(raw.changes);
+        if (changes.length === 0) return;
+        setEdges((prev) => applyEdgeChanges(changes, prev) as CanvasEdge[]);
       } else if (raw.type === "edges:connect") {
-        setEdges((prev) => addEdge(raw.edge, prev) as CanvasEdge[]);
+        setEdges((prev) => addEdge(asUnselected(raw.edge), prev) as CanvasEdge[]);
       } else if (raw.type === "edges:label") {
         setEdges((prev) =>
           prev.map((e) =>
@@ -105,10 +110,10 @@ export function useRealtimeFlow(
           ) as CanvasEdge[],
         );
       } else if (raw.type === "nodes:add") {
-        setNodes((prev) => [...prev, raw.node]);
+        setNodes((prev) => [...prev, asUnselected(raw.node)]);
       } else if (raw.type === "canvas:append") {
-        setNodes((prev) => [...prev, ...raw.nodes]);
-        setEdges((prev) => [...prev, ...raw.edges]);
+        setNodes((prev) => [...prev, ...raw.nodes.map(asUnselected)]);
+        setEdges((prev) => [...prev, ...raw.edges.map(asUnselected)]);
       }
     };
 
@@ -128,32 +133,46 @@ export function useRealtimeFlow(
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
-      pushHistory(snapshotRef.current);
+      const synced = withoutSharedSelection(changes);
+      if (synced.length > 0) {
+        pushHistory(snapshotRef.current);
+      }
       setNodes((prev) => {
         const next = applyNodeChanges(changes, prev) as CanvasNode[];
-        snapshotRef.current = {
-          nodes: next.map((n) => ({ ...n, data: { ...n.data } })),
-          edges: snapshotRef.current.edges,
-        };
+        if (synced.length > 0) {
+          snapshotRef.current = {
+            nodes: next.map((n) => ({ ...n, data: { ...n.data } })),
+            edges: snapshotRef.current.edges,
+          };
+        }
         return next;
       });
-      send({ type: "nodes:change", changes });
+      if (synced.length > 0) {
+        send({ type: "nodes:change", changes: synced });
+      }
     },
     [send, pushHistory],
   );
 
   const onEdgesChange: OnEdgesChange = useCallback(
     (changes) => {
-      pushHistory(snapshotRef.current);
+      const synced = withoutSharedSelection(changes);
+      if (synced.length > 0) {
+        pushHistory(snapshotRef.current);
+      }
       setEdges((prev) => {
         const next = applyEdgeChanges(changes, prev) as CanvasEdge[];
-        snapshotRef.current = {
-          nodes: snapshotRef.current.nodes,
-          edges: next.map((e) => ({ ...e, data: { ...e.data } })),
-        };
+        if (synced.length > 0) {
+          snapshotRef.current = {
+            nodes: snapshotRef.current.nodes,
+            edges: next.map((e) => ({ ...e, data: { ...e.data } })),
+          };
+        }
         return next;
       });
-      send({ type: "edges:change", changes });
+      if (synced.length > 0) {
+        send({ type: "edges:change", changes: synced });
+      }
     },
     [send, pushHistory],
   );
@@ -173,7 +192,7 @@ export function useRealtimeFlow(
         };
         return next;
       });
-      send({ type: "edges:connect", edge });
+      send({ type: "edges:connect", edge: asUnselected(edge) });
     },
     [send, pushHistory],
   );
@@ -189,7 +208,7 @@ export function useRealtimeFlow(
         };
         return next;
       });
-      send({ type: "nodes:add", node });
+      send({ type: "nodes:add", node: asUnselected(node) });
     },
     [send, pushHistory],
   );
@@ -229,7 +248,11 @@ export function useRealtimeFlow(
           data: { ...e.data },
         })),
       };
-      send({ type: "canvas:append", nodes: newNodes, edges: newEdges });
+      send({
+        type: "canvas:append",
+        nodes: newNodes.map(asUnselected),
+        edges: newEdges.map(asUnselected),
+      });
     },
     [send, pushHistory],
   );

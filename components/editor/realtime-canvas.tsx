@@ -12,6 +12,7 @@ import {
   MarkerType,
   type NodeTypes,
   type EdgeTypes,
+  type OnSelectionChangeFunc,
 } from "@xyflow/react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useRealtimeFlow } from "@/hooks/use-realtime-flow";
@@ -24,10 +25,15 @@ import { CanvasEdgeComponent } from "@/components/editor/canvas-edge";
 import { PresenceAvatars } from "@/components/editor/presence-avatars";
 import { LiveCursors } from "@/components/editor/live-cursors";
 import { EdgeLabelContext } from "@/components/editor/edge-label-context";
+import { RemoteSelectionProvider } from "@/components/editor/remote-selection-context";
 import { useTemplateImportRef } from "@/components/editor/template-import-context";
 import { DEFAULT_NODE_COLOR, type CanvasNode, type CanvasEdge, type NodeShape } from "@/types/canvas";
 import type { CanvasTemplate } from "@/components/editor/starter-templates";
-import type { PresencePayload } from "@/types/realtime";
+import type {
+  PresencePayload,
+  CursorMovePayload,
+  SelectionChangePayload,
+} from "@/types/realtime";
 
 interface CanvasUser {
   id: string;
@@ -40,6 +46,10 @@ interface RealtimeCanvasProps {
   user: CanvasUser;
   presenceEntries: PresencePayload[];
   incomingBroadcastRef: MutableRefObject<((event: unknown) => void) | null>;
+  incomingCursorRef: MutableRefObject<((payload: CursorMovePayload) => void) | null>;
+  incomingSelectionRef: MutableRefObject<
+    ((payload: SelectionChangePayload) => void) | null
+  >;
 }
 
 let nodeIdCounter = 0;
@@ -54,6 +64,8 @@ function FlowCanvas({
   user,
   presenceEntries,
   incomingBroadcastRef,
+  incomingCursorRef,
+  incomingSelectionRef,
 }: RealtimeCanvasProps) {
   const {
     nodes,
@@ -69,11 +81,14 @@ function FlowCanvas({
     canUndo,
     canRedo,
   } = useRealtimeFlow(channel, incomingBroadcastRef);
-  const { others, updateCursor } = useRealtimePresence(
-    channel,
-    user,
-    presenceEntries,
-  );
+  const { others, remoteHighlights, updateCursor, updateSelection } =
+    useRealtimePresence(
+      channel,
+      user,
+      presenceEntries,
+      incomingCursorRef,
+      incomingSelectionRef,
+    );
   const wrapperRef = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition, zoomIn, zoomOut, fitView } = useReactFlow();
   const importRef = useTemplateImportRef();
@@ -192,6 +207,13 @@ function FlowCanvas({
     updateCursor(null);
   }, [updateCursor]);
 
+  const onSelectionChange: OnSelectionChangeFunc = useCallback(
+    ({ nodes: selectedNodes }) => {
+      updateSelection(selectedNodes.map((node) => node.id));
+    },
+    [updateSelection],
+  );
+
   return (
     <div
       ref={wrapperRef}
@@ -200,12 +222,14 @@ function FlowCanvas({
       onDrop={onDrop}
     >
       <EdgeLabelContext.Provider value={updateEdgeLabel}>
+      <RemoteSelectionProvider value={remoteHighlights}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onSelectionChange={onSelectionChange}
         onMouseMove={onMouseMove}
         onMouseLeave={onMouseLeave}
         onPaneMouseMove={onMouseMove}
@@ -215,6 +239,7 @@ function FlowCanvas({
         connectionMode={ConnectionMode.Loose}
         fitView
         proOptions={{ hideAttribution: true }}
+        className="[&_.react-flow__node]:overflow-visible"
         style={{ backgroundColor: "var(--bg-base)" }}
       >
         <Background
@@ -249,6 +274,7 @@ function FlowCanvas({
         />
         <LiveCursors others={others} />
       </ReactFlow>
+      </RemoteSelectionProvider>
       </EdgeLabelContext.Provider>
     </div>
   );
@@ -259,6 +285,8 @@ export function RealtimeCanvas({
   user,
   presenceEntries,
   incomingBroadcastRef,
+  incomingCursorRef,
+  incomingSelectionRef,
 }: RealtimeCanvasProps) {
   return (
     <ReactFlowProvider>
@@ -267,6 +295,8 @@ export function RealtimeCanvas({
         user={user}
         presenceEntries={presenceEntries}
         incomingBroadcastRef={incomingBroadcastRef}
+        incomingCursorRef={incomingCursorRef}
+        incomingSelectionRef={incomingSelectionRef}
       />
     </ReactFlowProvider>
   );

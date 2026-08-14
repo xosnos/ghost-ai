@@ -35,7 +35,8 @@
 - Only authenticated users can access protected routes.
 - Only the owner or a collaborator can mutate project resources.
 - Realtime channel access is gated by the existing Supabase Auth session and `hasProjectAccess` verification — no separate token flow is needed.
-- Realtime Presence is keyed by the authenticated user ID so each collaborator has a distinct presence entry. The payload includes `cursor` and `thinking`.
+- Realtime Presence is keyed by the authenticated user ID so each collaborator has a distinct presence entry. The payload includes identity metadata and `thinking`. Live cursor positions are sent on the same channel via Broadcast (`cursor:move`), not Presence `track()`, because Presence is not designed for high frequency mouse updates.
+- Node and edge `selected` state is local to each collaborator. Broadcast canvas sync omits `select` changes so one person's click does not select the same node for everyone else. Remote selection is sent separately as Broadcast `selection:change` with the selected node IDs. Other clients draw a ring in that collaborator's presence color (the same color as their avatar and cursor). Local chrome (resize handles, color toolbar, node text border) stays on the local `selected` flag only.
 - Auth is handled via `@supabase/ssr` with cookie-based sessions and Next.js middleware.
 - Route protection: middleware checks session on every request, redirects unauthenticated users to `/login`.
 - Public routes: `/login`, `/signup`, `/forgot-password`, `/reset-password`.

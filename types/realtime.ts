@@ -11,3 +11,13 @@ export interface UserMeta {
 }
 
 export type PresencePayload = UserMeta & PresenceState;
+
+export interface CursorMovePayload {
+  userId: string;
+  cursor: { x: number; y: number } | null;
+}
+
+export interface SelectionChangePayload {
+  userId: string;
+  nodeIds: string[];
+}

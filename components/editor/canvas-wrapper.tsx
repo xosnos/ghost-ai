@@ -7,9 +7,15 @@ import {
   buildUserMeta,
   attachPresenceListeners,
   attachCanvasSyncListener,
+  attachCursorMoveListener,
+  attachSelectionChangeListener,
 } from "@/lib/realtime";
 import { RealtimeCanvas } from "@/components/editor/realtime-canvas";
-import type { PresencePayload } from "@/types/realtime";
+import type {
+  CursorMovePayload,
+  PresencePayload,
+  SelectionChangePayload,
+} from "@/types/realtime";
 
 interface CanvasWrapperProps {
   projectId: string;
@@ -27,6 +33,12 @@ export function CanvasWrapper({ projectId, user }: CanvasWrapperProps) {
   const [status, setStatus] = useState<Status>("connecting");
   const [presenceEntries, setPresenceEntries] = useState<PresencePayload[]>([]);
   const incomingBroadcastRef = useRef<((event: unknown) => void) | null>(null);
+  const incomingCursorRef = useRef<((payload: CursorMovePayload) => void) | null>(
+    null,
+  );
+  const incomingSelectionRef = useRef<
+    ((payload: SelectionChangePayload) => void) | null
+  >(null);
   const userRef = useRef(user);
   userRef.current = user;
 
@@ -47,6 +59,12 @@ export function CanvasWrapper({ projectId, user }: CanvasWrapperProps) {
       attachPresenceListeners(ch, setPresenceEntries);
       attachCanvasSyncListener(ch, (payload) => {
         incomingBroadcastRef.current?.(payload);
+      });
+      attachCursorMoveListener(ch, (payload) => {
+        incomingCursorRef.current?.(payload);
+      });
+      attachSelectionChangeListener(ch, (payload) => {
+        incomingSelectionRef.current?.(payload);
       });
       setChannel(ch);
 
@@ -111,6 +129,8 @@ export function CanvasWrapper({ projectId, user }: CanvasWrapperProps) {
         user={user}
         presenceEntries={presenceEntries}
         incomingBroadcastRef={incomingBroadcastRef}
+        incomingCursorRef={incomingCursorRef}
+        incomingSelectionRef={incomingSelectionRef}
       />
     </div>
   );
