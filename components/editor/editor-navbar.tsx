@@ -78,7 +78,7 @@ export function EditorNavbar({
       )}
 
       <div className="flex flex-1 items-center justify-end">
-        <UserMenu email={userEmail} />
+        {!isWorkspace && <UserMenu email={userEmail} />}
       </div>
     </header>
   );

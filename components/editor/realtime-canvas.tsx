@@ -15,18 +15,28 @@ import {
 } from "@xyflow/react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useRealtimeFlow } from "@/hooks/use-realtime-flow";
+import { useRealtimePresence } from "@/hooks/use-realtime-presence";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { ShapePanel } from "@/components/editor/shape-panel";
 import { CanvasControlBar } from "@/components/editor/canvas-control-bar";
 import { CanvasNodeComponent } from "@/components/editor/canvas-node";
 import { CanvasEdgeComponent } from "@/components/editor/canvas-edge";
+import { PresenceAvatars } from "@/components/editor/presence-avatars";
+import { LiveCursors } from "@/components/editor/live-cursors";
 import { EdgeLabelContext } from "@/components/editor/edge-label-context";
 import { useTemplateImportRef } from "@/components/editor/template-import-context";
 import { DEFAULT_NODE_COLOR, type CanvasNode, type CanvasEdge, type NodeShape } from "@/types/canvas";
 import type { CanvasTemplate } from "@/components/editor/starter-templates";
 
+interface CanvasUser {
+  id: string;
+  email?: string;
+  user_metadata?: { avatar_url?: string; display_name?: string } | null;
+}
+
 interface RealtimeCanvasProps {
   channel: RealtimeChannel;
+  user: CanvasUser;
 }
 
 let nodeIdCounter = 0;
@@ -36,7 +46,7 @@ function generateNodeId(shape: NodeShape): string {
   return `${shape}-${Date.now()}-${nodeIdCounter}`;
 }
 
-function FlowCanvas({ channel }: RealtimeCanvasProps) {
+function FlowCanvas({ channel, user }: RealtimeCanvasProps) {
   const {
     nodes,
     edges,
@@ -51,6 +61,7 @@ function FlowCanvas({ channel }: RealtimeCanvasProps) {
     canUndo,
     canRedo,
   } = useRealtimeFlow(channel);
+  const { others, updateCursor } = useRealtimePresence(channel, user);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition, zoomIn, zoomOut, fitView } = useReactFlow();
   const importRef = useTemplateImportRef();
@@ -154,6 +165,21 @@ function FlowCanvas({ channel }: RealtimeCanvasProps) {
     [addNode, screenToFlowPosition],
   );
 
+  const onMouseMove = useCallback(
+    (event: React.MouseEvent) => {
+      const position = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
+      updateCursor(position);
+    },
+    [screenToFlowPosition, updateCursor],
+  );
+
+  const onMouseLeave = useCallback(() => {
+    updateCursor(null);
+  }, [updateCursor]);
+
   return (
     <div
       ref={wrapperRef}
@@ -168,6 +194,8 @@ function FlowCanvas({ channel }: RealtimeCanvasProps) {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
+        onMouseMove={onMouseMove}
+        onMouseLeave={onMouseLeave}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
@@ -202,16 +230,21 @@ function FlowCanvas({ channel }: RealtimeCanvasProps) {
           canUndo={canUndo}
           canRedo={canRedo}
         />
+        <PresenceAvatars
+          others={others}
+          userEmail={user.email ?? ""}
+        />
+        <LiveCursors others={others} />
       </ReactFlow>
       </EdgeLabelContext.Provider>
     </div>
   );
 }
 
-export function RealtimeCanvas({ channel }: RealtimeCanvasProps) {
+export function RealtimeCanvas({ channel, user }: RealtimeCanvasProps) {
   return (
     <ReactFlowProvider>
-      <FlowCanvas channel={channel} />
+      <FlowCanvas channel={channel} user={user} />
     </ReactFlowProvider>
   );
 }

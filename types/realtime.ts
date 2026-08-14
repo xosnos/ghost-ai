@@ -9,3 +9,5 @@ export interface UserMeta {
   avatarUrl: string | null;
   cursorColor: string;
 }
+
+export type PresencePayload = UserMeta & PresenceState;

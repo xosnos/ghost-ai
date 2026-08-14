@@ -21,23 +21,21 @@ export function CanvasWrapper({ projectId, user }: CanvasWrapperProps) {
   const [status, setStatus] = useState<Status>("connecting");
 
   useEffect(() => {
-    const ch = createRealtimeChannel(projectId);
+    const ch = createRealtimeChannel(projectId, user.id);
     setChannel(ch);
 
-    ch
-      .on("presence", { event: "sync" }, () => {
+    ch.subscribe(async (state) => {
+      if (state === "SUBSCRIBED") {
+        await ch.track({
+          ...buildUserMeta(user),
+          cursor: null,
+          thinking: false,
+        });
         setStatus("connected");
-      })
-      .subscribe(async (state) => {
-        if (state === "SUBSCRIBED") {
-          await ch.track({
-            ...buildUserMeta(user),
-            cursor: null,
-          });
-        } else if (state === "CHANNEL_ERROR" || state === "TIMED_OUT") {
-          setStatus("error");
-        }
-      });
+      } else if (state === "CHANNEL_ERROR" || state === "TIMED_OUT") {
+        setStatus("error");
+      }
+    });
 
     return () => {
       ch.unsubscribe();
@@ -72,7 +70,7 @@ export function CanvasWrapper({ projectId, user }: CanvasWrapperProps) {
 
   return (
     <div className="flex flex-1">
-      <RealtimeCanvas channel={channel} />
+      <RealtimeCanvas channel={channel} user={user} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { NODE_COLORS } from "@/types/canvas";
-import type { PresenceState, UserMeta } from "@/types/realtime";
+import type { PresencePayload, PresenceState, UserMeta } from "@/types/realtime";
 
 export function getUserCursorColor(userId: string): string {
   let hash = 0;
@@ -9,14 +9,14 @@ export function getUserCursorColor(userId: string): string {
     hash |= 0;
   }
   const index = Math.abs(hash) % NODE_COLORS.length;
-  return NODE_COLORS[index].fill;
+  return NODE_COLORS[index].text;
 }
 
-export function createRealtimeChannel(projectId: string) {
+export function createRealtimeChannel(projectId: string, userId: string) {
   const supabase = createClient();
   return supabase.channel(`project:${projectId}`, {
     config: {
-      presence: { key: projectId },
+      presence: { key: userId },
       broadcast: { self: false },
     },
   });
@@ -38,4 +38,38 @@ export function buildUserMeta(user: {
   };
 }
 
-export type { PresenceState, UserMeta };
+export function parsePresencePayload(value: unknown): PresencePayload | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  if (typeof record.userId !== "string" || typeof record.displayName !== "string") {
+    return null;
+  }
+
+  const cursor = record.cursor;
+  let parsedCursor: PresenceState["cursor"] = null;
+  if (
+    cursor !== null &&
+    typeof cursor === "object" &&
+    typeof (cursor as { x?: unknown }).x === "number" &&
+    typeof (cursor as { y?: unknown }).y === "number"
+  ) {
+    parsedCursor = {
+      x: (cursor as { x: number }).x,
+      y: (cursor as { y: number }).y,
+    };
+  }
+
+  return {
+    userId: record.userId,
+    displayName: record.displayName,
+    avatarUrl: typeof record.avatarUrl === "string" ? record.avatarUrl : null,
+    cursorColor:
+      typeof record.cursorColor === "string"
+        ? record.cursorColor
+        : getUserCursorColor(record.userId),
+    thinking: record.thinking === true,
+    cursor: parsedCursor,
+  };
+}
+
+export type { PresencePayload, PresenceState, UserMeta };
