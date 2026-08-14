@@ -64,8 +64,6 @@ export function useRealtimeFlow(
 ): UseRealtimeFlowReturn {
   const [nodes, setNodes] = useState<CanvasNode[]>([]);
   const [edges, setEdges] = useState<CanvasEdge[]>([]);
-  const skipBroadcast = useRef(false);
-  const skipHistory = useRef(false);
 
   const past = useRef<HistorySnapshot[]>([]);
   const future = useRef<HistorySnapshot[]>([]);
@@ -88,18 +86,10 @@ export function useRealtimeFlow(
   }, []);
 
   const snapshotRef = useRef<HistorySnapshot>({ nodes: [], edges: [] });
-  const captureSnapshot = useCallback(() => {
-    snapshotRef.current = {
-      nodes: nodes.map((n) => ({ ...n, data: { ...n.data } })),
-      edges: edges.map((e) => ({ ...e, data: { ...e.data } })),
-    };
-  }, [nodes, edges]);
 
   useEffect(() => {
     const applyRemote = (raw: unknown) => {
       if (!isBroadcastEvent(raw)) return;
-      skipBroadcast.current = true;
-      skipHistory.current = true;
       if (raw.type === "nodes:change") {
         setNodes((prev) => applyNodeChanges(raw.changes, prev) as CanvasNode[]);
       } else if (raw.type === "edges:change") {
@@ -138,9 +128,7 @@ export function useRealtimeFlow(
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
-      if (!skipHistory.current) {
-        pushHistory(snapshotRef.current);
-      }
+      pushHistory(snapshotRef.current);
       setNodes((prev) => {
         const next = applyNodeChanges(changes, prev) as CanvasNode[];
         snapshotRef.current = {
@@ -149,20 +137,14 @@ export function useRealtimeFlow(
         };
         return next;
       });
-      if (!skipBroadcast.current) {
-        send({ type: "nodes:change", changes });
-      }
-      skipBroadcast.current = false;
-      skipHistory.current = false;
+      send({ type: "nodes:change", changes });
     },
     [send, pushHistory],
   );
 
   const onEdgesChange: OnEdgesChange = useCallback(
     (changes) => {
-      if (!skipHistory.current) {
-        pushHistory(snapshotRef.current);
-      }
+      pushHistory(snapshotRef.current);
       setEdges((prev) => {
         const next = applyEdgeChanges(changes, prev) as CanvasEdge[];
         snapshotRef.current = {
@@ -171,11 +153,7 @@ export function useRealtimeFlow(
         };
         return next;
       });
-      if (!skipBroadcast.current) {
-        send({ type: "edges:change", changes });
-      }
-      skipBroadcast.current = false;
-      skipHistory.current = false;
+      send({ type: "edges:change", changes });
     },
     [send, pushHistory],
   );
@@ -262,8 +240,6 @@ export function useRealtimeFlow(
     past.current = past.current.slice(0, -1);
     future.current = [snapshotRef.current, ...future.current];
     snapshotRef.current = previous;
-    skipBroadcast.current = true;
-    skipHistory.current = true;
     setNodes(previous.nodes);
     setEdges(previous.edges);
     setCanUndo(past.current.length > 0);
@@ -276,8 +252,6 @@ export function useRealtimeFlow(
     future.current = future.current.slice(1);
     past.current = [...past.current, snapshotRef.current];
     snapshotRef.current = next;
-    skipBroadcast.current = true;
-    skipHistory.current = true;
     setNodes(next.nodes);
     setEdges(next.edges);
     setCanUndo(true);
