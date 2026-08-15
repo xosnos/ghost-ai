@@ -12,6 +12,10 @@ import {
   CanvasSaveProvider,
   type CanvasSaveContextValue,
 } from "@/components/editor/canvas-save-context";
+import {
+  CanvasPresenceProvider,
+  type CanvasPresenceContextValue,
+} from "@/components/editor/canvas-presence-context";
 import type { SaveStatus } from "@/hooks/use-canvas-autosave";
 import { AiSidebar } from "@/components/editor/ai-sidebar";
 import {
@@ -22,6 +26,7 @@ import { useProjectActions } from "@/hooks/use-project-actions";
 import { useShareDialog } from "@/hooks/use-share-dialog";
 import type { Project } from "@/lib/projects/types";
 import type { CanvasTemplate } from "@/components/editor/starter-templates";
+import type { PresencePayload } from "@/types/realtime";
 
 interface EditorChromeProps {
   children: React.ReactNode;
@@ -56,6 +61,12 @@ export function EditorChrome({
   const templateImportRef = useRef<
     ((template: CanvasTemplate) => void) | null
   >(null);
+
+  const [presenceOthers, setPresenceOthers] = useState<PresencePayload[]>([]);
+  const presenceContextValue: CanvasPresenceContextValue = {
+    others: presenceOthers,
+    setOthers: setPresenceOthers,
+  };
 
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const saveHandlerRef = useRef<(() => Promise<boolean>) | null>(null);
@@ -112,20 +123,22 @@ export function EditorChrome({
   return (
     <ProjectDialogContext.Provider value={contextValue}>
       <TemplateImportProvider value={templateImportRef}>
-        <CanvasSaveProvider value={saveContextValue}>
-          <div className="relative flex h-screen flex-col overflow-hidden bg-[var(--bg-base)]">
-            <EditorNavbar
-              sidebarOpen={sidebarOpen}
-              onToggleSidebar={() => setSidebarOpen((v) => !v)}
-              userEmail={userEmail}
-              projectName={project?.name}
-              aiSidebarOpen={aiSidebarOpen}
-              onToggleAiSidebar={() => setAiSidebarOpen((v) => !v)}
-              onShare={project ? share.openShare : undefined}
-              onOpenTemplates={project ? () => setTemplatesOpen(true) : undefined}
-              saveStatus={isWorkspace ? saveStatus : undefined}
-              onSaveNow={isWorkspace ? handleSaveNow : undefined}
-            />
+        <CanvasPresenceProvider value={presenceContextValue}>
+          <CanvasSaveProvider value={saveContextValue}>
+            <div className="relative flex h-screen flex-col overflow-hidden bg-[var(--bg-base)]">
+              <EditorNavbar
+                sidebarOpen={sidebarOpen}
+                onToggleSidebar={() => setSidebarOpen((v) => !v)}
+                userEmail={userEmail}
+                projectName={project?.name}
+                aiSidebarOpen={aiSidebarOpen}
+                onToggleAiSidebar={() => setAiSidebarOpen((v) => !v)}
+                onShare={project ? share.openShare : undefined}
+                onOpenTemplates={project ? () => setTemplatesOpen(true) : undefined}
+                saveStatus={isWorkspace ? saveStatus : undefined}
+                onSaveNow={isWorkspace ? handleSaveNow : undefined}
+                presenceOthers={isWorkspace ? presenceOthers : undefined}
+              />
 
           {/* Drawer Sidebar for Mobile or Workspace Overlay */}
           <ProjectSidebar
@@ -139,10 +152,10 @@ export function EditorChrome({
           />
 
           {/* Main Area */}
-          <main className="flex flex-1 overflow-hidden pt-12">
+          <main className="flex flex-1 overflow-hidden">
             {!isWorkspace ? (
               // Dashboard Google Stitch View: Left Panel Embedded + Center Hero Canvas
-              <div className="flex flex-1 overflow-hidden p-3 md:p-4 gap-4">
+              <div className="flex flex-1 overflow-hidden p-3 md:p-4 pt-16 md:pt-16 gap-4">
                 <ProjectSidebar
                   isOpen={true}
                   onClose={() => {}}
@@ -158,7 +171,7 @@ export function EditorChrome({
                 </div>
               </div>
             ) : (
-              // Full-viewport Canvas Workspace View
+              // Full-viewport Canvas Workspace View (seamless behind floating navbar)
               <div className="flex flex-1 overflow-hidden">
                 {children}
               </div>
@@ -206,7 +219,8 @@ export function EditorChrome({
               onClose={() => setTemplatesOpen(false)}
             />
           )}
-        </CanvasSaveProvider>
+          </CanvasSaveProvider>
+        </CanvasPresenceProvider>
       </TemplateImportProvider>
     </ProjectDialogContext.Provider>
   );

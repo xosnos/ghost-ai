@@ -356,10 +356,10 @@ export function EditorHome() {
               </div>
 
               {/* Architecture Mode Toggle (Microservices / Serverless) with Smooth Slider Pill */}
-              <div className="relative flex items-center rounded-lg bg-[var(--bg-base)] p-0.5 border border-[var(--border-default)]">
+              <div className="relative grid grid-cols-2 items-center rounded-lg bg-[var(--bg-base)] p-1 border border-[var(--border-default)]">
                 {/* Animated Slider Pill */}
                 <div
-                  className="absolute left-0.5 top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-md bg-[var(--bg-elevated)] shadow-sm border border-[var(--border-subtle)]/50 transition-transform duration-200 ease-out pointer-events-none"
+                  className="absolute left-1 top-1 bottom-1 w-[calc(50%-4px)] rounded-md bg-[var(--bg-elevated)] shadow-sm border border-[var(--border-subtle)]/50 transition-transform duration-200 ease-out pointer-events-none"
                   style={{
                     transform: activeArchMode === "microservices" ? "translateX(0)" : "translateX(100%)",
                   }}
@@ -369,26 +369,26 @@ export function EditorHome() {
                   type="button"
                   onClick={() => setActiveArchMode("microservices")}
                   className={cn(
-                    "relative z-10 flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors duration-200",
+                    "relative z-10 flex items-center justify-center gap-2 rounded-md px-4 py-1.5 text-xs font-medium transition-colors duration-200 whitespace-nowrap",
                     activeArchMode === "microservices"
                       ? "text-[var(--text-primary)]"
                       : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
                   )}
                 >
-                  <Zap className="h-3.5 w-3.5 text-amber-400" />
+                  <Zap className="h-3.5 w-3.5 shrink-0 text-amber-400" />
                   <span>Microservices</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveArchMode("serverless")}
                   className={cn(
-                    "relative z-10 flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors duration-200",
+                    "relative z-10 flex items-center justify-center gap-2 rounded-md px-4 py-1.5 text-xs font-medium transition-colors duration-200 whitespace-nowrap",
                     activeArchMode === "serverless"
                       ? "text-[var(--text-primary)]"
                       : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
                   )}
                 >
-                  <Cloud className="h-3.5 w-3.5 text-cyan-400" />
+                  <Cloud className="h-3.5 w-3.5 shrink-0 text-cyan-400" />
                   <span>Serverless</span>
                 </button>
               </div>

@@ -21,11 +21,11 @@ import { useRealtimePresence } from "@/hooks/use-realtime-presence";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useCanvasAutosave } from "@/hooks/use-canvas-autosave";
 import { useCanvasSave } from "@/components/editor/canvas-save-context";
+import { useCanvasPresence } from "@/components/editor/canvas-presence-context";
 import { ShapePanel } from "@/components/editor/shape-panel";
 import { CanvasControlBar } from "@/components/editor/canvas-control-bar";
 import { CanvasNodeComponent } from "@/components/editor/canvas-node";
 import { CanvasEdgeComponent } from "@/components/editor/canvas-edge";
-import { PresenceAvatars } from "@/components/editor/presence-avatars";
 import { LiveCursors } from "@/components/editor/live-cursors";
 import { EdgeLabelContext } from "@/components/editor/edge-label-context";
 import { RemoteSelectionProvider } from "@/components/editor/remote-selection-context";
@@ -127,6 +127,20 @@ function FlowCanvas({
       incomingCursorRef,
       incomingSelectionRef,
     );
+
+  const canvasPresence = useCanvasPresence();
+
+  useEffect(() => {
+    if (!canvasPresence) return;
+    canvasPresence.setOthers(others);
+  }, [others, canvasPresence]);
+
+  useEffect(() => {
+    return () => {
+      canvasPresence?.setOthers([]);
+    };
+  }, [canvasPresence]);
+
   const wrapperRef = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition, zoomIn, zoomOut, fitView } = useReactFlow();
   const importRef = useTemplateImportRef();
@@ -380,10 +394,6 @@ function FlowCanvas({
           onRedo={redo}
           canUndo={canUndo}
           canRedo={canRedo}
-        />
-        <PresenceAvatars
-          others={others}
-          userEmail={user.email ?? ""}
         />
         <LiveCursors others={others} />
       </ReactFlow>

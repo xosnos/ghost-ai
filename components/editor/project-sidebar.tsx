@@ -91,7 +91,7 @@ export function ProjectSidebar({
     <div className="flex h-full w-full flex-col overflow-hidden">
       {/* Top Segmented Controls - Google Stitch Sliding Pill Style */}
       <div className="p-3 pb-2">
-        <div className="relative flex items-center rounded-xl bg-[var(--bg-subtle)] p-1 border border-[var(--border-default)]">
+        <div className="relative grid grid-cols-2 items-center rounded-xl bg-[var(--bg-subtle)] p-1 border border-[var(--border-default)]">
           {/* Animated Slider Pill */}
           <div
             className="absolute left-1 top-1 bottom-1 w-[calc(50%-4px)] rounded-lg bg-[var(--bg-surface)] shadow-sm border border-[var(--border-subtle)] transition-transform duration-200 ease-out pointer-events-none"
@@ -104,16 +104,16 @@ export function ProjectSidebar({
             type="button"
             onClick={() => setActiveTab("owned")}
             className={cn(
-              "relative z-10 flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-medium transition-colors duration-200",
+              "relative z-10 flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors duration-200 whitespace-nowrap",
               activeTab === "owned"
-                ? "text-[var(--text-primary)]"
+                ? "text-[var(--text-primary)] font-semibold"
                 : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
             )}
           >
-            <LayoutGrid className="h-3.5 w-3.5" />
+            <LayoutGrid className="h-3.5 w-3.5 shrink-0" />
             <span>My Projects</span>
             {ownedProjects.length > 0 && (
-              <span className="ml-0.5 rounded-full bg-[var(--bg-elevated)] px-1.5 py-0.2 text-[10px] text-[var(--text-faint)]">
+              <span className="ml-1 rounded-full bg-[var(--bg-elevated)] px-1.5 py-0.5 text-[10px] font-medium leading-none text-[var(--text-faint)]">
                 {ownedProjects.length}
               </span>
             )}
@@ -123,16 +123,16 @@ export function ProjectSidebar({
             type="button"
             onClick={() => setActiveTab("shared")}
             className={cn(
-              "relative z-10 flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-medium transition-colors duration-200",
+              "relative z-10 flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors duration-200 whitespace-nowrap",
               activeTab === "shared"
-                ? "text-[var(--text-primary)]"
+                ? "text-[var(--text-primary)] font-semibold"
                 : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
             )}
           >
-            <Users className="h-3.5 w-3.5" />
-            <span>Shared with me</span>
+            <Users className="h-3.5 w-3.5 shrink-0" />
+            <span>Shared</span>
             {sharedProjects.length > 0 && (
-              <span className="ml-0.5 rounded-full bg-[var(--bg-elevated)] px-1.5 py-0.2 text-[10px] text-[var(--text-faint)]">
+              <span className="ml-1 rounded-full bg-[var(--bg-elevated)] px-1.5 py-0.5 text-[10px] font-medium leading-none text-[var(--text-faint)]">
                 {sharedProjects.length}
               </span>
             )}
@@ -277,7 +277,7 @@ export function ProjectSidebar({
   // If embedded in desktop dashboard layout:
   if (isEmbedded) {
     return (
-      <aside className="hidden md:flex h-[calc(100vh-4.5rem)] w-72 lg:w-80 shrink-0 flex-col rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] shadow-xl overflow-hidden backdrop-blur-md transition-colors">
+      <aside className="hidden md:flex h-[calc(100vh-4.5rem)] w-80 shrink-0 flex-col rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] shadow-xl overflow-hidden backdrop-blur-md transition-colors">
         {sidebarContent}
       </aside>
     );
@@ -288,14 +288,14 @@ export function ProjectSidebar({
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 top-12 z-40 bg-black/60 backdrop-blur-sm transition-opacity"
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity"
           onClick={onClose}
           aria-hidden="true"
         />
       )}
 
       <aside
-        className="fixed top-12 left-0 z-50 flex h-[calc(100vh-3rem)] w-80 flex-col transition-transform duration-200 shadow-2xl backdrop-blur-md bg-[var(--bg-surface)] border-r border-[var(--border-default)]"
+        className="fixed top-0 bottom-0 left-0 z-50 flex h-screen w-80 flex-col transition-transform duration-200 shadow-2xl backdrop-blur-md bg-[var(--bg-surface)] border-r border-[var(--border-default)]"
         style={{
           transform: isOpen ? "translateX(0)" : "translateX(-100%)",
         }}

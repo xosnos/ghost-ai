@@ -1,15 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Panel } from "@xyflow/react";
-import { UserMenu } from "@/components/editor/user-menu";
 import type { PresencePayload } from "@/types/realtime";
 
 const VISIBLE_LIMIT = 5;
 
 interface PresenceAvatarsProps {
   others: PresencePayload[];
-  userEmail: string;
+  userEmail?: string;
 }
 
 function initials(name: string): string {
@@ -20,16 +18,16 @@ function initials(name: string): string {
   return name.charAt(0).toUpperCase() || "?";
 }
 
-function CollaboratorAvatar({ person }: { person: PresencePayload }) {
+export function CollaboratorAvatar({ person }: { person: PresencePayload }) {
   const [imageFailed, setImageFailed] = useState(false);
   const showImage = Boolean(person.avatarUrl) && !imageFailed;
 
   return (
     <span
-      className="relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-full text-[10px] font-medium ring-2 ring-[var(--bg-base)]"
+      className="relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-full text-[10px] font-semibold ring-2 ring-[var(--bg-surface)] transition-transform hover:scale-105"
       style={{
         backgroundColor: person.cursorColor,
-        color: "var(--bg-base)",
+        color: "#ffffff",
       }}
       title={person.displayName}
       aria-label={person.displayName}
@@ -49,61 +47,39 @@ function CollaboratorAvatar({ person }: { person: PresencePayload }) {
   );
 }
 
-export function PresenceAvatars({ others, userEmail }: PresenceAvatarsProps) {
+export function PresenceAvatars({ others }: PresenceAvatarsProps) {
   const visible = others.slice(0, VISIBLE_LIMIT);
   const overflow = others.length - visible.length;
 
+  if (visible.length === 0) {
+    return null;
+  }
+
   return (
-    <Panel
-      position="top-right"
-      className="nopan nodrag nowheel m-3 flex items-center gap-2 overflow-visible rounded-full px-2 py-1.5"
-      style={{
-        backgroundColor: "var(--bg-elevated)",
-        border: "1px solid var(--border-default)",
-        boxShadow: "0 4px 24px rgba(0, 0, 0, 0.4)",
-      }}
+    <ul
+      className="flex items-center -space-x-1.5"
+      aria-label="Collaborators in this room"
     >
-      {visible.length > 0 && (
-        <ul
-          className="flex items-center"
-          aria-label="Collaborators in this room"
+      {visible.map((person, index) => (
+        <li
+          key={person.userId}
+          className="relative"
+          style={{ zIndex: visible.length - index }}
         >
-          {visible.map((person, index) => (
-            <li
-              key={person.userId}
-              className={index === 0 ? "relative" : "relative -ml-2"}
-              style={{ zIndex: visible.length - index }}
-            >
-              <CollaboratorAvatar person={person} />
-            </li>
-          ))}
-          {overflow > 0 && (
-            <li className="relative -ml-2" style={{ zIndex: 0 }}>
-              <span
-                className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-medium ring-2 ring-[var(--bg-base)]"
-                style={{
-                  backgroundColor: "var(--bg-subtle)",
-                  color: "var(--text-secondary)",
-                }}
-                title={`${overflow} more`}
-                aria-label={`${overflow} more collaborators`}
-              >
-                +{overflow}
-              </span>
-            </li>
-          )}
-        </ul>
+          <CollaboratorAvatar person={person} />
+        </li>
+      ))}
+      {overflow > 0 && (
+        <li className="relative" style={{ zIndex: 0 }}>
+          <span
+            className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-semibold ring-2 ring-[var(--bg-surface)] bg-[var(--bg-subtle)] text-[var(--text-secondary)]"
+            title={`${overflow} more`}
+            aria-label={`${overflow} more collaborators`}
+          >
+            +{overflow}
+          </span>
+        </li>
       )}
-
-      {visible.length > 0 && (
-        <div
-          className="h-5 w-px"
-          style={{ backgroundColor: "var(--border-default)" }}
-          aria-hidden="true"
-        />
-      )}
-
-      <UserMenu email={userEmail} />
-    </Panel>
+    </ul>
   );
 }

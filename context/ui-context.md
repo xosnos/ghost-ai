@@ -93,11 +93,11 @@ shadcn/ui on top of Tailwind. No custom design system. Components live in `compo
 
 ## Layout Patterns
 
-- Editor workspace: full-viewport layout — floating sidebar overlay on the left, center canvas, slide-over AI sidebar on the right.
-- Canvas presence: collaborator avatars and the current user's UserMenu sit in a floating pill at the top-right of the editor canvas, not in the navbar. Live cursors for other participants render in flow coordinates. When another collaborator selects a node, that node shows a ring in their presence color. Resize handles and the color toolbar appear only for the local user's selection.
-- Sidebars: floating overlay with dark semi-transparent background and subtle border.
-- Modals and dialogs: centered overlay, `rounded-3xl`, dark background with backdrop blur.
-- Navbar: top bar with dark background and bottom border.
+- Editor workspace: full-viewport layout — floating sidebar drawer on the left, full-bleed center canvas, slide-over AI sidebar on the right.
+- Navbar: Google Stitch-style transparent floating navigation header (`bg-transparent border-none`) with frosted glass pill islands for brand/project title, center workspace actions (Save, Share, Templates, AI), and right utility controls with the consolidated user profile avatar (`UserMenu`).
+- Canvas presence: collaborator avatars stack in a floating pill at the top-right of the editor canvas when other participants are in the room. Live cursors for other participants render in flow coordinates. When another collaborator selects a node, that node shows a ring in their presence color. Resize handles and the color toolbar appear only for the local user's selection.
+- Sidebars: floating overlay with semi-transparent background and subtle border.
+- Modals and dialogs: centered overlay, `rounded-3xl`, surface background with backdrop blur.
 
 ## Icons
 

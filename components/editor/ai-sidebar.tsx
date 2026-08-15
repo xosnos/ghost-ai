@@ -103,7 +103,7 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
       {/* Backdrop for mobile drawer */}
       {isOpen && (
         <div
-          className="fixed inset-0 top-12 z-20 md:hidden bg-black/60 backdrop-blur-sm transition-opacity"
+          className="fixed inset-0 z-40 md:hidden bg-black/60 backdrop-blur-sm transition-opacity"
           onClick={onClose}
           aria-hidden="true"
         />
@@ -111,7 +111,7 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
 
       <aside
         className={cn(
-          "fixed top-12 right-0 z-30 flex h-[calc(100vh-3rem)] w-80 lg:w-96 flex-col shadow-2xl backdrop-blur-md transition-transform duration-200 ease-out border-l",
+          "fixed top-0 bottom-0 right-0 z-50 flex h-screen w-80 lg:w-96 flex-col shadow-2xl backdrop-blur-md transition-transform duration-200 ease-out border-l",
           "bg-[var(--bg-surface)] border-[var(--border-default)]"
         )}
         style={{
@@ -146,7 +146,7 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
 
         {/* Top Segmented Controls - Google Stitch Sliding Pill Style */}
         <div className="p-3 pb-2 bg-[var(--bg-surface)]">
-          <div className="relative flex items-center rounded-xl bg-[var(--bg-subtle)] p-1 border border-[var(--border-default)]">
+          <div className="relative grid grid-cols-2 items-center rounded-xl bg-[var(--bg-subtle)] p-1 border border-[var(--border-default)]">
             {/* Animated Slider Pill */}
             <div
               className="absolute left-1 top-1 bottom-1 w-[calc(50%-4px)] rounded-lg bg-[var(--bg-surface)] shadow-sm border border-[var(--border-subtle)] transition-transform duration-200 ease-out pointer-events-none"
@@ -159,13 +159,13 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
               type="button"
               onClick={() => setActiveTab("architect")}
               className={cn(
-                "relative z-10 flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-medium transition-colors duration-200",
+                "relative z-10 flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors duration-200 whitespace-nowrap",
                 activeTab === "architect"
                   ? "text-[var(--text-primary)] font-semibold"
                   : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
               )}
             >
-              <Sparkles className="h-3.5 w-3.5 text-[var(--accent-ai-text)]" />
+              <Sparkles className="h-3.5 w-3.5 shrink-0 text-[var(--accent-ai-text)]" />
               <span>AI Architect</span>
             </button>
 
@@ -173,13 +173,13 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
               type="button"
               onClick={() => setActiveTab("specs")}
               className={cn(
-                "relative z-10 flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-medium transition-colors duration-200",
+                "relative z-10 flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors duration-200 whitespace-nowrap",
                 activeTab === "specs"
                   ? "text-[var(--text-primary)] font-semibold"
                   : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
               )}
             >
-              <FileText className="h-3.5 w-3.5 text-[var(--accent-primary)]" />
+              <FileText className="h-3.5 w-3.5 shrink-0 text-[var(--accent-primary)]" />
               <span>Specs</span>
             </button>
           </div>

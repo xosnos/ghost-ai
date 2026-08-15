@@ -16,6 +16,20 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Completed
 
+- Presence Avatars Navbar Integration & Workspace Icon Scoping:
+  - **Collaborator Presence in Floating Navbar**: Created `components/editor/canvas-presence-context.tsx` and moved `PresenceAvatars` from an absolute ReactFlow canvas panel directly into `components/editor/editor-navbar.tsx`'s right floating utility island beside the user's avatar. This prevents collaborator avatars from ever rendering behind/underneath the fixed navbar or current user avatar.
+  - **Workspace Navbar Icon Scoping**: Scoped the Community Discord, Twitter/X, and What's New (Gift) icons in `EditorNavbar` to only appear on the home dashboard (`/editor`, `!isWorkspace`), keeping the active canvas workspace clean and focused.
+
+- Google Stitch Transparent Navigation Bar & User Nav Consolidation:
+  - **Transparent Floating Island Header**: Redesigned `components/editor/editor-navbar.tsx` to use a transparent container (`bg-transparent border-none pointer-events-none`) with floating frosted-glass interactive pill islands (`pointer-events-auto backdrop-blur-md bg-[var(--bg-surface)]/80 border border-[var(--border-default)] shadow-sm`).
+  - **Full-Bleed Canvas**: Updated `components/editor/editor-chrome.tsx` so the workspace canvas extends edge-to-edge full viewport behind the floating navbar header, while the dashboard (`/editor`) maintains clean top spacing (`pt-16`).
+  - **Single Consolidated User Avatar**: Removed the duplicate `UserMenu` and divider from `components/editor/presence-avatars.tsx`. Consolidated all user menu actions into the single top-right avatar in `EditorNavbar`. `PresenceAvatars` now solely renders collaborator avatar stacks when other users are active in the room.
+
+- Segmented Slider Pill Layout & Spacing Precision:
+  - **Architecture Mode Slider (`components/editor/editor-home.tsx`)**: Replaced flex with CSS `grid grid-cols-2`, `p-1`, `w-[calc(50%-4px)]`, and `px-4 py-1.5` on buttons. Using grid guarantees both tracks size to the max-content width, ensuring the sliding pill matches the exact button dimensions and `Microservices` / `Serverless` have 16px+ margin from the borders.
+  - **Sidebar Pill Tabs (`components/editor/project-sidebar.tsx`, `components/editor/ai-sidebar.tsx`)**: Migrated to `grid grid-cols-2`, concise `Shared` label (matching section headers and modern UX conventions), `px-2.5 py-1.5` padding, `shrink-0` on icons, and standardized desktop sidebar width `w-80` to provide ~28px balanced clearance for icons and count badges.
+  - **UI Tabs (`components/ui/tabs.tsx`)**: Updated `TabsTrigger` to `px-3.5 py-1.5` for balanced clearance.
+
 - Canvas Connectors, Handle Snapping, Shape Drop Precision, and Auto-Zoom:
   - **Directional Connectors**: Fixed SVG marker rendering in `components/editor/canvas-edge.tsx` by passing dynamic `markerEnd` from `EdgeProps`. Configured `defaultEdgeOptions` and `onConnect` in `hooks/use-realtime-flow.ts` to assign `MarkerType.ArrowClosed`, ensuring connections dragged from Node A to Node B point arrows directly at Node B.
   - **Connector Drop Reliability**: Eliminated duplicate stacked handles in `components/editor/canvas-node.tsx` (which caused DOM hover thrashing and canceled connection attempts in loose mode). Replaced with a single handle per position (`Top`, `Right`, `Bottom`, `Left`) featuring an enlarged 24px invisible hit target (`after:-inset-3`). Added global handle illumination in `app/globals.css` during active connection drags (`.react-flow--connecting .react-flow__handle`).
