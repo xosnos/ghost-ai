@@ -31,6 +31,7 @@ function CanvasEdgeInner({
   targetPosition,
   data,
   selected,
+  markerEnd,
 }: EdgeProps) {
   const [hovered, setHovered] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -125,7 +126,7 @@ function CanvasEdgeInner({
         stroke={stroke}
         strokeWidth={strokeWidth}
         strokeLinecap="round"
-        markerEnd="url(#canvas-edge-arrow)"
+        markerEnd={markerEnd}
         opacity={opacity}
         style={{ pointerEvents: "none", transition: "opacity 150ms ease, stroke 150ms ease" }}
       />

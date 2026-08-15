@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { useProjectDialogs } from "@/components/editor/project-dialog-context";
 import { useTheme } from "@/lib/theme-provider";
+import { GhostLogo, GhostIcon } from "@/components/ui/ghost-logo";
 import { cn } from "@/lib/utils";
 
 const PROMPT_SUGGESTIONS = [
@@ -181,7 +182,7 @@ export function EditorHome() {
       {/* Top Banner - Google Stitch Style */}
       {!bannerDismissed && (
         <div className="animate-in fade-in slide-in-from-top-2 duration-300 mb-6 flex items-center gap-2 rounded-full border border-[var(--border-default)] bg-[var(--bg-surface)]/90 px-3.5 py-1 text-xs text-[var(--text-secondary)] shadow-sm backdrop-blur-md hover:border-[var(--border-subtle)]">
-          <Sparkles className="h-3.5 w-3.5 text-[var(--accent-ai-text)]" />
+          <GhostIcon size={14} glow />
           <span className="font-medium">Meet the new Ghost AI Architect</span>
           <button
             type="button"
@@ -196,8 +197,11 @@ export function EditorHome() {
 
       {/* Center Hero Content */}
       <div className="flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-6 my-auto">
-        {/* Title */}
-        <div className="text-center space-y-2">
+        {/* Title & Emblem */}
+        <div className="text-center space-y-3">
+          <div className="flex justify-center">
+            <GhostLogo size={36} variant="mark" glow className="transition-transform duration-300 hover:scale-110" />
+          </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[var(--text-primary)]">
             Welcome to Ghost AI..
           </h1>

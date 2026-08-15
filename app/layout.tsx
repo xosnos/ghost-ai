@@ -5,7 +5,12 @@ import { ThemeProvider } from "@/lib/theme-provider";
 
 export const metadata: Metadata = {
   title: "Ghost AI",
-  description: "AI-powered diagramming",
+  description: "AI-powered diagramming & collaborative architecture canvas",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

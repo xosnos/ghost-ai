@@ -5,14 +5,19 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Share2,
-  Bot,
   LayoutTemplate,
   BookOpen,
   Gift,
-  Layers,
+  Loader2,
+  Check,
+  AlertCircle,
+  Cloud,
 } from "lucide-react";
+import { GhostLogo, GhostIcon } from "@/components/ui/ghost-logo";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "@/components/editor/user-menu";
+import { cn } from "@/lib/utils";
+import type { SaveStatus } from "@/hooks/use-canvas-autosave";
 
 interface EditorNavbarProps {
   sidebarOpen: boolean;
@@ -23,6 +28,8 @@ interface EditorNavbarProps {
   onToggleAiSidebar?: () => void;
   onShare?: () => void;
   onOpenTemplates?: () => void;
+  saveStatus?: SaveStatus;
+  onSaveNow?: () => void;
 }
 
 export function EditorNavbar({
@@ -34,6 +41,8 @@ export function EditorNavbar({
   onToggleAiSidebar,
   onShare,
   onOpenTemplates,
+  saveStatus,
+  onSaveNow,
 }: EditorNavbarProps) {
   const isWorkspace = Boolean(projectName);
 
@@ -61,9 +70,7 @@ export function EditorNavbar({
           href="/editor"
           className="flex items-center gap-2 transition-opacity hover:opacity-90"
         >
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-ai)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30">
-            <Layers className="h-4 w-4" />
-          </div>
+          <GhostLogo size="xs" variant="mark" glow />
           <span className="font-semibold tracking-tight text-sm md:text-base" style={{ color: "var(--text-primary)" }}>
             Ghost AI
           </span>
@@ -87,6 +94,53 @@ export function EditorNavbar({
       {/* Center workspace actions */}
       {isWorkspace && (
         <div className="flex items-center gap-1.5">
+          {saveStatus && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "gap-1.5 h-8 px-2.5 text-xs transition-colors",
+                saveStatus === "saving" && "text-[var(--accent-primary)]",
+                saveStatus === "saved" && "text-emerald-500 hover:text-emerald-400",
+                saveStatus === "error" && "text-[var(--state-error)] hover:text-red-400",
+                saveStatus === "idle" && "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              )}
+              onClick={onSaveNow}
+              disabled={saveStatus === "saving"}
+              title={
+                saveStatus === "saving"
+                  ? "Saving canvas..."
+                  : saveStatus === "saved"
+                  ? "All changes saved"
+                  : saveStatus === "error"
+                  ? "Save failed. Click to retry"
+                  : "Save canvas"
+              }
+            >
+              {saveStatus === "saving" ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span className="hidden sm:inline">Saving…</span>
+                </>
+              ) : saveStatus === "saved" ? (
+                <>
+                  <Check className="h-3.5 w-3.5 text-emerald-500" />
+                  <span className="hidden sm:inline text-emerald-500">Saved</span>
+                </>
+              ) : saveStatus === "error" ? (
+                <>
+                  <AlertCircle className="h-3.5 w-3.5 text-[var(--state-error)]" />
+                  <span className="hidden sm:inline text-[var(--state-error)]">Save error</span>
+                </>
+              ) : (
+                <>
+                  <Cloud className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Save</span>
+                </>
+              )}
+            </Button>
+          )}
+
           <Button
             variant="ghost"
             size="sm"
@@ -110,12 +164,15 @@ export function EditorNavbar({
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            className={cn(
+              "h-8 w-8 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-all",
+              aiSidebarOpen && "bg-[var(--accent-ai)]/20 text-[var(--accent-ai-text)] ring-1 ring-[var(--accent-ai)]/40"
+            )}
             onClick={onToggleAiSidebar}
             aria-label="Toggle AI sidebar"
             aria-pressed={aiSidebarOpen}
           >
-            <Bot className="h-4 w-4" />
+            <GhostIcon size={16} glow={aiSidebarOpen} />
           </Button>
         </div>
       )}

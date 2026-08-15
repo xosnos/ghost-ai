@@ -180,4 +180,22 @@ select {
   color: var(--text-primary);
 }
 
+/* React Flow Connection & Arrow Styles */
+.react-flow--connecting .react-flow__handle,
+.react-flow.connecting .react-flow__handle {
+  opacity: 1 !important;
+}
+
+.react-flow__arrowhead polyline {
+  fill: var(--text-muted);
+  stroke: var(--text-muted);
+  transition: fill 150ms ease, stroke 150ms ease;
+}
+
+.react-flow__edge.selected .react-flow__arrowhead polyline,
+.react-flow__edge:hover .react-flow__arrowhead polyline {
+  fill: var(--text-secondary);
+  stroke: var(--text-secondary);
+}
+
 

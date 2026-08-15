@@ -1,7 +1,7 @@
 "use client";
 
 import { Square, Diamond, Circle, Pill, Cylinder, Hexagon } from "lucide-react";
-import { Panel } from "@xyflow/react";
+import { Panel, useReactFlow } from "@xyflow/react";
 import {
   NODE_SHAPES,
   SHAPE_DEFAULT_SIZES,
@@ -67,14 +67,20 @@ function buildDragPreview(shape: NodeShape, width: number, height: number): HTML
 }
 
 export function ShapePanel() {
+  const { getZoom } = useReactFlow();
+
   const onDragStart = (event: React.DragEvent<HTMLButtonElement>, shape: NodeShape) => {
     const size = SHAPE_DEFAULT_SIZES[shape];
     const payload = JSON.stringify({ shape, width: size.width, height: size.height });
     event.dataTransfer.setData("application/reactflow-shape", payload);
     event.dataTransfer.effectAllowed = "move";
 
-    const preview = buildDragPreview(shape, size.width, size.height);
-    event.dataTransfer.setDragImage(preview, size.width / 2, size.height / 2);
+    const zoom = getZoom() || 1;
+    const previewWidth = Math.max(20, Math.round(size.width * zoom));
+    const previewHeight = Math.max(20, Math.round(size.height * zoom));
+
+    const preview = buildDragPreview(shape, previewWidth, previewHeight);
+    event.dataTransfer.setDragImage(preview, previewWidth / 2, previewHeight / 2);
     setTimeout(() => preview.remove(), 0);
   };
 

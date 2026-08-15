@@ -313,20 +313,13 @@ function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
       {(
         [Position.Top, Position.Right, Position.Bottom, Position.Left] as const
       ).map((pos) => (
-        <span key={pos}>
-          <Handle
-            type="source"
-            position={pos}
-            id={`${pos}-source`}
-            className="!z-20 !h-2.5 !w-2.5 !rounded-full !border !bg-[var(--accent-primary)] !border-[var(--bg-surface)] opacity-0 transition-opacity duration-150 group-hover:opacity-100"
-          />
-          <Handle
-            type="target"
-            position={pos}
-            id={`${pos}-target`}
-            className="!z-20 !h-2.5 !w-2.5 !rounded-full !border !bg-[var(--accent-primary)] !border-[var(--bg-surface)] opacity-0 transition-opacity duration-150 group-hover:opacity-100"
-          />
-        </span>
+        <Handle
+          key={pos}
+          type="source"
+          position={pos}
+          id={pos}
+          className="!z-20 !h-3 !w-3 !rounded-full !border-2 !bg-[var(--accent-primary)] !border-[var(--bg-surface)] opacity-0 transition-all duration-150 group-hover:opacity-100 after:absolute after:-inset-3 after:content-[''] after:cursor-crosshair hover:!scale-125"
+        />
       ))}
     </div>
   );

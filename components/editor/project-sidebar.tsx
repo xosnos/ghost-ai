@@ -22,6 +22,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useProjectDialogs } from "@/components/editor/project-dialog-context";
+import { GhostIcon } from "@/components/ui/ghost-logo";
 import { cn } from "@/lib/utils";
 import { CANVAS_TEMPLATES, type CanvasTemplate } from "@/components/editor/starter-templates";
 import type { Project } from "@/lib/projects/types";
@@ -303,7 +304,7 @@ export function ProjectSidebar({
           className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-default)]"
         >
           <div className="flex items-center gap-2">
-            <LayoutGrid className="h-4 w-4 text-[var(--accent-primary)]" />
+            <GhostIcon size={16} glow />
             <span className="text-sm font-semibold text-[var(--text-primary)]">
               Projects & Examples
             </span>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, type MutableRefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
 import {
   ReactFlow,
   Background,
@@ -9,6 +9,7 @@ import {
   ReactFlowProvider,
   useReactFlow,
   ConnectionMode,
+  ConnectionLineType,
   MarkerType,
   type NodeTypes,
   type EdgeTypes,
@@ -18,6 +19,8 @@ import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useRealtimeFlow } from "@/hooks/use-realtime-flow";
 import { useRealtimePresence } from "@/hooks/use-realtime-presence";
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
+import { useCanvasAutosave } from "@/hooks/use-canvas-autosave";
+import { useCanvasSave } from "@/components/editor/canvas-save-context";
 import { ShapePanel } from "@/components/editor/shape-panel";
 import { CanvasControlBar } from "@/components/editor/canvas-control-bar";
 import { CanvasNodeComponent } from "@/components/editor/canvas-node";
@@ -44,6 +47,7 @@ interface CanvasUser {
 }
 
 interface RealtimeCanvasProps {
+  projectId: string;
   channel: RealtimeChannel;
   user: CanvasUser;
   presenceEntries: PresencePayload[];
@@ -62,6 +66,7 @@ function generateNodeId(shape: NodeShape): string {
 }
 
 function FlowCanvas({
+  projectId,
   channel,
   user,
   presenceEntries,
@@ -79,11 +84,41 @@ function FlowCanvas({
     addNode,
     updateEdgeLabel,
     appendTemplate,
+    loadInitialState,
     undo,
     redo,
     canUndo,
     canRedo,
   } = useRealtimeFlow(channel, incomingBroadcastRef);
+
+  const [isInitialized, setIsInitialized] = useState(false);
+  const canvasSave = useCanvasSave();
+  const nodesRef = useRef(nodes);
+  const edgesRef = useRef(edges);
+  nodesRef.current = nodes;
+  edgesRef.current = edges;
+
+  const autosave = useCanvasAutosave({
+    projectId,
+    nodes,
+    edges,
+    isInitialized,
+  });
+
+  // Keep editor chrome save context in sync
+  useEffect(() => {
+    if (!canvasSave) return;
+    canvasSave.setStatus(autosave.status);
+  }, [autosave.status, canvasSave]);
+
+  useEffect(() => {
+    if (!canvasSave) return;
+    canvasSave.registerSaveHandler(autosave.saveNow);
+    return () => {
+      canvasSave.registerSaveHandler(null);
+    };
+  }, [autosave.saveNow, canvasSave]);
+
   const { others, remoteHighlights, updateCursor, updateSelection } =
     useRealtimePresence(
       channel,
@@ -95,6 +130,51 @@ function FlowCanvas({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const { screenToFlowPosition, zoomIn, zoomOut, fitView } = useReactFlow();
   const importRef = useTemplateImportRef();
+
+  // Load saved canvas state on mount if channel is empty
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSavedCanvas() {
+      // Check if channel already has active nodes or edges from broadcast
+      if (nodesRef.current.length > 0 || edgesRef.current.length > 0) {
+        if (!cancelled) setIsInitialized(true);
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/projects/${projectId}/canvas`);
+        if (cancelled) return;
+        if (res.ok) {
+          const data = await res.json();
+          if (cancelled) return;
+          // If channel is still empty and saved data has content, load it
+          if (
+            (data.nodes?.length > 0 || data.edges?.length > 0) &&
+            nodesRef.current.length === 0 &&
+            edgesRef.current.length === 0
+          ) {
+            loadInitialState(data.nodes || [], data.edges || []);
+            requestAnimationFrame(() => {
+              fitView({ duration: 400, padding: 0.2 });
+            });
+          }
+        }
+      } catch (err) {
+        console.error("[RealtimeCanvas] Failed to load saved canvas:", err);
+      } finally {
+        if (!cancelled) {
+          setIsInitialized(true);
+        }
+      }
+    }
+
+    void loadSavedCanvas();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId, loadInitialState, fitView]);
 
   const handleZoomIn = useCallback(() => zoomIn({ duration: 300 }), [zoomIn]);
   const handleZoomOut = useCallback(() => zoomOut({ duration: 300 }), [zoomOut]);
@@ -149,7 +229,12 @@ function FlowCanvas({
   const defaultEdgeOptions = useMemo(
     () => ({
       type: "canvasEdge",
-      markerEnd: { type: MarkerType.ArrowClosed, color: "var(--text-muted)", width: 16, height: 16 },
+      markerEnd: {
+        type: MarkerType.ArrowClosed,
+        color: "var(--text-secondary)",
+        width: 16,
+        height: 16,
+      },
     }),
     [],
   );
@@ -172,10 +257,19 @@ function FlowCanvas({
         return;
       }
 
-      const position = screenToFlowPosition({
+      // Convert client drop coordinates to flow coordinates
+      const centerPosition = screenToFlowPosition({
         x: event.clientX,
         y: event.clientY,
       });
+
+      // Center the node at the drop coordinate
+      const position = {
+        x: centerPosition.x - payload.width / 2,
+        y: centerPosition.y - payload.height / 2,
+      };
+
+      const isFirstNode = nodes.length === 0;
 
       const newNode: CanvasNode = {
         id: generateNodeId(payload.shape),
@@ -183,6 +277,9 @@ function FlowCanvas({
         position,
         width: payload.width,
         height: payload.height,
+        style: { width: payload.width, height: payload.height },
+        initialWidth: payload.width,
+        initialHeight: payload.height,
         data: {
           label: "",
           color: DEFAULT_NODE_COLOR,
@@ -191,8 +288,14 @@ function FlowCanvas({
       } as unknown as CanvasNode;
 
       addNode(newNode);
+
+      if (isFirstNode) {
+        requestAnimationFrame(() => {
+          fitView({ duration: 400, padding: 0.3, maxZoom: 1 });
+        });
+      }
     },
-    [addNode, screenToFlowPosition],
+    [addNode, fitView, nodes.length, screenToFlowPosition],
   );
 
   const onMouseMove = useCallback(
@@ -239,6 +342,12 @@ function FlowCanvas({
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         defaultEdgeOptions={defaultEdgeOptions}
+        connectionLineType={ConnectionLineType.SmoothStep}
+        connectionLineStyle={{
+          stroke: "var(--accent-primary)",
+          strokeWidth: 2,
+        }}
+        connectionRadius={25}
         connectionMode={ConnectionMode.Loose}
         fitView
         proOptions={{ hideAttribution: true }}
@@ -285,6 +394,7 @@ function FlowCanvas({
 }
 
 export function RealtimeCanvas({
+  projectId,
   channel,
   user,
   presenceEntries,
@@ -295,6 +405,7 @@ export function RealtimeCanvas({
   return (
     <ReactFlowProvider>
       <FlowCanvas
+        projectId={projectId}
         channel={channel}
         user={user}
         presenceEntries={presenceEntries}

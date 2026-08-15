@@ -3,7 +3,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
   X,
-  Bot,
   Sparkles,
   Send,
   FileText,
@@ -15,6 +14,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { GhostLogo } from "@/components/ui/ghost-logo";
 import { cn } from "@/lib/utils";
 
 interface AiSidebarProps {
@@ -122,9 +122,7 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
         {/* Header - Matches Editor Chrome & Project Sidebar */}
         <div className="flex h-12 shrink-0 items-center justify-between px-4 border-b border-[var(--border-default)] bg-[var(--bg-surface)]">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-ai)]/20 text-[var(--accent-ai-text)] border border-[var(--accent-ai)]/30">
-              <Bot className="h-4 w-4" />
-            </div>
+            <GhostLogo size="xs" variant="mark" glow />
             <div className="flex flex-col">
               <span className="text-sm font-semibold text-[var(--text-primary)]">
                 AI Workspace
@@ -197,8 +195,8 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
                 {messages.length === 0 ? (
                   /* Empty State */
                   <div className="flex flex-col items-center justify-center py-6 text-center">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--bg-elevated)] border border-[var(--border-default)] shadow-sm mb-3 text-[var(--accent-ai-text)]">
-                      <Bot className="h-6 w-6" />
+                    <div className="mb-3">
+                      <GhostLogo size={36} variant="mark" glow className="shadow-lg" />
                     </div>
                     <h4 className="text-sm font-semibold text-[var(--text-primary)] mb-1">
                       Design with AI Architect

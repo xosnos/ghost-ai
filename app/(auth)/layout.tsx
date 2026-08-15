@@ -1,4 +1,4 @@
-import { Cpu } from "lucide-react";
+import { GhostLogo } from "@/components/ui/ghost-logo";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -7,11 +7,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         className="hidden lg:flex lg:w-[480px] flex-col justify-center px-16"
         style={{ backgroundColor: "var(--bg-surface)", borderRight: "1px solid var(--border-default)" }}
       >
-        <div className="flex items-center gap-2 mb-8">
-          <Cpu className="h-6 w-6" style={{ color: "var(--accent-primary)" }} />
-          <span className="text-lg font-semibold" style={{ color: "var(--text-primary)" }}>
-            Ghost AI
-          </span>
+        <div className="mb-8">
+          <GhostLogo size="lg" variant="full" glow />
         </div>
 
         <p className="text-sm mb-8" style={{ color: "var(--text-secondary)" }}>
@@ -37,7 +34,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </ul>
       </div>
 
-      <div className="flex flex-1 items-center justify-center p-6" style={{ backgroundColor: "var(--bg-base)" }}>
+      <div className="flex flex-1 flex-col items-center justify-center p-6" style={{ backgroundColor: "var(--bg-base)" }}>
+        {/* Mobile Header Branding */}
+        <div className="lg:hidden mb-8">
+          <GhostLogo size="md" variant="full" glow />
+        </div>
         <div className="w-full max-w-sm">{children}</div>
       </div>
     </div>

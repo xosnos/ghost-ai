@@ -8,6 +8,11 @@ import { ProjectDialogs } from "@/components/editor/project-dialogs";
 import { ShareProjectDialog } from "@/components/editor/share-project-dialog";
 import { StarterTemplatesModal } from "@/components/editor/starter-templates-modal";
 import { TemplateImportProvider } from "@/components/editor/template-import-context";
+import {
+  CanvasSaveProvider,
+  type CanvasSaveContextValue,
+} from "@/components/editor/canvas-save-context";
+import type { SaveStatus } from "@/hooks/use-canvas-autosave";
 import { AiSidebar } from "@/components/editor/ai-sidebar";
 import {
   ProjectDialogContext,
@@ -52,6 +57,27 @@ export function EditorChrome({
     ((template: CanvasTemplate) => void) | null
   >(null);
 
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const saveHandlerRef = useRef<(() => Promise<boolean>) | null>(null);
+
+  const handleRegisterSave = (handler: (() => Promise<boolean>) | null) => {
+    saveHandlerRef.current = handler;
+  };
+
+  const handleSaveNow = async () => {
+    if (saveHandlerRef.current) {
+      return saveHandlerRef.current();
+    }
+    return false;
+  };
+
+  const saveContextValue: CanvasSaveContextValue = {
+    status: saveStatus,
+    setStatus: setSaveStatus,
+    registerSaveHandler: handleRegisterSave,
+    saveNow: handleSaveNow,
+  };
+
   const contextValue: ProjectDialogContextValue = {
     openCreate: dialogs.openCreate,
     openRename: dialogs.openRename,
@@ -86,17 +112,20 @@ export function EditorChrome({
   return (
     <ProjectDialogContext.Provider value={contextValue}>
       <TemplateImportProvider value={templateImportRef}>
-        <div className="relative flex h-screen flex-col overflow-hidden bg-[var(--bg-base)]">
-          <EditorNavbar
-            sidebarOpen={sidebarOpen}
-            onToggleSidebar={() => setSidebarOpen((v) => !v)}
-            userEmail={userEmail}
-            projectName={project?.name}
-            aiSidebarOpen={aiSidebarOpen}
-            onToggleAiSidebar={() => setAiSidebarOpen((v) => !v)}
-            onShare={project ? share.openShare : undefined}
-            onOpenTemplates={project ? () => setTemplatesOpen(true) : undefined}
-          />
+        <CanvasSaveProvider value={saveContextValue}>
+          <div className="relative flex h-screen flex-col overflow-hidden bg-[var(--bg-base)]">
+            <EditorNavbar
+              sidebarOpen={sidebarOpen}
+              onToggleSidebar={() => setSidebarOpen((v) => !v)}
+              userEmail={userEmail}
+              projectName={project?.name}
+              aiSidebarOpen={aiSidebarOpen}
+              onToggleAiSidebar={() => setAiSidebarOpen((v) => !v)}
+              onShare={project ? share.openShare : undefined}
+              onOpenTemplates={project ? () => setTemplatesOpen(true) : undefined}
+              saveStatus={isWorkspace ? saveStatus : undefined}
+              onSaveNow={isWorkspace ? handleSaveNow : undefined}
+            />
 
           {/* Drawer Sidebar for Mobile or Workspace Overlay */}
           <ProjectSidebar
@@ -167,16 +196,17 @@ export function EditorChrome({
           />
         )}
 
-        {project && (
-          <StarterTemplatesModal
-            open={templatesOpen}
-            onImport={(template) => {
-              templateImportRef.current?.(template);
-              setTemplatesOpen(false);
-            }}
-            onClose={() => setTemplatesOpen(false)}
-          />
-        )}
+          {project && (
+            <StarterTemplatesModal
+              open={templatesOpen}
+              onImport={(template) => {
+                templateImportRef.current?.(template);
+                setTemplatesOpen(false);
+              }}
+              onClose={() => setTemplatesOpen(false)}
+            />
+          )}
+        </CanvasSaveProvider>
       </TemplateImportProvider>
     </ProjectDialogContext.Provider>
   );

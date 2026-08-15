@@ -7,13 +7,47 @@ Update this file whenever the current phase, active feature, or implementation s
 - Google Stitch-inspired UI Redesign (Dashboard & Chrome complete)
 - Feature 19: Presence avatars and cursors (complete)
 - Feature 20: AI Sidebar Shell (complete)
+- Feature 21: Canvas Autosave & Loading (complete)
 - Collaborator selection rings (complete)
 
 ## Current Goal
 
-- Canvas autosave (Feature 21) and AI design generation agent workflows (Features 22-26).
+- AI design generation agent workflows (Features 22-26).
 
 ## Completed
+
+- Canvas Connectors, Handle Snapping, Shape Drop Precision, and Auto-Zoom:
+  - **Directional Connectors**: Fixed SVG marker rendering in `components/editor/canvas-edge.tsx` by passing dynamic `markerEnd` from `EdgeProps`. Configured `defaultEdgeOptions` and `onConnect` in `hooks/use-realtime-flow.ts` to assign `MarkerType.ArrowClosed`, ensuring connections dragged from Node A to Node B point arrows directly at Node B.
+  - **Connector Drop Reliability**: Eliminated duplicate stacked handles in `components/editor/canvas-node.tsx` (which caused DOM hover thrashing and canceled connection attempts in loose mode). Replaced with a single handle per position (`Top`, `Right`, `Bottom`, `Left`) featuring an enlarged 24px invisible hit target (`after:-inset-3`). Added global handle illumination in `app/globals.css` during active connection drags (`.react-flow--connecting .react-flow__handle`).
+  - **Exact Shape Drop Precision & Preview Zoom**: Updated `components/editor/shape-panel.tsx` to scale drag previews by canvas zoom (`getZoom()`), eliminating size jumping between drag ghost and placed node. Updated `onDrop` in `components/editor/realtime-canvas.tsx` to center the node at mouse drop coordinates (`x - width/2, y - height/2`).
+  - **Auto-Zoom on First Node Drop**: Automatically triggers smooth `fitView({ duration: 400, padding: 0.3, maxZoom: 1 })` upon placing the first node on an empty canvas.
+
+- Dev Server & Log Errors Resolution:
+  - Fixed Next.js 500 error on `/icon.svg` caused by conflicting `public/icon.svg` static file alongside App Router `app/icon.svg`. Removed duplicate public static file and verified `/icon.svg` serves `image/svg+xml` with HTTP 200.
+  - Resolved all ESLint errors/warnings: updated `eslint.config.mjs` to ignore `supabase/**` runtime builds, `.next/**`, and `out/**`; resolved `prefer-const` in `middleware.ts`; cleaned unused destructuring in `hooks/use-canvas-autosave.ts`.
+  - Added `SUPABASE_SERVICE_ROLE_KEY` to `.env.local` pointing to local Supabase stack.
+  - Dev server (`next dev --turbopack`) actively running on `http://localhost:3000` with 0 log errors.
+
+- Ghost AI Brand Logo & Universal Iconography — Designed and deployed signature vector branding throughout the entire application:
+  - Custom modern vector monomark (`components/ui/ghost-logo.tsx`) featuring an interlocking dimensional origami ribbon geometry, aerodynamic spectral wings, a central quantum diamond neural nexus (`#FFFFFF` → `#67E8F9` → `#06B6D4`), specular rim glass lighting, micro-spark satellite, and dual electric Cyan (`#00F5FF` → `#0284C7`) and Radiant Indigo (`#C084FC` → `#4338CA`) gradient sweeps.
+  - Highly flexible `GhostLogo` and `GhostIcon` components supporting multiple variants (`icon`, `mark`, `full`), standard sizing scale (`xs`, `sm`, `md`, `lg`, `xl`), dynamic glow filters, and responsive styling.
+  - Universal application touchpoints:
+    - **Editor Navbar (`components/editor/editor-navbar.tsx`)**: Replaced generic placeholder icons with the glowing Ghost logo mark in the brand header and the AI sidebar toggle button.
+    - **Auth Layout (`app/(auth)/layout.tsx`)**: Replaced generic Cpu icon with `<GhostLogo size="lg" variant="full" glow />` on desktop and added mobile header branding for small screens.
+    - **Editor Dashboard (`components/editor/editor-home.tsx`)**: Incorporated the Ghost logo in the top announcement banner pill and as a prominent glowing hero emblem above the main heading.
+    - **AI Workspace Sidebar (`components/editor/ai-sidebar.tsx`)**: Updated sidebar header and the AI Architect empty state with branded Ghost logo and glow accents.
+    - **Project Sidebar Drawer (`components/editor/project-sidebar.tsx`)**: Branded mobile drawer header with GhostIcon.
+    - **Access Denied (`components/editor/access-denied.tsx`)**: Branded unauthorized state with GhostLogo.
+    - **Browser App Icon & Favicon (`app/icon.svg`, `public/icon.svg`, `public/favicon.svg`, `app/layout.tsx`)**: Dynamic Next.js app icon metadata and standalone vector SVG favicons.
+
+- 21-canvas-autosave — Canvas autosave and loading persisted across Supabase Storage and PostgreSQL metadata:
+  - Supabase Storage bucket `canvas` configured with RLS policies (`supabase/migrations/20260815181500_create_canvas_storage_bucket.sql`) for authenticated JSON snapshot storage.
+  - Storage & metadata helpers in `lib/canvas-storage.ts` (`uploadCanvasSnapshot`, `downloadCanvasSnapshot`, `updateProjectCanvasPath`) and `lib/supabase/admin.ts` (`createAdminClient`).
+  - REST API routes: `PUT /api/projects/[projectId]/canvas` (uploads JSON to storage and updates `projects.canvas_storage_path`) and `GET /api/projects/[projectId]/canvas` (fetches JSON from storage via metadata reference or returns empty canvas).
+  - Autosave hook `hooks/use-canvas-autosave.ts` with 1500ms debounce, status tracking (`idle`, `saving`, `saved`, `error`), and `saveNow()` manual trigger.
+  - Global save state context `components/editor/canvas-save-context.tsx` connecting canvas autosave with `EditorChrome`.
+  - Non-destructive initial state loading: on mount, if Realtime channel has no existing nodes/edges, fetches and loads saved snapshot via `loadInitialState`; if channel already has active nodes/edges, skips load to prevent overwriting active collaboration.
+  - Editor Navbar Save button indicator with live animated states (`Saving…` spinner, `Saved` checkmark, `Save error` alert, `Save` cloud). `npm run build` passes cleanly.
 
 - Google Stitch Dashboard & Chrome Redesign — Modernized the dashboard (`/editor`) and chrome navigation to match Google Stitch's design language:
   - Top navigation bar featuring brand logo + `BETA` pill tag, `Docs`, Discord community link, Twitter/X link, and `What's New / Gift` button with unread indicator badge.
