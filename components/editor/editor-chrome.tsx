@@ -8,7 +8,7 @@ import { ProjectDialogs } from "@/components/editor/project-dialogs";
 import { ShareProjectDialog } from "@/components/editor/share-project-dialog";
 import { StarterTemplatesModal } from "@/components/editor/starter-templates-modal";
 import { TemplateImportProvider } from "@/components/editor/template-import-context";
-import { AiSidebarPlaceholder } from "@/components/editor/ai-sidebar-placeholder";
+import { AiSidebar } from "@/components/editor/ai-sidebar";
 import {
   ProjectDialogContext,
   type ProjectDialogContextValue,
@@ -137,7 +137,7 @@ export function EditorChrome({
           </main>
 
           {project && (
-            <AiSidebarPlaceholder
+            <AiSidebar
               isOpen={aiSidebarOpen}
               onClose={() => setAiSidebarOpen(false)}
             />
