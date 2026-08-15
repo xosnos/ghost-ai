@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { EditorNavbar } from "@/components/editor/editor-navbar";
 import { ProjectSidebar } from "@/components/editor/project-sidebar";
 import { ProjectDialogs } from "@/components/editor/project-dialogs";
@@ -36,10 +37,12 @@ export function EditorChrome({
   project,
   currentRoomId,
 }: EditorChromeProps) {
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [aiSidebarOpen, setAiSidebarOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const dialogs = useProjectActions();
+  const isWorkspace = Boolean(project);
   const isProjectOwner = Boolean(
     project && project.ownerId === currentUserId
   );
@@ -55,10 +58,35 @@ export function EditorChrome({
     openDelete: dialogs.openDelete,
   };
 
+  const handleTemplateSelect = async (template: CanvasTemplate) => {
+    if (isWorkspace) {
+      templateImportRef.current?.(template);
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: template.name }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.project?.id) {
+          router.push(`/editor/${data.project.id}`);
+          return;
+        }
+      }
+    } catch (err) {
+      console.error("Failed to create project from template:", err);
+    }
+    dialogs.openCreate();
+  };
+
   return (
     <ProjectDialogContext.Provider value={contextValue}>
       <TemplateImportProvider value={templateImportRef}>
-        <div className="relative flex h-screen flex-col overflow-hidden">
+        <div className="relative flex h-screen flex-col overflow-hidden bg-[var(--bg-base)]">
           <EditorNavbar
             sidebarOpen={sidebarOpen}
             onToggleSidebar={() => setSidebarOpen((v) => !v)}
@@ -69,6 +97,8 @@ export function EditorChrome({
             onShare={project ? share.openShare : undefined}
             onOpenTemplates={project ? () => setTemplatesOpen(true) : undefined}
           />
+
+          {/* Drawer Sidebar for Mobile or Workspace Overlay */}
           <ProjectSidebar
             isOpen={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
@@ -76,8 +106,36 @@ export function EditorChrome({
             ownedProjects={ownedProjects}
             sharedProjects={sharedProjects}
             currentRoomId={currentRoomId}
+            onSelectTemplate={handleTemplateSelect}
           />
-          <main className="flex flex-1 overflow-hidden pt-12">{children}</main>
+
+          {/* Main Area */}
+          <main className="flex flex-1 overflow-hidden pt-12">
+            {!isWorkspace ? (
+              // Dashboard Google Stitch View: Left Panel Embedded + Center Hero Canvas
+              <div className="flex flex-1 overflow-hidden p-3 md:p-4 gap-4">
+                <ProjectSidebar
+                  isOpen={true}
+                  onClose={() => {}}
+                  currentUserId={currentUserId}
+                  ownedProjects={ownedProjects}
+                  sharedProjects={sharedProjects}
+                  currentRoomId={currentRoomId}
+                  isEmbedded={true}
+                  onSelectTemplate={handleTemplateSelect}
+                />
+                <div className="flex flex-1 overflow-hidden rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)]/50 backdrop-blur-sm">
+                  {children}
+                </div>
+              </div>
+            ) : (
+              // Full-viewport Canvas Workspace View
+              <div className="flex flex-1 overflow-hidden">
+                {children}
+              </div>
+            )}
+          </main>
+
           {project && (
             <AiSidebarPlaceholder
               isOpen={aiSidebarOpen}
@@ -123,3 +181,4 @@ export function EditorChrome({
     </ProjectDialogContext.Provider>
   );
 }
+

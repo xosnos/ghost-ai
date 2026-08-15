@@ -4,14 +4,24 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Phase
 
+- Google Stitch-inspired UI Redesign (Dashboard & Chrome complete)
 - Feature 19: Presence avatars and cursors (complete)
 - Collaborator selection rings (complete)
 
 ## Current Goal
 
-- Next feature spec.
+- Workspace UI polish and AI generation flows.
 
 ## Completed
+
+- Google Stitch Dashboard & Chrome Redesign — Modernized the dashboard (`/editor`) and chrome navigation to match Google Stitch's design language:
+  - Top navigation bar featuring brand logo + `BETA` pill tag, `Docs`, Discord community link, Twitter/X link, and `What's New / Gift` button with unread indicator badge.
+  - Full Light & Dark Mode Engine: Custom `ThemeProvider` (`lib/theme-provider.tsx`) with zero-flash inline script in `app/layout.tsx`, supporting `"dark"`, `"light"`, and `"system"` modes.
+  - Google Stitch Bottom-Right Theme Switcher Popover: Dynamic trigger button (🖥️ / ☀️ / 🌙) opening an interactive popover to toggle between Light, System (with active checkmark `✓`), and Dark themes.
+  - Light & Dark Adaptive Surfaces: Replaced all legacy dark rgba backgrounds across `editor-navbar.tsx` and `project-sidebar.tsx` with dynamic CSS tokens (`bg-[var(--bg-surface)]`, `border-[var(--border-default)]`), ensuring crisp white surfaces in light mode and sleek technical surfaces in dark mode.
+  - Left Project & Examples panel: Dual pill tabs (`My Projects` / `Shared with me`), live search filter input (`Search projects`), Recent projects list with diagram thumbnail glyphs and timestamps, and curated Examples/Templates section (Microservices, CI/CD, Event-Driven, Serverless Edge, Real-time AI Canvas Engine) with one-click creation.
+  - Center Hero Canvas with dot-matrix grid background (`bg-dot-grid`), dismissible announcement banner pill (`Meet the new Ghost AI ✕`), bold title (`Welcome to Ghost AI..`), horizontal suggestion prompt chips, and central interactive Stitch prompt card with mode toggles (`[Microservices] [Serverless]`), prompt enhancer wand `✨`, Model selector pill (`Gemini 2.5 Flash`, `Claude 3.7 Sonnet`, `GPT-4o`), voice/mic trigger `🎙️`, and circular action button `[↑]`.
+  - Desktop embedded left panel layout for dashboard vs collapsible floating overlay drawer for mobile and active workspace.
 
 - Boilerplate cleanup (globals.css, page.tsx, public SVGs)
 - 01-design-system: globals.css tokens, lib/utils.ts cn() helper, shadcn/ui components (Button, Card, Dialog, Input, Tabs, Textarea, ScrollArea), lucide-react, Radix UI primitives

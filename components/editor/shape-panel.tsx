@@ -5,7 +5,6 @@ import { Panel } from "@xyflow/react";
 import {
   NODE_SHAPES,
   SHAPE_DEFAULT_SIZES,
-  DEFAULT_NODE_COLOR,
   type NodeShape,
 } from "@/types/canvas";
 
@@ -19,9 +18,9 @@ const SHAPE_ICONS: Record<NodeShape, typeof Square> = {
 };
 
 function buildShapeSvg(shape: NodeShape, width: number, height: number): string {
-  const fill = DEFAULT_NODE_COLOR.fill;
+  const fill = "var(--bg-elevated, #18181c)";
   const stroke = "var(--border-subtle, #3a3a42)";
-  const sw = 1;
+  const sw = 1.5;
 
   if (shape === "diamond") {
     const hw = width / 2;
@@ -53,8 +52,8 @@ function buildDragPreview(shape: NodeShape, width: number, height: number): HTML
     const inner = document.createElement("div");
     inner.style.width = "100%";
     inner.style.height = "100%";
-    inner.style.backgroundColor = DEFAULT_NODE_COLOR.fill;
-    inner.style.border = "1px solid var(--border-subtle, #3a3a42)";
+    inner.style.backgroundColor = "var(--bg-elevated)";
+    inner.style.border = "1.5px solid var(--border-subtle)";
     inner.style.borderRadius =
       shape === "rectangle" ? "12px" : shape === "pill" ? "999px" : "50%";
     container.appendChild(inner);
@@ -82,12 +81,7 @@ export function ShapePanel() {
   return (
     <Panel
       position="bottom-center"
-      className="m-0 flex items-center gap-1 rounded-full px-2 py-1.5"
-      style={{
-        backgroundColor: "var(--bg-elevated)",
-        border: "1px solid var(--border-default)",
-        boxShadow: "0 4px 24px rgba(0, 0, 0, 0.4)",
-      }}
+      className="m-0 flex items-center gap-1 rounded-full px-2 py-1.5 shadow-xl backdrop-blur-md transition-colors bg-[var(--bg-surface)] border border-[var(--border-default)]"
     >
       {NODE_SHAPES.map((shape) => {
         const Icon = SHAPE_ICONS[shape];
@@ -97,8 +91,7 @@ export function ShapePanel() {
             type="button"
             draggable
             onDragStart={(e) => onDragStart(e, shape)}
-            className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-[var(--bg-subtle)]"
-            style={{ color: "var(--text-secondary)" }}
+            className="flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             title={shape}
             aria-label={shape}
           >

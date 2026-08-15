@@ -9,12 +9,13 @@ import {
   type NodeProps,
 } from "@xyflow/react";
 import {
-  DEFAULT_NODE_COLOR,
+  resolveNodeColor,
   type CanvasNodeData,
   type NodeShape,
 } from "@/types/canvas";
 import { NodeColorToolbar } from "@/components/editor/node-color-toolbar";
 import { useRemoteHighlights } from "@/components/editor/remote-selection-context";
+import { useTheme } from "@/lib/theme-provider";
 
 const CSS_SHAPE_RADIUS: Partial<Record<NodeShape, string>> = {
   rectangle: "12px",
@@ -182,7 +183,8 @@ function RemoteSelectionRings({
 
 function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
   const nodeData = data as CanvasNodeData;
-  const color = nodeData.color ?? DEFAULT_NODE_COLOR;
+  const { resolvedTheme } = useTheme();
+  const resolvedColor = resolveNodeColor(nodeData.color, resolvedTheme);
   const shape = nodeData.shape ?? "rectangle";
   const w = width ?? 176;
   const h = height ?? 64;
@@ -192,9 +194,13 @@ function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
   const [editing, setEditing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const stroke = selected ? color.text : "var(--border-default)";
-  const strokeWidth = selected ? 1.5 : 1;
-  const labelColor = color.text;
+  const stroke = selected
+    ? resolvedColor.text
+    : resolvedTheme === "light"
+    ? resolvedColor.border
+    : "var(--border-default)";
+  const strokeWidth = selected ? 2 : 1.25;
+  const labelColor = resolvedColor.text;
 
   const startEditing = useCallback(() => {
     setEditing(true);
@@ -235,12 +241,12 @@ function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
       onBlur={stopEditing}
       onKeyDown={handleKeyDown}
       rows={1}
-      className="nodrag nopan nowheel absolute inset-0 z-10 h-full w-full resize-none appearance-none overflow-hidden border-0 bg-transparent p-3 text-center text-sm font-medium leading-[1.5] outline-none shadow-none ring-0 focus:border-transparent focus:outline-none focus:ring-0"
+      className="nodrag nopan nowheel absolute inset-0 z-10 h-full w-full resize-none appearance-none overflow-hidden border-0 bg-transparent p-3 text-center text-sm font-semibold leading-[1.5] outline-none shadow-none ring-0 focus:border-transparent focus:outline-none focus:ring-0"
       style={{ color: labelColor, alignContent: "center" }}
     />
   ) : (
     <span
-      className="pointer-events-none relative z-10 px-3 text-center text-sm font-medium"
+      className="pointer-events-none relative z-10 px-3 text-center text-sm font-semibold tracking-tight"
       style={{ color: labelColor }}
     >
       {nodeData.label || (
@@ -254,9 +260,9 @@ function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
   if (isCssShape(shape)) {
     content = (
       <div
-        className="relative flex h-full w-full items-center justify-center"
+        className="relative flex h-full w-full items-center justify-center transition-colors"
         style={{
-          backgroundColor: color.fill,
+          backgroundColor: resolvedColor.fill,
           border: `${strokeWidth}px solid ${stroke}`,
           borderRadius: CSS_SHAPE_RADIUS[shape],
         }}
@@ -268,14 +274,14 @@ function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
   } else {
     content = (
       <div
-        className="relative flex h-full w-full items-center justify-center"
+        className="relative flex h-full w-full items-center justify-center transition-colors"
         onDoubleClick={startEditing}
       >
         <SvgShape
           shape={shape}
           width={w}
           height={h}
-          fill={color.fill}
+          fill={resolvedColor.fill}
           stroke={stroke}
           strokeWidth={strokeWidth}
         />
@@ -312,13 +318,13 @@ function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
             type="source"
             position={pos}
             id={`${pos}-source`}
-            className="!z-20 !h-2.5 !w-2.5 !rounded-full !border !bg-white !border-[var(--bg-base)] opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+            className="!z-20 !h-2.5 !w-2.5 !rounded-full !border !bg-[var(--accent-primary)] !border-[var(--bg-surface)] opacity-0 transition-opacity duration-150 group-hover:opacity-100"
           />
           <Handle
             type="target"
             position={pos}
             id={`${pos}-target`}
-            className="!z-20 !h-2.5 !w-2.5 !rounded-full !border !bg-white !border-[var(--bg-base)] opacity-0 transition-opacity duration-150 group-hover:opacity-100"
+            className="!z-20 !h-2.5 !w-2.5 !rounded-full !border !bg-[var(--accent-primary)] !border-[var(--bg-surface)] opacity-0 transition-opacity duration-150 group-hover:opacity-100"
           />
         </span>
       ))}

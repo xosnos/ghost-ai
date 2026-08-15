@@ -1,6 +1,16 @@
 "use client";
 
-import { PanelLeftClose, PanelLeftOpen, Share2, Bot, LayoutTemplate } from "lucide-react";
+import Link from "next/link";
+import {
+  PanelLeftClose,
+  PanelLeftOpen,
+  Share2,
+  Bot,
+  LayoutTemplate,
+  BookOpen,
+  Gift,
+  Layers,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UserMenu } from "@/components/editor/user-menu";
 
@@ -28,58 +38,136 @@ export function EditorNavbar({
   const isWorkspace = Boolean(projectName);
 
   return (
-    <header
-      className="fixed top-0 left-0 right-0 z-40 flex h-12 items-center justify-between px-3"
-      style={{
-        backgroundColor: "var(--bg-surface)",
-        borderBottom: "1px solid var(--border-default)",
-      }}
-    >
-      <div className="flex min-w-0 flex-1 items-center gap-2">
-        <Button variant="ghost" size="icon" onClick={onToggleSidebar} aria-label="Toggle sidebar">
-          {sidebarOpen ? (
-            <PanelLeftClose className="h-5 w-5" />
-          ) : (
-            <PanelLeftOpen className="h-5 w-5" />
-          )}
-        </Button>
+    <header className="fixed top-0 left-0 right-0 z-40 flex h-12 items-center justify-between px-3 md:px-4 backdrop-blur-md bg-[var(--bg-surface)]/90 border-b border-[var(--border-default)] transition-colors">
+      <div className="flex min-w-0 items-center gap-3">
         {isWorkspace && (
-          <span
-            className="truncate text-sm font-semibold"
-            style={{ color: "var(--text-primary)" }}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onToggleSidebar}
+            aria-label="Toggle sidebar"
+            className="h-8 w-8 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
           >
-            {projectName}
+            {sidebarOpen ? (
+              <PanelLeftClose className="h-4 w-4" />
+            ) : (
+              <PanelLeftOpen className="h-4 w-4" />
+            )}
+          </Button>
+        )}
+
+        {/* Brand & Beta Badge */}
+        <Link
+          href="/editor"
+          className="flex items-center gap-2 transition-opacity hover:opacity-90"
+        >
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent-ai)]/20 text-[var(--accent-primary)] border border-[var(--accent-primary)]/30">
+            <Layers className="h-4 w-4" />
+          </div>
+          <span className="font-semibold tracking-tight text-sm md:text-base" style={{ color: "var(--text-primary)" }}>
+            Ghost AI
           </span>
+          <span className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-subtle)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+            BETA
+          </span>
+        </Link>
+
+        {isWorkspace && (
+          <div className="hidden md:flex items-center gap-2 ml-2 pl-3 border-l border-[var(--border-default)]">
+            <span
+              className="truncate text-xs font-medium max-w-[200px]"
+              style={{ color: "var(--text-secondary)" }}
+            >
+              {projectName}
+            </span>
+          </div>
         )}
       </div>
 
+      {/* Center workspace actions */}
       {isWorkspace && (
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" className="gap-2" onClick={onShare}>
-            <Share2 className="h-4 w-4" />
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2 h-8 px-2.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            onClick={onShare}
+          >
+            <Share2 className="h-3.5 w-3.5" />
             Share
           </Button>
           {onOpenTemplates && (
-            <Button variant="ghost" size="sm" className="gap-2" onClick={onOpenTemplates}>
-              <LayoutTemplate className="h-4 w-4" />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2 h-8 px-2.5 text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              onClick={onOpenTemplates}
+            >
+              <LayoutTemplate className="h-3.5 w-3.5" />
               Templates
             </Button>
           )}
           <Button
             variant="ghost"
             size="icon"
+            className="h-8 w-8 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             onClick={onToggleAiSidebar}
             aria-label="Toggle AI sidebar"
             aria-pressed={aiSidebarOpen}
           >
-            <Bot className="h-5 w-5" />
+            <Bot className="h-4 w-4" />
           </Button>
         </div>
       )}
 
-      <div className="flex flex-1 items-center justify-end">
-        {!isWorkspace && <UserMenu email={userEmail} />}
+      {/* Right utility items matching Google Stitch */}
+      <div className="flex items-center gap-1 md:gap-2">
+        <a
+          href="https://github.com"
+          target="_blank"
+          rel="noreferrer"
+          className="hidden sm:flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-medium transition-colors text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
+        >
+          <BookOpen className="h-3.5 w-3.5" />
+          <span>Docs</span>
+        </a>
+
+        {/* Discord / Community */}
+        <button
+          type="button"
+          aria-label="Community Discord"
+          className="hidden sm:flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
+        >
+          <svg className="h-4 w-4 fill-current" viewBox="0 0 24 24">
+            <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.893.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+          </svg>
+        </button>
+
+        {/* X / Twitter */}
+        <button
+          type="button"
+          aria-label="Twitter X"
+          className="hidden sm:flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
+        >
+          <svg className="h-3.5 w-3.5 fill-current" viewBox="0 0 24 24">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+        </button>
+
+        {/* What's new / Gift with notification dot */}
+        <button
+          type="button"
+          aria-label="What's new"
+          className="relative flex h-8 w-8 items-center justify-center rounded-lg text-[var(--text-muted)] transition-colors hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]"
+        >
+          <Gift className="h-4 w-4" />
+          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[var(--accent-ai)] ring-2 ring-[var(--bg-surface)]" />
+        </button>
+
+        {/* User avatar menu */}
+        <UserMenu email={userEmail} />
       </div>
     </header>
   );
 }
+

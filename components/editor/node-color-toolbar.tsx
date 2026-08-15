@@ -2,7 +2,8 @@
 
 import { memo, useCallback } from "react";
 import { useReactFlow } from "@xyflow/react";
-import { NODE_COLORS, type CanvasNodeData, type NodeColor } from "@/types/canvas";
+import { NODE_COLORS, resolveNodeColor, type CanvasNodeData, type NodeColor } from "@/types/canvas";
+import { useTheme } from "@/lib/theme-provider";
 
 interface NodeColorToolbarProps {
   id: string;
@@ -13,11 +14,16 @@ interface NodeColorToolbarProps {
 }
 
 function isSameColor(a: NodeColor, b: NodeColor): boolean {
-  return a.fill === b.fill && a.text === b.text;
+  return (
+    a.fill.toLowerCase() === b.fill.toLowerCase() ||
+    a.name === b.name ||
+    a.text.toLowerCase() === b.text.toLowerCase()
+  );
 }
 
 function NodeColorToolbarInner({ id, data, selected, width, height }: NodeColorToolbarProps) {
   const { updateNodeData } = useReactFlow();
+  const { resolvedTheme } = useTheme();
   const activeColor = data.color ?? NODE_COLORS[0];
   const w = width ?? 176;
   const h = height ?? 64;
@@ -37,7 +43,7 @@ function NodeColorToolbarInner({ id, data, selected, width, height }: NodeColorT
 
   return (
     <div
-      className="nodrag nopan nowheel absolute z-30 flex items-center gap-1 rounded-lg border p-1.5"
+      className="nodrag nopan nowheel absolute z-30 flex items-center gap-1 rounded-xl border p-1.5 shadow-xl backdrop-blur-md transition-colors"
       style={{
         left,
         top,
@@ -50,22 +56,24 @@ function NodeColorToolbarInner({ id, data, selected, width, height }: NodeColorT
     >
       {NODE_COLORS.map((color, i) => {
         const isActive = isSameColor(color, activeColor);
+        const resolved = resolveNodeColor(color, resolvedTheme);
+
         return (
           <button
             key={i}
             type="button"
             onClick={() => selectColor(color)}
-            className="relative flex h-6 w-6 items-center justify-center rounded-md transition-all duration-150"
+            className="relative flex h-6 w-6 items-center justify-center rounded-lg transition-all duration-150"
             style={{
-              backgroundColor: color.fill,
+              backgroundColor: resolved.fill,
               border: isActive
-                ? `2px solid ${color.text}`
-                : "1px solid var(--border-default)",
-              boxShadow: isActive ? `0 0 0 2px ${color.text}33` : "none",
+                ? `2px solid ${resolved.text}`
+                : `1px solid ${resolvedTheme === "light" ? resolved.border : "var(--border-default)"}`,
+              boxShadow: isActive ? `0 0 0 2px ${resolved.text}33` : "none",
             }}
             onMouseEnter={(e) => {
               if (!isActive) {
-                e.currentTarget.style.boxShadow = `0 0 6px 1px ${color.text}55`;
+                e.currentTarget.style.boxShadow = `0 0 6px 1px ${resolved.text}55`;
               }
             }}
             onMouseLeave={(e) => {
@@ -73,11 +81,11 @@ function NodeColorToolbarInner({ id, data, selected, width, height }: NodeColorT
                 e.currentTarget.style.boxShadow = "none";
               }
             }}
-            aria-label={`Set node color ${i + 1}`}
+            aria-label={`Set node color ${color.name ?? i + 1}`}
           >
             <span
               className="text-[10px] font-bold leading-none"
-              style={{ color: color.text }}
+              style={{ color: resolved.text }}
             >
               A
             </span>

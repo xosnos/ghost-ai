@@ -31,8 +31,7 @@ function ControlButton({
       disabled={disabled}
       title={label}
       aria-label={label}
-      className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-[var(--bg-subtle)] disabled:opacity-30 disabled:hover:bg-transparent"
-      style={{ color: "var(--text-secondary)" }}
+      className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-[var(--bg-elevated)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] disabled:opacity-30 disabled:hover:bg-transparent"
     >
       {children}
     </button>
@@ -51,12 +50,7 @@ export function CanvasControlBar({
   return (
     <Panel
       position="bottom-left"
-      className="m-0 flex items-center gap-1 rounded-full px-2 py-1.5"
-      style={{
-        backgroundColor: "var(--bg-elevated)",
-        border: "1px solid var(--border-default)",
-        boxShadow: "0 4px 24px rgba(0, 0, 0, 0.4)",
-      }}
+      className="m-0 flex items-center gap-1 rounded-full px-2 py-1.5 shadow-xl backdrop-blur-md transition-colors bg-[var(--bg-surface)] border border-[var(--border-default)]"
     >
       <ControlButton onClick={onZoomOut} disabled={false} label="Zoom out">
         <ZoomOut className="h-4 w-4" />

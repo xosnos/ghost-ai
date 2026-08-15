@@ -27,6 +27,8 @@ import { LiveCursors } from "@/components/editor/live-cursors";
 import { EdgeLabelContext } from "@/components/editor/edge-label-context";
 import { RemoteSelectionProvider } from "@/components/editor/remote-selection-context";
 import { useTemplateImportRef } from "@/components/editor/template-import-context";
+import { useTheme } from "@/lib/theme-provider";
+import { cn } from "@/lib/utils";
 import { DEFAULT_NODE_COLOR, type CanvasNode, type CanvasEdge, type NodeShape } from "@/types/canvas";
 import type { CanvasTemplate } from "@/components/editor/starter-templates";
 import type {
@@ -67,6 +69,7 @@ function FlowCanvas({
   incomingCursorRef,
   incomingSelectionRef,
 }: RealtimeCanvasProps) {
+  const { resolvedTheme } = useTheme();
   const {
     nodes,
     edges,
@@ -239,20 +242,21 @@ function FlowCanvas({
         connectionMode={ConnectionMode.Loose}
         fitView
         proOptions={{ hideAttribution: true }}
-        className="[&_.react-flow__node]:overflow-visible"
+        className={cn("[&_.react-flow__node]:overflow-visible", resolvedTheme)}
         style={{ backgroundColor: "var(--bg-base)" }}
       >
         <Background
           variant={BackgroundVariant.Dots}
           gap={20}
-          size={1}
-          color="var(--border-default)"
+          size={1.25}
+          bgColor="var(--bg-base)"
+          color={resolvedTheme === "light" ? "rgba(0, 0, 0, 0.09)" : "rgba(255, 255, 255, 0.09)"}
         />
         <MiniMap
           pannable
           zoomable
-          maskColor="rgba(8, 8, 9, 0.7)"
-          nodeColor="#2a2a30"
+          maskColor={resolvedTheme === "light" ? "rgba(240, 240, 245, 0.7)" : "rgba(8, 8, 9, 0.7)"}
+          nodeColor={resolvedTheme === "light" ? "#d1d5db" : "#2a2a30"}
           style={{
             backgroundColor: "var(--bg-surface)",
             border: "1px solid var(--border-default)",
