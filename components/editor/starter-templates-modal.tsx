@@ -9,7 +9,6 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Download } from "lucide-react";
 import {
   type CanvasTemplate,
@@ -311,7 +310,7 @@ export function StarterTemplatesModal({
 }: StarterTemplatesModalProps) {
   return (
     <Dialog open={open} onOpenChange={(value) => !value && onClose()}>
-      <DialogContent className="flex max-h-[85vh] max-w-5xl flex-col gap-0 overflow-hidden p-0">
+      <DialogContent className="flex h-[min(90dvh,920px)] max-w-5xl flex-col gap-0 overflow-hidden p-0">
         <DialogHeader className="shrink-0 px-7 pb-5 pt-7 sm:px-8 sm:pt-8">
           <DialogTitle className="text-2xl tracking-tight">
             Import Template
@@ -321,7 +320,7 @@ export function StarterTemplatesModal({
             nodes and edges will stay in place.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="flex-1 px-7 pb-7 sm:px-8 sm:pb-8">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-7 pb-7 sm:px-8 sm:pb-8">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             {CANVAS_TEMPLATES.map((template) => (
               <article
@@ -369,7 +368,7 @@ export function StarterTemplatesModal({
               </article>
             ))}
           </div>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );

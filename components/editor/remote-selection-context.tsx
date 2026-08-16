@@ -9,6 +9,7 @@ export interface RemoteNodeHighlight {
 }
 
 export type RemoteSelectionMap = Record<string, RemoteNodeHighlight[]>;
+const EMPTY_HIGHLIGHTS: RemoteNodeHighlight[] = [];
 
 const RemoteSelectionContext = createContext<RemoteSelectionMap>({});
 
@@ -27,5 +28,5 @@ export function RemoteSelectionProvider({
 }
 
 export function useRemoteHighlights(nodeId: string): RemoteNodeHighlight[] {
-  return useContext(RemoteSelectionContext)[nodeId] ?? [];
+  return useContext(RemoteSelectionContext)[nodeId] ?? EMPTY_HIGHLIGHTS;
 }

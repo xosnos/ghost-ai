@@ -22,6 +22,7 @@ import {
   Moon,
 } from "lucide-react";
 import { useProjectDialogs } from "@/components/editor/project-dialog-context";
+import { useTemplateSelection } from "@/components/editor/template-import-context";
 import { useTheme } from "@/lib/theme-provider";
 import { GhostLogo, GhostIcon } from "@/components/ui/ghost-logo";
 import { cn } from "@/lib/utils";
@@ -58,6 +59,7 @@ const MODELS = [
 export function EditorHome() {
   const router = useRouter();
   const { openCreate } = useProjectDialogs();
+  const openTemplates = useTemplateSelection();
   const { theme, resolvedTheme, setTheme } = useTheme();
   const [prompt, setPrompt] = useState(
     "Create a high-throughput payment and subscription system with Redis caching, Kafka event streaming, and partitioned PostgreSQL storage."
@@ -242,6 +244,7 @@ export function EditorHome() {
                   <button
                     type="button"
                     onClick={() => setAttachedFiles((prev) => prev.filter((_, i) => i !== idx))}
+                    aria-label={`Remove ${file.name}`}
                     className="ml-1 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                   >
                     <X className="h-3 w-3" />
@@ -256,6 +259,7 @@ export function EditorHome() {
                   <button
                     type="button"
                     onClick={() => setAttachedUrl(null)}
+                    aria-label="Remove attached URL"
                     className="ml-1 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                   >
                     <X className="h-3 w-3" />
@@ -335,7 +339,7 @@ export function EditorHome() {
                       type="button"
                       onClick={() => {
                         setAttachMenuOpen(false);
-                        openCreate();
+                        openTemplates();
                       }}
                       className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)] transition-colors"
                     >

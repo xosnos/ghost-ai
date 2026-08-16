@@ -22,10 +22,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
-    const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-    if (saved && (saved === "dark" || saved === "light" || saved === "system")) {
-      setThemeState(saved);
-    } else {
+    try {
+      const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
+      if (saved && (saved === "dark" || saved === "light" || saved === "system")) {
+        setThemeState(saved);
+      } else {
+        setThemeState("dark");
+      }
+    } catch {
       setThemeState("dark");
     }
   }, []);
@@ -73,16 +77,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setThemeState((prev) => {
-      const next = prev === "dark" ? "light" : "dark";
-      try {
-        localStorage.setItem(THEME_STORAGE_KEY, next);
-      } catch {
-        // Ignore
-      }
-      return next;
-    });
-  }, []);
+    const nextTheme: Theme = theme === "dark" ? "light" : "dark";
+    setThemeState(nextTheme);
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
+    } catch {
+      // Ignore
+    }
+  }, [theme]);
 
   const value = useMemo(
     () => ({

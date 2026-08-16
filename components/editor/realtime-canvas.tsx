@@ -32,7 +32,7 @@ import { RemoteSelectionProvider } from "@/components/editor/remote-selection-co
 import { useTemplateImportRef } from "@/components/editor/template-import-context";
 import { useTheme } from "@/lib/theme-provider";
 import { cn } from "@/lib/utils";
-import { DEFAULT_NODE_COLOR, type CanvasNode, type CanvasEdge, type NodeShape } from "@/types/canvas";
+import { DEFAULT_NODE_COLOR, SHAPE_DEFAULT_SIZES, type CanvasNode, type CanvasEdge, type NodeShape } from "@/types/canvas";
 import type { CanvasTemplate } from "@/components/editor/starter-templates";
 import type {
   PresencePayload,
@@ -75,6 +75,7 @@ function FlowCanvas({
   incomingSelectionRef,
 }: RealtimeCanvasProps) {
   const { resolvedTheme } = useTheme();
+  const receivedBroadcastRef = useRef(false);
   const {
     nodes,
     edges,
@@ -89,7 +90,11 @@ function FlowCanvas({
     redo,
     canUndo,
     canRedo,
-  } = useRealtimeFlow(channel, incomingBroadcastRef);
+  } = useRealtimeFlow(
+    channel,
+    incomingBroadcastRef,
+    receivedBroadcastRef,
+  );
 
   const [isInitialized, setIsInitialized] = useState(false);
   const canvasSave = useCanvasSave();
@@ -151,7 +156,11 @@ function FlowCanvas({
 
     async function loadSavedCanvas() {
       // Check if channel already has active nodes or edges from broadcast
-      if (nodesRef.current.length > 0 || edgesRef.current.length > 0) {
+      if (
+        receivedBroadcastRef.current ||
+        nodesRef.current.length > 0 ||
+        edgesRef.current.length > 0
+      ) {
         if (!cancelled) setIsInitialized(true);
         return;
       }
@@ -196,12 +205,24 @@ function FlowCanvas({
 
   const handleImportTemplate = useCallback(
     (template: CanvasTemplate) => {
-      const suffix = `${Date.now()}`;
+      const suffix = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}`;
       const idMap = new Map<string, string>();
       const newNodes = template.nodes.map((n) => {
         const newId = `${n.id}-${suffix}`;
         idMap.set(n.id, newId);
-        return { ...n, id: newId, data: { ...n.data } } as unknown as CanvasNode;
+        const defaults = SHAPE_DEFAULT_SIZES[n.data.shape] ?? SHAPE_DEFAULT_SIZES.rectangle;
+        const width = n.width ?? defaults.width;
+        const height = n.height ?? defaults.height;
+        return {
+          ...n,
+          id: newId,
+          width,
+          height,
+          style: { ...n.style, width, height },
+          initialWidth: n.initialWidth ?? width,
+          initialHeight: n.initialHeight ?? height,
+          data: { ...n.data },
+        } as unknown as CanvasNode;
       });
       const newEdges = template.edges.map((e) => {
         const newId = `${e.id}-${suffix}`;

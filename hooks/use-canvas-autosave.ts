@@ -49,6 +49,11 @@ export function useCanvasAutosave({
   const lastSavedJsonRef = useRef<string>("");
   const isSavingRef = useRef<boolean>(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingSaveRef = useRef<{
+    json: string;
+    nodes: CanvasNode[];
+    edges: CanvasEdge[];
+  } | null>(null);
   const nodesRef = useRef(nodes);
   const edgesRef = useRef(edges);
   nodesRef.current = nodes;
@@ -65,7 +70,15 @@ export function useCanvasAutosave({
 
   const performSave = useCallback(
     async (currentJson: string, nodesToSave: CanvasNode[], edgesToSave: CanvasEdge[]) => {
-      if (isSavingRef.current || !projectId) return false;
+      if (isSavingRef.current) {
+        pendingSaveRef.current = {
+          json: currentJson,
+          nodes: nodesToSave,
+          edges: edgesToSave,
+        };
+        return false;
+      }
+      if (!projectId) return false;
 
       isSavingRef.current = true;
       setStatus("saving");
@@ -107,10 +120,23 @@ export function useCanvasAutosave({
         return false;
       } finally {
         isSavingRef.current = false;
+        const pending = pendingSaveRef.current;
+        pendingSaveRef.current = null;
+        if (pending) {
+          queueMicrotask(() => {
+            void performSaveRef.current?.(
+              pending.json,
+              pending.nodes,
+              pending.edges,
+            );
+          });
+        }
       }
     },
     [projectId]
   );
+  const performSaveRef = useRef<typeof performSave | null>(null);
+  performSaveRef.current = performSave;
 
   const saveNow = useCallback(async (): Promise<boolean> => {
     if (!isInitialized) return false;

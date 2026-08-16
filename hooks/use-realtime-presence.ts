@@ -63,7 +63,9 @@ export function useRealtimePresence(
   const pendingCursorRef = useRef<{ x: number; y: number } | null>(null);
   const lastSelectionKeyRef = useRef("");
 
-  metaRef.current = buildUserMeta(user);
+  useEffect(() => {
+    metaRef.current = buildUserMeta(user);
+  }, [user]);
 
   useEffect(() => {
     const supabase = createClient();

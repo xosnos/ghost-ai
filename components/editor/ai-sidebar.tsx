@@ -74,7 +74,7 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
     if (!content) return;
 
     const userMessage: ChatMessage = {
-      id: `msg-${Date.now()}`,
+      id: `msg-${crypto.randomUUID()}`,
       role: "user",
       content,
       timestamp: new Date().toLocaleTimeString([], {
@@ -116,8 +116,11 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
         )}
         style={{
           transform: isOpen ? "translateX(0)" : "translateX(100%)",
+          visibility: isOpen ? "visible" : "hidden",
         }}
         aria-label="AI Workspace Sidebar"
+        aria-hidden={!isOpen}
+        inert={!isOpen ? true : undefined}
       >
         {/* Header - Matches Editor Chrome & Project Sidebar */}
         <div className="flex h-12 shrink-0 items-center justify-between px-4 border-b border-[var(--border-default)] bg-[var(--bg-surface)]">
@@ -306,6 +309,8 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
             <div className="flex flex-1 flex-col overflow-hidden p-4">
               <div className="flex flex-col gap-4">
                 <Button
+                  type="button"
+                  disabled
                   className="w-full gap-2 rounded-xl bg-[var(--accent-primary)] text-white font-medium hover:bg-[var(--accent-primary)]/90 h-9 text-xs shadow-sm active:scale-[0.98] transition-all"
                 >
                   <Sparkles className="h-3.5 w-3.5" />

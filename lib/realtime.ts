@@ -33,6 +33,7 @@ export async function connectRealtimeChannel(
 
   const channel = supabase.channel(`project:${projectId}`, {
     config: {
+      private: true,
       presence: { key: userId, enabled: true },
       broadcast: { self: false, ack: false },
     },
@@ -158,7 +159,12 @@ export function attachCursorMoveListener(
     { event: "cursor:move" },
     (message: { payload?: unknown }) => {
       const parsed = parseCursorMovePayload(message?.payload);
-      if (parsed) onEvent(parsed);
+      if (
+        parsed &&
+        readPresenceEntries(channel).some((entry) => entry.userId === parsed.userId)
+      ) {
+        onEvent(parsed);
+      }
     },
   );
 }
@@ -186,7 +192,12 @@ export function attachSelectionChangeListener(
     { event: "selection:change" },
     (message: { payload?: unknown }) => {
       const parsed = parseSelectionChangePayload(message?.payload);
-      if (parsed) onEvent(parsed);
+      if (
+        parsed &&
+        readPresenceEntries(channel).some((entry) => entry.userId === parsed.userId)
+      ) {
+        onEvent(parsed);
+      }
     },
   );
 }

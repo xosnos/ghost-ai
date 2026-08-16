@@ -44,7 +44,7 @@ export interface UseProjectActionsResult {
   deleteTarget: DeleteTarget | null;
   loading: boolean;
   error: string | null;
-  openCreate: () => void;
+  openCreate: (initialError?: string) => void;
   openRename: (projectId: string, currentName: string) => void;
   openDelete: (projectId: string, projectName: string) => void;
   closeDialog: () => void;
@@ -86,10 +86,10 @@ export function useProjectActions(): UseProjectActionsResult {
     return projectSlug(renameName, renameTarget.projectId);
   }, [renameName, renameTarget]);
 
-  const openCreate = useCallback(() => {
+  const openCreate = useCallback((initialError?: string) => {
     setCreateName("");
     setCreateSuffix(Math.random().toString(36).slice(2, 8));
-    setError(null);
+    setError(initialError ?? null);
     setOpenDialog("create");
   }, []);
 

@@ -1,13 +1,16 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { EditorNavbar } from "@/components/editor/editor-navbar";
 import { ProjectSidebar } from "@/components/editor/project-sidebar";
 import { ProjectDialogs } from "@/components/editor/project-dialogs";
 import { ShareProjectDialog } from "@/components/editor/share-project-dialog";
 import { StarterTemplatesModal } from "@/components/editor/starter-templates-modal";
-import { TemplateImportProvider } from "@/components/editor/template-import-context";
+import {
+  TemplateImportProvider,
+  TemplateSelectionProvider,
+} from "@/components/editor/template-import-context";
 import {
   CanvasSaveProvider,
   type CanvasSaveContextValue,
@@ -52,6 +55,7 @@ export function EditorChrome({
   const [aiSidebarOpen, setAiSidebarOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const dialogs = useProjectActions();
+  const openCreate = dialogs.openCreate;
   const isWorkspace = Boolean(project);
   const isProjectOwner = Boolean(
     project && project.ownerId === currentUserId
@@ -63,39 +67,39 @@ export function EditorChrome({
   >(null);
 
   const [presenceOthers, setPresenceOthers] = useState<PresencePayload[]>([]);
-  const presenceContextValue: CanvasPresenceContextValue = {
+  const presenceContextValue = useMemo<CanvasPresenceContextValue>(() => ({
     others: presenceOthers,
     setOthers: setPresenceOthers,
-  };
+  }), [presenceOthers]);
 
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const saveHandlerRef = useRef<(() => Promise<boolean>) | null>(null);
 
-  const handleRegisterSave = (handler: (() => Promise<boolean>) | null) => {
+  const handleRegisterSave = useCallback((handler: (() => Promise<boolean>) | null) => {
     saveHandlerRef.current = handler;
-  };
+  }, []);
 
-  const handleSaveNow = async () => {
+  const handleSaveNow = useCallback(async () => {
     if (saveHandlerRef.current) {
       return saveHandlerRef.current();
     }
     return false;
-  };
+  }, []);
 
-  const saveContextValue: CanvasSaveContextValue = {
+  const saveContextValue = useMemo<CanvasSaveContextValue>(() => ({
     status: saveStatus,
     setStatus: setSaveStatus,
     registerSaveHandler: handleRegisterSave,
     saveNow: handleSaveNow,
-  };
+  }), [saveStatus, handleRegisterSave, handleSaveNow]);
 
-  const contextValue: ProjectDialogContextValue = {
+  const contextValue = useMemo<ProjectDialogContextValue>(() => ({
     openCreate: dialogs.openCreate,
     openRename: dialogs.openRename,
     openDelete: dialogs.openDelete,
-  };
+  }), [dialogs.openCreate, dialogs.openRename, dialogs.openDelete]);
 
-  const handleTemplateSelect = async (template: CanvasTemplate) => {
+  const handleTemplateSelect = useCallback(async (template: CanvasTemplate) => {
     if (isWorkspace) {
       templateImportRef.current?.(template);
       return;
@@ -116,15 +120,18 @@ export function EditorChrome({
       }
     } catch (err) {
       console.error("Failed to create project from template:", err);
+      openCreate("Could not create the template project. Please try again.");
+      return;
     }
-    dialogs.openCreate();
-  };
+    openCreate("Could not create the template project. Please try again.");
+  }, [isWorkspace, openCreate, router]);
 
   return (
     <ProjectDialogContext.Provider value={contextValue}>
       <TemplateImportProvider value={templateImportRef}>
-        <CanvasPresenceProvider value={presenceContextValue}>
-          <CanvasSaveProvider value={saveContextValue}>
+        <TemplateSelectionProvider onOpen={() => setTemplatesOpen(true)}>
+          <CanvasPresenceProvider value={presenceContextValue}>
+            <CanvasSaveProvider value={saveContextValue}>
             <div className="relative flex h-screen flex-col overflow-hidden bg-[var(--bg-base)]">
               <EditorNavbar
                 sidebarOpen={sidebarOpen}
@@ -209,18 +216,17 @@ export function EditorChrome({
           />
         )}
 
-          {project && (
-            <StarterTemplatesModal
-              open={templatesOpen}
-              onImport={(template) => {
-                templateImportRef.current?.(template);
-                setTemplatesOpen(false);
-              }}
-              onClose={() => setTemplatesOpen(false)}
-            />
-          )}
-          </CanvasSaveProvider>
-        </CanvasPresenceProvider>
+          <StarterTemplatesModal
+            open={templatesOpen}
+            onImport={(template) => {
+              void handleTemplateSelect(template);
+              setTemplatesOpen(false);
+            }}
+            onClose={() => setTemplatesOpen(false)}
+          />
+            </CanvasSaveProvider>
+          </CanvasPresenceProvider>
+        </TemplateSelectionProvider>
       </TemplateImportProvider>
     </ProjectDialogContext.Provider>
   );

@@ -1,5 +1,6 @@
 import {
   NODE_COLORS,
+  SHAPE_DEFAULT_SIZES,
   type CanvasNode,
   type CanvasEdge,
   type NodeShape,
@@ -26,12 +27,18 @@ function node(
   width?: number,
   height?: number,
 ): CanvasNode {
+  const size = SHAPE_DEFAULT_SIZES[shape];
+  const resolvedWidth = width ?? size.width;
+  const resolvedHeight = height ?? size.height;
   return {
     id,
     type: "canvasNode",
     position: { x, y },
-    width,
-    height,
+    width: resolvedWidth,
+    height: resolvedHeight,
+    style: { width: resolvedWidth, height: resolvedHeight },
+    initialWidth: resolvedWidth,
+    initialHeight: resolvedHeight,
     data: { label, color, shape },
   } as unknown as CanvasNode;
 }

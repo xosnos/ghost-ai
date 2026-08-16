@@ -9,8 +9,8 @@ import {
   Trash2,
   Search,
   Users,
-  LayoutGrid,
   Calendar,
+  LayoutGrid,
   Sparkles,
   Layers,
   Cpu,
@@ -47,7 +47,7 @@ const THUMBNAIL_STYLES = [
 ];
 
 function formatDate(dateStr?: string) {
-  if (!dateStr) return "May 19, 2026";
+  if (!dateStr) return "Date unavailable";
   try {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return "Recently";
@@ -55,6 +55,7 @@ function formatDate(dateStr?: string) {
       month: "short",
       day: "numeric",
       year: "numeric",
+      timeZone: "UTC",
     });
   } catch {
     return "Recently";
@@ -154,6 +155,7 @@ export function ProjectSidebar({
             <button
               type="button"
               onClick={() => setSearchQuery("")}
+              aria-label="Clear project search"
               className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             >
               <X className="h-3 w-3" />
@@ -173,7 +175,7 @@ export function ProjectSidebar({
               </span>
               <button
                 type="button"
-                onClick={dialogs.openCreate}
+                onClick={() => dialogs.openCreate()}
                 className="flex items-center gap-1 text-[11px] text-[var(--accent-primary)] hover:underline"
               >
                 <Plus className="h-3 w-3" />
@@ -244,10 +246,6 @@ export function ProjectSidebar({
                         <span className="truncate text-xs font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] transition-colors">
                           {tmpl.name}
                         </span>
-                        <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-muted)]">
-                          <Calendar className="h-3 w-3 text-[var(--text-faint)]" />
-                          <span>May 19, 2026</span>
-                        </div>
                       </div>
 
                       <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-[var(--text-faint)] opacity-0 transition-opacity group-hover:opacity-100 group-hover:text-[var(--text-secondary)]" />
@@ -265,7 +263,7 @@ export function ProjectSidebar({
         <Button
           variant="secondary"
           className="w-full gap-2 text-xs font-semibold h-9 rounded-xl border border-[var(--border-subtle)] hover:border-[var(--accent-primary)]/50 hover:bg-[var(--bg-elevated)]"
-          onClick={dialogs.openCreate}
+          onClick={() => dialogs.openCreate()}
         >
           <Plus className="h-4 w-4 text-[var(--accent-primary)]" />
           Create New Project
@@ -353,19 +351,27 @@ function ProjectList({
 
   return (
     <ul className="flex flex-col gap-1 animate-in fade-in duration-200">
-      {projects.map((project, index) => (
+      {projects.map((project) => (
         <ProjectListItem
           key={project.id}
           project={project}
           currentUserId={currentUserId}
           isActive={project.id === currentRoomId}
-          colorIndex={index}
+          colorIndex={stableColorIndex(project.id)}
           onRename={onRename}
           onDelete={onDelete}
         />
       ))}
     </ul>
   );
+}
+
+function stableColorIndex(projectId: string): number {
+  let hash = 0;
+  for (const character of projectId) {
+    hash = (hash * 31 + character.charCodeAt(0)) | 0;
+  }
+  return Math.abs(hash);
 }
 
 interface ProjectListItemProps {

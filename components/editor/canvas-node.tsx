@@ -305,8 +305,8 @@ function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
         minWidth={MIN_NODE_WIDTH}
         minHeight={MIN_NODE_HEIGHT}
         isVisible={!!selected}
-        lineClassName="!border-[var(--accent-primary)]"
-        handleClassName="!h-2 !w-2 !rounded-sm !border-[var(--accent-primary)] !bg-[var(--bg-elevated)]"
+        lineClassName="border-[var(--accent-primary)]!"
+        handleClassName="h-2! w-2! rounded-sm! border-[var(--accent-primary)]! bg-[var(--bg-elevated)]!"
       />
       {content}
       <NodeColorToolbar id={id} data={nodeData} selected={!!selected} width={width} height={height} />
@@ -318,7 +318,7 @@ function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
           type="source"
           position={pos}
           id={pos}
-          className="!z-20 !h-3 !w-3 !rounded-full !border-2 !bg-[var(--accent-primary)] !border-[var(--bg-surface)] opacity-0 transition-all duration-150 group-hover:opacity-100 after:absolute after:-inset-3 after:content-[''] after:cursor-crosshair hover:!scale-125"
+          className="z-20! h-3! w-3! rounded-full! border-2! bg-[var(--accent-primary)]! border-[var(--bg-surface)]! opacity-0 transition-all duration-150 group-hover:opacity-100 after:absolute after:-inset-3 after:content-[''] after:cursor-crosshair hover:scale-125!"
         />
       ))}
     </div>

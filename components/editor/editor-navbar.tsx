@@ -113,7 +113,7 @@ export function EditorNavbar({
 
       {/* Center floating action pill (Workspace mode) */}
       {isWorkspace && (
-        <div className="pointer-events-auto hidden sm:flex items-center gap-1 rounded-full border border-[var(--border-default)] bg-[var(--bg-surface)]/80 p-1 shadow-sm backdrop-blur-md">
+        <div className="pointer-events-auto flex items-center gap-1 rounded-full border border-[var(--border-default)] bg-[var(--bg-surface)]/80 p-1 shadow-sm backdrop-blur-md">
           {saveStatus && (
             <Button
               variant="ghost"
@@ -140,22 +140,22 @@ export function EditorNavbar({
               {saveStatus === "saving" ? (
                 <>
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  <span>Saving…</span>
+                  <span className="hidden sm:inline">Saving…</span>
                 </>
               ) : saveStatus === "saved" ? (
                 <>
                   <Check className="h-3.5 w-3.5 text-emerald-500" />
-                  <span className="text-emerald-500">Saved</span>
+                  <span className="hidden text-emerald-500 sm:inline">Saved</span>
                 </>
               ) : saveStatus === "error" ? (
                 <>
                   <AlertCircle className="h-3.5 w-3.5 text-[var(--state-error)]" />
-                  <span className="text-[var(--state-error)]">Save error</span>
+                  <span className="hidden text-[var(--state-error)] sm:inline">Save error</span>
                 </>
               ) : (
                 <>
                   <Cloud className="h-3.5 w-3.5" />
-                  <span>Save</span>
+                  <span className="hidden sm:inline">Save</span>
                 </>
               )}
             </Button>
@@ -168,7 +168,7 @@ export function EditorNavbar({
             onClick={onShare}
           >
             <Share2 className="h-3.5 w-3.5" />
-            Share
+            <span className="hidden sm:inline">Share</span>
           </Button>
 
           {onOpenTemplates && (
@@ -179,7 +179,7 @@ export function EditorNavbar({
               onClick={onOpenTemplates}
             >
               <LayoutTemplate className="h-3.5 w-3.5" />
-              Templates
+              <span className="hidden sm:inline">Templates</span>
             </Button>
           )}
 

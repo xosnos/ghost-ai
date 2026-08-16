@@ -7,10 +7,45 @@ import {
   downloadCanvasSnapshot,
   type CanvasData,
 } from "@/lib/canvas-storage";
-import type { CanvasNode, CanvasEdge } from "@/types/canvas";
+import { NODE_SHAPES, type CanvasNode, type CanvasEdge } from "@/types/canvas";
 
 interface RouteContext {
   params: Promise<{ projectId: string }>;
+}
+
+const MAX_CANVAS_ITEMS = 1000;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isCanvasNode(value: unknown): value is CanvasNode {
+  if (!isRecord(value) || typeof value.id !== "string") return false;
+  if (!isRecord(value.position)) return false;
+  if (
+    typeof value.position.x !== "number" ||
+    typeof value.position.y !== "number"
+  ) {
+    return false;
+  }
+  if (!isRecord(value.data)) return false;
+  return (
+    typeof value.data.label === "string" &&
+    isRecord(value.data.color) &&
+    typeof value.data.color.fill === "string" &&
+    typeof value.data.color.text === "string" &&
+    typeof value.data.shape === "string" &&
+    NODE_SHAPES.includes(value.data.shape as (typeof NODE_SHAPES)[number])
+  );
+}
+
+function isCanvasEdge(value: unknown): value is CanvasEdge {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.source === "string" &&
+    typeof value.target === "string"
+  );
 }
 
 export async function GET(_req: Request, ctx: RouteContext) {
@@ -88,8 +123,22 @@ export async function PUT(req: Request, ctx: RouteContext) {
       );
     }
 
-    const nodes = (Array.isArray(body.nodes) ? body.nodes : []) as CanvasNode[];
-    const edges = (Array.isArray(body.edges) ? body.edges : []) as CanvasEdge[];
+    if (
+      !Array.isArray(body.nodes) ||
+      !Array.isArray(body.edges) ||
+      body.nodes.length > MAX_CANVAS_ITEMS ||
+      body.edges.length > MAX_CANVAS_ITEMS ||
+      !body.nodes.every(isCanvasNode) ||
+      !body.edges.every(isCanvasEdge)
+    ) {
+      return NextResponse.json(
+        { error: "Invalid canvas data" },
+        { status: 400 }
+      );
+    }
+
+    const nodes = body.nodes;
+    const edges = body.edges;
 
     const canvasData: CanvasData = { nodes, edges };
     const storagePath = await uploadCanvasSnapshot(

@@ -5,7 +5,7 @@ import { createContext, useContext } from "react";
 export type DialogKind = "create" | "rename" | "delete" | null;
 
 export interface ProjectDialogContextValue {
-  openCreate: () => void;
+  openCreate: (initialError?: string) => void;
   openRename: (projectId: string, currentName: string) => void;
   openDelete: (projectId: string, projectName: string) => void;
 }
