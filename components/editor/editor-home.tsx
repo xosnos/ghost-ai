@@ -23,7 +23,6 @@ import {
 } from "lucide-react";
 import { useProjectDialogs } from "@/components/editor/project-dialog-context";
 import { useTheme } from "@/lib/theme-provider";
-import { GhostLogo, GhostIcon } from "@/components/ui/ghost-logo";
 import { cn } from "@/lib/utils";
 
 const PROMPT_SUGGESTIONS = [
@@ -182,7 +181,7 @@ export function EditorHome() {
       {/* Top Banner - Google Stitch Style */}
       {!bannerDismissed && (
         <div className="animate-in fade-in slide-in-from-top-2 duration-300 mb-6 flex items-center gap-2 rounded-full border border-[var(--border-default)] bg-[var(--bg-surface)]/90 px-3.5 py-1 text-xs text-[var(--text-secondary)] shadow-sm backdrop-blur-md hover:border-[var(--border-subtle)]">
-          <GhostIcon size={14} glow />
+          <Sparkles className="h-3.5 w-3.5 text-[var(--accent-ai-text)]" />
           <span className="font-medium">Meet the new Ghost AI Architect</span>
           <button
             type="button"
@@ -197,11 +196,8 @@ export function EditorHome() {
 
       {/* Center Hero Content */}
       <div className="flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-6 my-auto">
-        {/* Title & Emblem */}
-        <div className="text-center space-y-3">
-          <div className="flex justify-center">
-            <GhostLogo size={36} variant="mark" glow className="transition-transform duration-300 hover:scale-110" />
-          </div>
+        {/* Title */}
+        <div className="text-center space-y-2">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[var(--text-primary)]">
             Welcome to Ghost AI..
           </h1>
@@ -356,10 +352,10 @@ export function EditorHome() {
               </div>
 
               {/* Architecture Mode Toggle (Microservices / Serverless) with Smooth Slider Pill */}
-              <div className="relative grid grid-cols-2 items-center rounded-lg bg-[var(--bg-base)] p-1 border border-[var(--border-default)]">
+              <div className="relative flex items-center rounded-lg bg-[var(--bg-base)] p-0.5 border border-[var(--border-default)]">
                 {/* Animated Slider Pill */}
                 <div
-                  className="absolute left-1 top-1 bottom-1 w-[calc(50%-4px)] rounded-md bg-[var(--bg-elevated)] shadow-sm border border-[var(--border-subtle)]/50 transition-transform duration-200 ease-out pointer-events-none"
+                  className="absolute left-0.5 top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-md bg-[var(--bg-elevated)] shadow-sm border border-[var(--border-subtle)]/50 transition-transform duration-200 ease-out pointer-events-none"
                   style={{
                     transform: activeArchMode === "microservices" ? "translateX(0)" : "translateX(100%)",
                   }}
@@ -369,26 +365,26 @@ export function EditorHome() {
                   type="button"
                   onClick={() => setActiveArchMode("microservices")}
                   className={cn(
-                    "relative z-10 flex items-center justify-center gap-2 rounded-md px-4 py-1.5 text-xs font-medium transition-colors duration-200 whitespace-nowrap",
+                    "relative z-10 flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors duration-200",
                     activeArchMode === "microservices"
                       ? "text-[var(--text-primary)]"
                       : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
                   )}
                 >
-                  <Zap className="h-3.5 w-3.5 shrink-0 text-amber-400" />
+                  <Zap className="h-3.5 w-3.5 text-amber-400" />
                   <span>Microservices</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setActiveArchMode("serverless")}
                   className={cn(
-                    "relative z-10 flex items-center justify-center gap-2 rounded-md px-4 py-1.5 text-xs font-medium transition-colors duration-200 whitespace-nowrap",
+                    "relative z-10 flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors duration-200",
                     activeArchMode === "serverless"
                       ? "text-[var(--text-primary)]"
                       : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
                   )}
                 >
-                  <Cloud className="h-3.5 w-3.5 shrink-0 text-cyan-400" />
+                  <Cloud className="h-3.5 w-3.5 text-cyan-400" />
                   <span>Serverless</span>
                 </button>
               </div>

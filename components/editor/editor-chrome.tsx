@@ -8,16 +8,7 @@ import { ProjectDialogs } from "@/components/editor/project-dialogs";
 import { ShareProjectDialog } from "@/components/editor/share-project-dialog";
 import { StarterTemplatesModal } from "@/components/editor/starter-templates-modal";
 import { TemplateImportProvider } from "@/components/editor/template-import-context";
-import {
-  CanvasSaveProvider,
-  type CanvasSaveContextValue,
-} from "@/components/editor/canvas-save-context";
-import {
-  CanvasPresenceProvider,
-  type CanvasPresenceContextValue,
-} from "@/components/editor/canvas-presence-context";
-import type { SaveStatus } from "@/hooks/use-canvas-autosave";
-import { AiSidebar } from "@/components/editor/ai-sidebar";
+import { AiSidebarPlaceholder } from "@/components/editor/ai-sidebar-placeholder";
 import {
   ProjectDialogContext,
   type ProjectDialogContextValue,
@@ -26,7 +17,6 @@ import { useProjectActions } from "@/hooks/use-project-actions";
 import { useShareDialog } from "@/hooks/use-share-dialog";
 import type { Project } from "@/lib/projects/types";
 import type { CanvasTemplate } from "@/components/editor/starter-templates";
-import type { PresencePayload } from "@/types/realtime";
 
 interface EditorChromeProps {
   children: React.ReactNode;
@@ -62,33 +52,6 @@ export function EditorChrome({
     ((template: CanvasTemplate) => void) | null
   >(null);
 
-  const [presenceOthers, setPresenceOthers] = useState<PresencePayload[]>([]);
-  const presenceContextValue: CanvasPresenceContextValue = {
-    others: presenceOthers,
-    setOthers: setPresenceOthers,
-  };
-
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
-  const saveHandlerRef = useRef<(() => Promise<boolean>) | null>(null);
-
-  const handleRegisterSave = (handler: (() => Promise<boolean>) | null) => {
-    saveHandlerRef.current = handler;
-  };
-
-  const handleSaveNow = async () => {
-    if (saveHandlerRef.current) {
-      return saveHandlerRef.current();
-    }
-    return false;
-  };
-
-  const saveContextValue: CanvasSaveContextValue = {
-    status: saveStatus,
-    setStatus: setSaveStatus,
-    registerSaveHandler: handleRegisterSave,
-    saveNow: handleSaveNow,
-  };
-
   const contextValue: ProjectDialogContextValue = {
     openCreate: dialogs.openCreate,
     openRename: dialogs.openRename,
@@ -123,22 +86,17 @@ export function EditorChrome({
   return (
     <ProjectDialogContext.Provider value={contextValue}>
       <TemplateImportProvider value={templateImportRef}>
-        <CanvasPresenceProvider value={presenceContextValue}>
-          <CanvasSaveProvider value={saveContextValue}>
-            <div className="relative flex h-screen flex-col overflow-hidden bg-[var(--bg-base)]">
-              <EditorNavbar
-                sidebarOpen={sidebarOpen}
-                onToggleSidebar={() => setSidebarOpen((v) => !v)}
-                userEmail={userEmail}
-                projectName={project?.name}
-                aiSidebarOpen={aiSidebarOpen}
-                onToggleAiSidebar={() => setAiSidebarOpen((v) => !v)}
-                onShare={project ? share.openShare : undefined}
-                onOpenTemplates={project ? () => setTemplatesOpen(true) : undefined}
-                saveStatus={isWorkspace ? saveStatus : undefined}
-                onSaveNow={isWorkspace ? handleSaveNow : undefined}
-                presenceOthers={isWorkspace ? presenceOthers : undefined}
-              />
+        <div className="relative flex h-screen flex-col overflow-hidden bg-[var(--bg-base)]">
+          <EditorNavbar
+            sidebarOpen={sidebarOpen}
+            onToggleSidebar={() => setSidebarOpen((v) => !v)}
+            userEmail={userEmail}
+            projectName={project?.name}
+            aiSidebarOpen={aiSidebarOpen}
+            onToggleAiSidebar={() => setAiSidebarOpen((v) => !v)}
+            onShare={project ? share.openShare : undefined}
+            onOpenTemplates={project ? () => setTemplatesOpen(true) : undefined}
+          />
 
           {/* Drawer Sidebar for Mobile or Workspace Overlay */}
           <ProjectSidebar
@@ -152,10 +110,10 @@ export function EditorChrome({
           />
 
           {/* Main Area */}
-          <main className="flex flex-1 overflow-hidden">
+          <main className="flex flex-1 overflow-hidden pt-12">
             {!isWorkspace ? (
               // Dashboard Google Stitch View: Left Panel Embedded + Center Hero Canvas
-              <div className="flex flex-1 overflow-hidden p-3 md:p-4 pt-16 md:pt-16 gap-4">
+              <div className="flex flex-1 overflow-hidden p-3 md:p-4 gap-4">
                 <ProjectSidebar
                   isOpen={true}
                   onClose={() => {}}
@@ -171,7 +129,7 @@ export function EditorChrome({
                 </div>
               </div>
             ) : (
-              // Full-viewport Canvas Workspace View (seamless behind floating navbar)
+              // Full-viewport Canvas Workspace View
               <div className="flex flex-1 overflow-hidden">
                 {children}
               </div>
@@ -179,7 +137,7 @@ export function EditorChrome({
           </main>
 
           {project && (
-            <AiSidebar
+            <AiSidebarPlaceholder
               isOpen={aiSidebarOpen}
               onClose={() => setAiSidebarOpen(false)}
             />
@@ -209,18 +167,16 @@ export function EditorChrome({
           />
         )}
 
-          {project && (
-            <StarterTemplatesModal
-              open={templatesOpen}
-              onImport={(template) => {
-                templateImportRef.current?.(template);
-                setTemplatesOpen(false);
-              }}
-              onClose={() => setTemplatesOpen(false)}
-            />
-          )}
-          </CanvasSaveProvider>
-        </CanvasPresenceProvider>
+        {project && (
+          <StarterTemplatesModal
+            open={templatesOpen}
+            onImport={(template) => {
+              templateImportRef.current?.(template);
+              setTemplatesOpen(false);
+            }}
+            onClose={() => setTemplatesOpen(false)}
+          />
+        )}
       </TemplateImportProvider>
     </ProjectDialogContext.Provider>
   );

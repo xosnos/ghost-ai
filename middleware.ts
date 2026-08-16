@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 const publicRoutes = ["/login", "/signup", "/forgot-password", "/reset-password", "/auth/callback"];
 
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next({
+  let response = NextResponse.next({
     request: { headers: request.headers },
   });
 

@@ -125,7 +125,6 @@ export function CanvasWrapper({ projectId, user }: CanvasWrapperProps) {
   return (
     <div className="flex flex-1">
       <RealtimeCanvas
-        projectId={projectId}
         channel={channel}
         user={user}
         presenceEntries={presenceEntries}

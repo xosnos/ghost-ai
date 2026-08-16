@@ -5,7 +5,6 @@ import {
   addEdge,
   applyEdgeChanges,
   applyNodeChanges,
-  MarkerType,
   type Connection,
   type EdgeChange,
   type NodeChange,
@@ -54,7 +53,6 @@ export interface UseRealtimeFlowReturn {
   addNode: (node: CanvasNode) => void;
   updateEdgeLabel: (edgeId: string, label: string) => void;
   appendTemplate: (nodes: CanvasNode[], edges: CanvasEdge[]) => void;
-  loadInitialState: (nodes: CanvasNode[], edges: CanvasEdge[]) => void;
   undo: () => void;
   redo: () => void;
   canUndo: boolean;
@@ -181,17 +179,10 @@ export function useRealtimeFlow(
 
   const onConnect: OnConnect = useCallback(
     (connection: Connection) => {
-      if (!connection.source || !connection.target) return;
       pushHistory(snapshotRef.current);
       const edge: CanvasEdge = {
         ...connection,
         id: `${connection.source}-${connection.target}-${Date.now()}`,
-        type: "canvasEdge",
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          width: 16,
-          height: 16,
-        },
       };
       setEdges((prev) => {
         const next = addEdge(edge, prev) as CanvasEdge[];
@@ -266,22 +257,6 @@ export function useRealtimeFlow(
     [send, pushHistory],
   );
 
-  const loadInitialState = useCallback(
-    (initialNodes: CanvasNode[], initialEdges: CanvasEdge[]) => {
-      setNodes(initialNodes);
-      setEdges(initialEdges);
-      snapshotRef.current = {
-        nodes: initialNodes.map((n) => ({ ...n, data: { ...n.data } })),
-        edges: initialEdges.map((e) => ({ ...e, data: { ...e.data } })),
-      };
-      past.current = [];
-      future.current = [];
-      setCanUndo(false);
-      setCanRedo(false);
-    },
-    []
-  );
-
   const undo = useCallback(() => {
     if (past.current.length === 0) return;
     const previous = past.current[past.current.length - 1];
@@ -306,19 +281,5 @@ export function useRealtimeFlow(
     setCanRedo(future.current.length > 0);
   }, []);
 
-  return {
-    nodes,
-    edges,
-    onNodesChange,
-    onEdgesChange,
-    onConnect,
-    addNode,
-    updateEdgeLabel,
-    appendTemplate,
-    loadInitialState,
-    undo,
-    redo,
-    canUndo,
-    canRedo,
-  };
+  return { nodes, edges, onNodesChange, onEdgesChange, onConnect, addNode, updateEdgeLabel, appendTemplate, undo, redo, canUndo, canRedo };
 }
