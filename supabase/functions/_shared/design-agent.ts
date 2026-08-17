@@ -1080,6 +1080,29 @@ export async function processDesignTask(
     throw new PermanentAiError("Prompt cannot be empty for design generation");
   }
 
+  const { data: taskRun, error: taskRunError } = await supabaseAdmin
+    .from("task_runs")
+    .select("id, project_id, kind, status")
+    .eq("id", runId)
+    .maybeSingle();
+
+  if (taskRunError) {
+    throw new TransientAiError(`Failed to fetch task run ${runId}: ${taskRunError.message}`);
+  }
+  if (!taskRun) {
+    throw new PermanentAiError(`Task run ${runId} not found`);
+  }
+  if (taskRun.project_id !== projectId) {
+    throw new PermanentAiError(
+      `Task run ${runId} project mismatch: expected ${projectId}, found ${taskRun.project_id}`
+    );
+  }
+  if (taskRun.kind !== "design") {
+    throw new PermanentAiError(
+      `Task run ${runId} kind mismatch: expected 'design', found '${taskRun.kind}'`
+    );
+  }
+
   let channel: RealtimeChannel | null = null;
 
   try {
