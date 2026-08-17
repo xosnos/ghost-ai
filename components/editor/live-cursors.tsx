@@ -1,13 +1,22 @@
 "use client";
 
 import { ViewportPortal } from "@xyflow/react";
+import { Loader2 } from "lucide-react";
 import type { PresencePayload } from "@/types/realtime";
 
 interface LiveCursorsProps {
   others: PresencePayload[];
 }
 
-function CursorPointer({ color, name }: { color: string; name: string }) {
+function CursorPointer({
+  color,
+  name,
+  thinking,
+}: {
+  color: string;
+  name: string;
+  thinking?: boolean;
+}) {
   return (
     <div className="pointer-events-none flex items-start">
       <svg
@@ -26,13 +35,16 @@ function CursorPointer({ color, name }: { color: string; name: string }) {
         />
       </svg>
       <span
-        className="mt-3 ml-0.5 max-w-32 truncate rounded-xl px-1.5 py-0.5 text-[10px] font-medium leading-tight"
+        className="mt-3 ml-0.5 inline-flex max-w-40 items-center gap-1 truncate rounded-xl px-1.5 py-0.5 text-[10px] font-medium leading-tight shadow-sm"
         style={{
           backgroundColor: color,
           color: "var(--bg-base)",
         }}
       >
-        {name}
+        {thinking && (
+          <Loader2 className="h-2.5 w-2.5 animate-spin shrink-0" aria-label="Thinking" />
+        )}
+        <span className="truncate">{name}</span>
       </span>
     </div>
   );
@@ -57,7 +69,11 @@ export function LiveCursors({ others }: LiveCursorsProps) {
             zIndex: 1000,
           }}
         >
-          <CursorPointer color={person.cursorColor} name={person.displayName} />
+          <CursorPointer
+            color={person.cursorColor}
+            name={person.displayName}
+            thinking={person.thinking}
+          />
         </div>
       ))}
     </ViewportPortal>

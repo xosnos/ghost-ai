@@ -1,6 +1,13 @@
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import { createRealtimeBrowserClient } from "@/lib/supabase/client";
 import { NODE_COLORS } from "@/types/canvas";
+import {
+  parseAiStatusMessage,
+  parseAiChatMessage,
+  type AiStatusMessage,
+  type AiChatMessage,
+  type AiChatMessageSender,
+} from "@/types/tasks";
 import type {
   CursorMovePayload,
   PresencePayload,
@@ -202,7 +209,42 @@ export function attachSelectionChangeListener(
   );
 }
 
+export function attachAiStatusListener(
+  channel: RealtimeChannel,
+  onEvent: (payload: AiStatusMessage) => void,
+) {
+  channel.on(
+    "broadcast",
+    { event: "ai-status" },
+    (message: { payload?: unknown }) => {
+      const parsed = parseAiStatusMessage(message?.payload);
+      if (parsed) {
+        onEvent(parsed);
+      }
+    },
+  );
+}
+
+export function attachAiChatListener(
+  channel: RealtimeChannel,
+  onEvent: (payload: AiChatMessage) => void,
+) {
+  channel.on(
+    "broadcast",
+    { event: "ai-chat" },
+    (message: { payload?: unknown }) => {
+      const parsed = parseAiChatMessage(message?.payload);
+      if (parsed) {
+        onEvent(parsed);
+      }
+    },
+  );
+}
+
 export type {
+  AiChatMessage,
+  AiChatMessageSender,
+  AiStatusMessage,
   CursorMovePayload,
   PresencePayload,
   PresenceState,

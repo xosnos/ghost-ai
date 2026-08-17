@@ -7,6 +7,7 @@ Add spec generation to the durable Supabase Queue and shared Edge Function worke
 Create or update `POST /api/ai/spec`.
 
 It should:
+
 - accept and validate `roomId`, `chatHistory`, `nodes`, and `edges`
 - authenticate the current user
 - resolve project access from `roomId`; do not trust a client-supplied project ID
@@ -14,9 +15,10 @@ It should:
 - invoke `ai-worker` as a best effort fast path after the queue transaction commits
 - return `{ runId }` with HTTP 202
 
-2. Spec metadata and storage
+1. Spec metadata and storage
 
 Ensure `project_specs` exists with:
+
 - `id` (uuid, primary key)
 - `task_run_id` (uuid, unique foreign key to `task_runs`)
 - `project_id` (uuid, foreign key to `projects`)
@@ -27,15 +29,17 @@ Add separate indexes on `task_run_id` through its unique constraint and on `proj
 
 Store generated Markdown in the private `specs` Supabase Storage bucket at the deterministic path `specs/{projectId}/{runId}.md`. Store only metadata and the storage path in PostgreSQL.
 
-3. Spec generation handler
+1. Spec generation handler
 
 Create `supabase/functions/_shared/generate-spec.ts` and dispatch to it from `supabase/functions/ai-worker/index.ts` when the trusted queue message kind is `spec`.
 
 It should:
+
 - validate the trusted queue payload containing `runId`, `projectId`, `roomId`, `userId`, `chatHistory`, `nodes`, and `edges`
 - verify the task run matches the expected project, user, and kind
 - let the queue worker own visibility timeout, lifecycle, attempt count, and message acknowledgement
-- use Gemini through the Deno-compatible AI SDK integration
+- use OpenRouter through the Deno-compatible AI SDK integration
+- send `openrouter/free` as the model ID so OpenRouter routes to an available free model
 - generate a Markdown technical spec from the canvas and chat context
 - upload the Markdown to Supabase Storage and create the matching `project_specs` row before marking the run completed
 - publish progress to the project-scoped `ai-status` Broadcast channel
@@ -48,13 +52,14 @@ It should:
 - Do not add frontend logic or a spec editor.
 - Do not derive access from client-provided project IDs.
 - Do not store Markdown content in `task_runs` or `project_specs`.
-- Do not create a new AI provider abstraction.
+- Do not create a new AI provider abstraction. OpenRouter is the only provider.
 - Do not add a provider-specific token route.
 - Do not change existing canvas or chat data models.
 
 ### Notes
 
-- Store `GOOGLE_AI_API_KEY` as a Supabase Edge Function secret.
+- Store `OPENROUTER_API_KEY` as a Supabase Edge Function secret.
+- Call OpenRouter at `https://openrouter.ai/api/v1` with model ID `openrouter/free`. Do not pin a paid model, a Google AI SDK client, or `GOOGLE_AI_API_KEY`.
 - The task run is the source of lifecycle state; Realtime Broadcast is only for ephemeral room-wide progress.
 - Keep work within Supabase Edge Function execution limits rather than modeling an unbounded workflow.
 

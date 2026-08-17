@@ -9,6 +9,8 @@ import {
   attachCanvasSyncListener,
   attachCursorMoveListener,
   attachSelectionChangeListener,
+  attachAiStatusListener,
+  attachAiChatListener,
 } from "@/lib/realtime";
 import { RealtimeCanvas } from "@/components/editor/realtime-canvas";
 import type {
@@ -16,6 +18,7 @@ import type {
   PresencePayload,
   SelectionChangePayload,
 } from "@/types/realtime";
+import type { AiStatusMessage, AiChatMessage } from "@/types/tasks";
 
 interface CanvasWrapperProps {
   projectId: string;
@@ -39,6 +42,12 @@ export function CanvasWrapper({ projectId, user }: CanvasWrapperProps) {
   const incomingSelectionRef = useRef<
     ((payload: SelectionChangePayload) => void) | null
   >(null);
+  const incomingAiStatusRef = useRef<((payload: AiStatusMessage) => void) | null>(
+    null,
+  );
+  const incomingAiChatRef = useRef<((payload: AiChatMessage) => void) | null>(
+    null,
+  );
   const userRef = useRef(user);
   userRef.current = user;
 
@@ -65,6 +74,12 @@ export function CanvasWrapper({ projectId, user }: CanvasWrapperProps) {
       });
       attachSelectionChangeListener(ch, (payload) => {
         incomingSelectionRef.current?.(payload);
+      });
+      attachAiStatusListener(ch, (payload) => {
+        incomingAiStatusRef.current?.(payload);
+      });
+      attachAiChatListener(ch, (payload) => {
+        incomingAiChatRef.current?.(payload);
       });
       setChannel(ch);
 
@@ -132,6 +147,8 @@ export function CanvasWrapper({ projectId, user }: CanvasWrapperProps) {
         incomingBroadcastRef={incomingBroadcastRef}
         incomingCursorRef={incomingCursorRef}
         incomingSelectionRef={incomingSelectionRef}
+        incomingAiStatusRef={incomingAiStatusRef}
+        incomingAiChatRef={incomingAiChatRef}
       />
     </div>
   );

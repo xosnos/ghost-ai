@@ -22,6 +22,10 @@ import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useCanvasAutosave } from "@/hooks/use-canvas-autosave";
 import { useCanvasSave } from "@/components/editor/canvas-save-context";
 import { useCanvasPresence } from "@/components/editor/canvas-presence-context";
+import { useAiStatus } from "@/components/editor/ai-status-context";
+import { useAiChat } from "@/components/editor/ai-chat-context";
+import { useAiTaskStatus } from "@/hooks/use-ai-task-status";
+import { useRealtimeChat } from "@/hooks/use-realtime-chat";
 import { ShapePanel } from "@/components/editor/shape-panel";
 import { CanvasControlBar } from "@/components/editor/canvas-control-bar";
 import { CanvasNodeComponent } from "@/components/editor/canvas-node";
@@ -39,6 +43,7 @@ import type {
   CursorMovePayload,
   SelectionChangePayload,
 } from "@/types/realtime";
+import type { AiStatusMessage, AiChatMessage } from "@/types/tasks";
 
 interface CanvasUser {
   id: string;
@@ -55,6 +60,12 @@ interface RealtimeCanvasProps {
   incomingCursorRef: MutableRefObject<((payload: CursorMovePayload) => void) | null>;
   incomingSelectionRef: MutableRefObject<
     ((payload: SelectionChangePayload) => void) | null
+  >;
+  incomingAiStatusRef?: MutableRefObject<
+    ((payload: AiStatusMessage) => void) | null
+  >;
+  incomingAiChatRef?: MutableRefObject<
+    ((payload: AiChatMessage) => void) | null
   >;
 }
 
@@ -73,6 +84,8 @@ function FlowCanvas({
   incomingBroadcastRef,
   incomingCursorRef,
   incomingSelectionRef,
+  incomingAiStatusRef,
+  incomingAiChatRef,
 }: RealtimeCanvasProps) {
   const { resolvedTheme } = useTheme();
   const receivedBroadcastRef = useRef(false);
@@ -123,6 +136,77 @@ function FlowCanvas({
       canvasSave.registerSaveHandler(null);
     };
   }, [autosave.saveNow, canvasSave]);
+
+  const addLocalMessageRef = useRef<((msg: AiChatMessage) => void) | null>(null);
+
+  const handleRunFailed = useCallback(
+    (runId: string, errorMessage?: string | null) => {
+      const sanitizedMsg = errorMessage
+        ? errorMessage.slice(0, 500)
+        : "AI design generation encountered an issue. Please try again.";
+      addLocalMessageRef.current?.({
+        id: `err-${runId}`,
+        sender: { id: "ghost-ai", name: "Ghost AI", avatarUrl: null },
+        role: "assistant",
+        content: `Generation failed: ${sanitizedMsg}`,
+        timestamp: new Date().toISOString(),
+        runId,
+      });
+    },
+    []
+  );
+
+  const aiTaskStatus = useAiTaskStatus({
+    projectId,
+    channel,
+    incomingAiStatusRef,
+    onRunFailed: handleRunFailed,
+  });
+  const aiStatusContext = useAiStatus();
+
+  // Keep editor chrome AI status context in sync
+  useEffect(() => {
+    if (!aiStatusContext) return;
+    aiStatusContext.setIsAiActive(aiTaskStatus.isAiActive);
+    aiStatusContext.setLatestStatus(aiTaskStatus.latestStatus);
+    aiStatusContext.setActiveTaskRun(aiTaskStatus.activeTaskRun);
+  }, [
+    aiTaskStatus.isAiActive,
+    aiTaskStatus.latestStatus,
+    aiTaskStatus.activeTaskRun,
+    aiStatusContext,
+  ]);
+
+  const realtimeChat = useRealtimeChat({
+    projectId,
+    channel,
+    user,
+    incomingAiChatRef,
+    trackRun: aiTaskStatus.trackRun,
+    isAiActive: aiTaskStatus.isAiActive,
+  });
+  addLocalMessageRef.current = realtimeChat.addLocalMessage;
+
+  const aiChatContext = useAiChat();
+
+  // Keep editor chrome AI chat context in sync
+  useEffect(() => {
+    if (!aiChatContext) return;
+    aiChatContext.setMessages(realtimeChat.messages);
+  }, [realtimeChat.messages, aiChatContext]);
+
+  useEffect(() => {
+    if (!aiChatContext?.setSendError) return;
+    aiChatContext.setSendError(realtimeChat.sendError);
+  }, [realtimeChat.sendError, aiChatContext]);
+
+  useEffect(() => {
+    if (!aiChatContext) return;
+    aiChatContext.registerSendHandler(realtimeChat.sendMessage);
+    return () => {
+      aiChatContext.registerSendHandler(null);
+    };
+  }, [realtimeChat.sendMessage, aiChatContext]);
 
   const { others, remoteHighlights, updateCursor, updateSelection } =
     useRealtimePresence(
@@ -432,6 +516,8 @@ export function RealtimeCanvas({
   incomingBroadcastRef,
   incomingCursorRef,
   incomingSelectionRef,
+  incomingAiStatusRef,
+  incomingAiChatRef,
 }: RealtimeCanvasProps) {
   return (
     <ReactFlowProvider>
@@ -443,6 +529,8 @@ export function RealtimeCanvas({
         incomingBroadcastRef={incomingBroadcastRef}
         incomingCursorRef={incomingCursorRef}
         incomingSelectionRef={incomingSelectionRef}
+        incomingAiStatusRef={incomingAiStatusRef}
+        incomingAiChatRef={incomingAiChatRef}
       />
     </ReactFlowProvider>
   );

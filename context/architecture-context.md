@@ -11,6 +11,7 @@
 | Canvas           | Supabase Realtime + React Flow | Real-time collaborative canvas, presence, and cursors          |
 | Background tasks | Supabase Queues + Edge Functions + Cron | Durable delivery and asynchronous AI generation                |
 | Artifact storage | Supabase Storage              | Canvas snapshots and generated Markdown specs                  |
+| AI models        | OpenRouter                    | Unified model gateway for design and spec generation           |
 
 ## System Boundaries
 
@@ -53,6 +54,13 @@
 - Templates do not require a separate database record; they are resolved by template ID at import time.
 
 ## AI Generation Model
+
+### Provider
+
+- All model inference goes through OpenRouter (`https://openrouter.ai/api/v1`) from the Edge Function worker, using the Deno-compatible AI SDK.
+- Store `OPENROUTER_API_KEY` as a Supabase Edge Function secret. Keep it out of browser code and API responses. `.env.local` is only for local Next.js development.
+- Use `openrouter/free` as the model ID. That is OpenRouter's Free Models Router: it picks an available free model that supports the request (tool calling, structured outputs, and similar). Do not pin a paid model or a specific `:free` variant unless a later spec changes this.
+- Treat free-router rate limits and temporary unavailability as transient failures so the queue can retry. Do not call Google AI, Anthropic, or OpenAI APIs directly, and do not add a second provider client.
 
 ### Design Generation
 

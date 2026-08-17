@@ -30,6 +30,7 @@ export interface UseRealtimePresenceReturn {
   remoteHighlights: RemoteSelectionMap;
   updateCursor: (cursor: { x: number; y: number } | null) => void;
   updateSelection: (nodeIds: string[]) => void;
+  updateThinking: (thinking: boolean) => void;
 }
 
 function dedupeByUserId(entries: PresencePayload[]): PresencePayload[] {
@@ -171,6 +172,17 @@ export function useRealtimePresence(
     [channel],
   );
 
+  const updateThinking = useCallback(
+    (thinking: boolean) => {
+      void channel.track({
+        ...metaRef.current,
+        cursor: pendingCursorRef.current,
+        thinking,
+      });
+    },
+    [channel],
+  );
+
   useEffect(() => {
     return () => {
       if (rafRef.current !== null) {
@@ -185,5 +197,6 @@ export function useRealtimePresence(
     remoteHighlights,
     updateCursor,
     updateSelection,
+    updateThinking,
   };
 }

@@ -1,6 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ProjectQueryError } from "@/lib/projects/queries";
-import type { CanvasNode, CanvasEdge } from "@/types/canvas";
+import {
+  type CanvasNode,
+  type CanvasEdge,
+  normalizeCanvasNode,
+  normalizeCanvasEdge,
+} from "@/types/canvas";
 
 export const CANVAS_BUCKET = "canvas";
 
@@ -99,9 +104,13 @@ export async function downloadCanvasSnapshot(
   try {
     const text = await data.text();
     const parsed = JSON.parse(text);
+    const rawNodes: CanvasNode[] = Array.isArray(parsed.nodes) ? parsed.nodes : [];
+    const rawEdges: CanvasEdge[] = Array.isArray(parsed.edges) ? parsed.edges : [];
+    const nodes = rawNodes.map(normalizeCanvasNode);
+    const edges = rawEdges.map((e) => normalizeCanvasEdge(e, nodes));
     return {
-      nodes: Array.isArray(parsed.nodes) ? parsed.nodes : [],
-      edges: Array.isArray(parsed.edges) ? parsed.edges : [],
+      nodes,
+      edges,
     };
   } catch (parseError) {
     const message =

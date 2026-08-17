@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   X,
   Sparkles,
@@ -11,23 +11,45 @@ import {
   ShoppingCart,
   MessageSquare,
   GitBranch,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { GhostLogo } from "@/components/ui/ghost-logo";
+import { useAiStatus } from "@/components/editor/ai-status-context";
+import { useAiChat } from "@/components/editor/ai-chat-context";
+import { getSenderDisplayName } from "@/types/tasks";
 import { cn } from "@/lib/utils";
 
 interface AiSidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  projectId?: string;
 }
 
-interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: string;
+function formatMessageTime(timestamp: string): string {
+  try {
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) {
+      return timestamp;
+    }
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return timestamp;
+  }
 }
+
+const STEP_LABELS: Record<string, string> = {
+  start: "Starting",
+  analyzing: "Analyzing Architecture",
+  generating: "Generating Components",
+  updating_canvas: "Updating Canvas",
+  complete: "Generation Complete",
+  failed: "Generation Failed",
+};
 
 const STARTER_PROMPTS = [
   {
@@ -49,10 +71,19 @@ const STARTER_PROMPTS = [
 
 export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
   const [activeTab, setActiveTab] = useState<"architect" | "specs">("architect");
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const aiStatus = useAiStatus();
+  const isAiActive = aiStatus?.isAiActive ?? false;
+  const latestStatus = aiStatus?.latestStatus ?? null;
+  const activeTaskRun = aiStatus?.activeTaskRun ?? null;
+
+  const aiChat = useAiChat();
+  const messages = useMemo(() => aiChat?.messages ?? [], [aiChat?.messages]);
+  const sendError = aiChat?.sendError ?? null;
+  const currentUserId = aiChat?.currentUserId ?? null;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -60,6 +91,9 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
+    if (aiChat?.sendError) {
+      aiChat.clearSendError();
+    }
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${Math.min(
@@ -69,32 +103,28 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
     }
   };
 
-  const handleSendMessage = (textToSend?: string) => {
+  const handleSendMessage = async (textToSend?: string) => {
+    if (isAiActive) return;
     const content = (textToSend ?? input).trim();
     if (!content) return;
 
-    const userMessage: ChatMessage = {
-      id: `msg-${crypto.randomUUID()}`,
-      role: "user",
-      content,
-      timestamp: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "72px";
+    if (aiChat) {
+      const success = await aiChat.sendMessage(content);
+      if (success) {
+        setInput("");
+        if (textareaRef.current) {
+          textareaRef.current.style.height = "72px";
+        }
+      }
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      if (!isAiActive) {
+        void handleSendMessage();
+      }
     }
   };
 
@@ -219,8 +249,12 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
                           <button
                             key={prompt.title}
                             type="button"
+                            disabled={isAiActive}
                             onClick={() => handleSendMessage(prompt.title)}
-                            className="group flex w-full items-center gap-2.5 rounded-xl p-2 text-left transition-all bg-[var(--bg-subtle)]/70 hover:bg-[var(--bg-elevated)] border border-[var(--border-default)]/70 hover:border-[var(--border-default)]"
+                            className={cn(
+                              "group flex w-full items-center gap-2.5 rounded-xl p-2 text-left transition-all bg-[var(--bg-subtle)]/70 hover:bg-[var(--bg-elevated)] border border-[var(--border-default)]/70 hover:border-[var(--border-default)]",
+                              isAiActive && "opacity-50 cursor-not-allowed pointer-events-none"
+                            )}
                           >
                             <div
                               className={cn(
@@ -242,29 +276,78 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
                 ) : (
                   /* Chat Messages List */
                   <div className="flex flex-col gap-3 py-2">
-                    {messages.map((msg) => (
-                      <div
-                        key={msg.id}
-                        className={cn(
-                          "flex flex-col gap-1 max-w-[85%]",
-                          msg.role === "user" ? "self-end items-end" : "self-start items-start"
-                        )}
-                      >
+                    {messages.map((msg) => {
+                      const isUser = msg.role === "user";
+                      const isAssistant = msg.role === "assistant";
+                      const isSystem = msg.role === "system";
+                      const senderId =
+                        typeof msg.sender === "object" ? msg.sender.id : null;
+                      const isSelf =
+                        isUser &&
+                        currentUserId !== null &&
+                        senderId === currentUserId;
+                      const senderName = getSenderDisplayName(msg.sender);
+                      const formattedTime = formatMessageTime(msg.timestamp);
+
+                      if (isSystem) {
+                        return (
+                          <div key={msg.id} className="flex justify-center my-1">
+                            <div className="rounded-xl border border-[var(--border-subtle)] bg-[var(--bg-subtle)] px-2.5 py-1 text-[11px] text-[var(--text-muted)] text-center max-w-[90%]">
+                              {msg.content}
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return (
                         <div
+                          key={msg.id}
                           className={cn(
-                            "rounded-2xl p-3 text-xs leading-relaxed shadow-sm break-words",
-                            msg.role === "user"
-                              ? "bg-[var(--accent-primary-dim)] border-2 border-[var(--accent-primary)]/50 text-[var(--text-primary)] rounded-tr-sm"
-                              : "bg-[var(--bg-elevated)] border border-[var(--border-default)] text-[var(--accent-ai-text)] rounded-tl-sm"
+                            "flex flex-col gap-1 max-w-[85%]",
+                            isSelf
+                              ? "self-end items-end"
+                              : "self-start items-start"
                           )}
                         >
-                          {msg.content}
+                          {/* Sender Header for collaborators or AI */}
+                          {!isSelf && (
+                            <div className="flex items-center gap-1.5 px-1">
+                              {isAssistant ? (
+                                <>
+                                  <GhostLogo size={12} variant="mark" />
+                                  <span className="text-[11px] font-semibold text-[var(--accent-ai-text)]">
+                                    Ghost AI
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-[11px] font-medium text-[var(--text-secondary)]">
+                                  {senderName}
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Message Bubble */}
+                          <div
+                            className={cn(
+                              "rounded-2xl p-3 text-xs leading-relaxed shadow-sm break-words",
+                              isSelf
+                                ? "bg-[var(--accent-primary-dim)] border-2 border-[var(--accent-primary)]/50 text-[var(--text-primary)] rounded-tr-sm"
+                                : isAssistant
+                                ? "bg-[var(--bg-elevated)] border border-[var(--border-default)] text-[var(--accent-ai-text)] rounded-tl-sm"
+                                : "bg-[var(--bg-elevated)] border border-[var(--border-default)] text-[var(--text-primary)] rounded-tl-sm"
+                            )}
+                          >
+                            {msg.content}
+                          </div>
+
+                          {/* Timestamp */}
+                          <span className="text-[10px] text-[var(--text-faint)] px-1">
+                            {formattedTime}
+                          </span>
                         </div>
-                        <span className="text-[10px] text-[var(--text-faint)] px-1">
-                          {msg.timestamp}
-                        </span>
-                      </div>
-                    ))}
+                      );
+                    })}
                     <div ref={messagesEndRef} />
                   </div>
                 )}
@@ -272,15 +355,78 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
 
               {/* Chat Input Area */}
               <div className="p-3 border-t border-[var(--border-default)] bg-[var(--bg-surface)]">
-                <div className="relative flex flex-col rounded-2xl border border-[var(--border-default)] bg-[var(--bg-elevated)] p-2.5 transition-colors focus-within:border-[var(--accent-primary)]/50 focus-within:ring-1 focus-within:ring-[var(--accent-primary)]/30 shadow-sm">
+                {/* Shared AI Activity Status Banner - Compact strip above input */}
+                {isAiActive && (
+                  <div className="mb-2 flex items-center gap-2.5 rounded-xl border border-[var(--accent-ai)]/30 bg-[var(--accent-ai-dim)]/50 px-3 py-2 shadow-sm backdrop-blur-sm animate-in fade-in slide-in-from-bottom-1 duration-200">
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-[var(--accent-ai)]/20 text-[var(--accent-ai-text)]">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    </div>
+                    <div className="flex flex-1 flex-col min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-[11px] font-semibold text-[var(--accent-ai-text)] truncate leading-tight">
+                          {latestStatus?.step
+                            ? STEP_LABELS[latestStatus.step] ?? "AI Generating"
+                            : activeTaskRun?.kind === "spec"
+                            ? "Generating Spec"
+                            : "AI Architect Working"}
+                        </span>
+                        <span className="text-[9px] uppercase tracking-wider font-semibold text-[var(--accent-ai-text)]/80 shrink-0">
+                          In Progress
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-[var(--text-secondary)] truncate leading-tight mt-0.5">
+                        {latestStatus?.text || latestStatus?.message || "AI is designing architecture updates..."}
+                      </p>
+                      {typeof latestStatus?.progress === "number" && (
+                        <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-[var(--bg-subtle)]">
+                          <div
+                            className="h-full bg-[var(--accent-ai)] transition-all duration-300 ease-out rounded-full"
+                            style={{ width: `${Math.min(Math.max(latestStatus.progress, 0), 100)}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {sendError && (
+                  <div className="mb-2 flex items-center justify-between gap-1.5 rounded-xl border border-[var(--state-error)]/30 bg-[var(--state-error)]/10 px-3 py-1.5 text-xs text-[var(--state-error)] animate-in fade-in duration-200">
+                    <span className="truncate">{sendError}</span>
+                    <button
+                      type="button"
+                      onClick={() => aiChat?.clearSendError()}
+                      className="shrink-0 text-[var(--state-error)]/70 hover:text-[var(--state-error)]"
+                      aria-label="Dismiss error"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+
+                <div
+                  className={cn(
+                    "relative flex flex-col rounded-2xl border border-[var(--border-default)] bg-[var(--bg-elevated)] p-2.5 transition-colors shadow-sm",
+                    isAiActive
+                      ? "opacity-80"
+                      : "focus-within:border-[var(--accent-primary)]/50 focus-within:ring-1 focus-within:ring-[var(--accent-primary)]/30"
+                  )}
+                >
                   <textarea
                     ref={textareaRef}
                     value={input}
                     onChange={handleInputChange}
                     onKeyDown={handleKeyDown}
-                    placeholder="Describe a system architecture..."
+                    disabled={isAiActive}
+                    placeholder={
+                      isAiActive
+                        ? "AI is working on the canvas..."
+                        : "Describe a system architecture..."
+                    }
                     rows={1}
-                    className="w-full resize-none bg-transparent px-1 py-1 text-xs text-[var(--text-primary)] placeholder-[var(--text-faint)] focus:outline-none min-h-[72px] max-h-[160px] leading-relaxed"
+                    className={cn(
+                      "w-full resize-none bg-transparent px-1 py-1 text-xs text-[var(--text-primary)] placeholder-[var(--text-faint)] focus:outline-none min-h-[72px] max-h-[160px] leading-relaxed",
+                      isAiActive && "cursor-not-allowed opacity-60"
+                    )}
                     style={{
                       color: "var(--text-primary)",
                       caretColor: "var(--accent-primary)",
@@ -289,16 +435,25 @@ export function AiSidebar({ isOpen, onClose }: AiSidebarProps) {
 
                   <div className="flex items-center justify-between pt-2 border-t border-[var(--border-default)]/60">
                     <span className="text-[10px] text-[var(--text-faint)]">
-                      Enter to send, Shift+Enter for newline
+                      {isAiActive
+                        ? "AI generation active..."
+                        : "Enter to send, Shift+Enter for newline"}
                     </span>
                     <Button
                       size="icon"
-                      onClick={() => handleSendMessage()}
-                      disabled={!input.trim()}
-                      className="h-7 w-7 rounded-lg bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary)]/90 disabled:opacity-30 active:scale-95 transition-all shadow-sm"
-                      aria-label="Send prompt"
+                      onClick={() => void handleSendMessage()}
+                      disabled={isAiActive || !input.trim()}
+                      className={cn(
+                        "h-7 w-7 rounded-lg bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary)]/90 disabled:opacity-30 active:scale-95 transition-all shadow-sm",
+                        isAiActive && "bg-[var(--accent-ai)] opacity-90 cursor-not-allowed"
+                      )}
+                      aria-label={isAiActive ? "AI generation active" : "Send prompt"}
                     >
-                      <Send className="h-3.5 w-3.5" />
+                      {isAiActive ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Send className="h-3.5 w-3.5" />
+                      )}
                     </Button>
                   </div>
                 </div>

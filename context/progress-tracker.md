@@ -8,13 +8,154 @@ Update this file whenever the current phase, active feature, or implementation s
 - Feature 19: Presence avatars and cursors (complete)
 - Feature 20: AI Sidebar Shell (complete)
 - Feature 21: Canvas Autosave & Loading (complete)
+- Feature 22: Durable AI Queue & Task Runs (complete)
+- Feature 23: AI Design Agent Logic (complete)
+- Feature 24: AI Presence State & Shared Status Feed (complete)
+- Feature 25: Sidebar Chat Feed & Collaborative Realtime Room Chat (complete)
+- Feature 26: AI Chat Functional Wiring & Design Prompt Execution (complete)
 - Collaborator selection rings (complete)
 
 ## Current Goal
 
-- AI design generation agent workflows (Features 22-26).
+- Specs generation workflows (Feature 27).
 
 ## Completed
+
+- **Connector Handle Calculation & AI Node Normalization Fix (`types/canvas.ts`, `supabase/functions/_shared/design-agent.ts`, `components/editor/starter-templates.ts`, `hooks/use-realtime-flow.ts`, `lib/canvas-storage.ts`)**:
+  - Identified root cause of AI Architect and template connectors attaching to top-left `(0,0)` / top handles: missing explicit `sourceHandle` / `targetHandle` attributes causing React Flow to default to the 1st handle (`Position.Top`), plus missing `width`/`height`/`initialWidth`/`initialHeight` properties on AI-generated node objects before DOM layout measurement.
+  - Added `calculateEdgeHandles`, `normalizeCanvasNode`, and `normalizeCanvasEdge` geometric resolution functions in `types/canvas.ts` computing natural connection endpoints (`right -> left`, `bottom -> top`, etc.) based on node centers and dominant axes while preserving user-explicit handle connections.
+  - Updated `design-agent.ts` to assign full root dimensions (`width`, `height`, `initialWidth`, `initialHeight`, `style`) on `CanvasNode` objects and dynamically calculate `sourceHandle` and `targetHandle` for generated `CanvasEdge` objects.
+  - Updated starter template catalog (`components/editor/starter-templates.ts`) via `createTemplate` wrapper to resolve directional handles for all built-in templates.
+  - Extended `use-realtime-flow.ts` and `lib/canvas-storage.ts` to normalize loaded canvas snapshots, appended templates, and live broadcast events (`edges:connect`, `nodes:add`, `canvas:append`).
+  - Added test suite `scratch/test-handle-resolution.ts` verifying all geometric handle permutations; verified `npm run build` passes cleanly.
+
+- 26-ai-chat-functional — AI Chat Functional Wiring, Prompt Submission, Edge Function Run Tracking, and Collaborative Canvas Sync:
+  - **AI Sidebar Prompt Submission (`hooks/use-realtime-chat.ts`, `components/editor/ai-sidebar.tsx`)**:
+    - Wired `sendMessage` to broadcast user prompt messages to the `ai-chat` Broadcast channel with Supabase Auth sender identity.
+    - Added direct integration with `POST /api/ai/design`, sending `{ prompt, roomId: projectId }` and extracting `{ runId }` from HTTP 202 Accepted responses.
+    - Maintained only `runId` in local client state without requiring third-party provider run tokens.
+    - Added resilient error handling for HTTP 409 conflict ("An AI generation task is already active for this project") and unexpected server/network failures.
+  - **Run Status Tracking & Recovery (`hooks/use-ai-task-status.ts`)**:
+    - Integrated `trackRun(runId)` providing single-fetch row retrieval on subscription to prevent stuck UI states from missed Realtime events.
+    - Subscribed to Supabase Realtime `postgres_changes` on the `task_runs` table filtered by `project_id=eq.${projectId}` to track lifecycle state changes in real time.
+    - Treated `queued`, `running`, and `retrying` as active states: disabling textarea input and rendering an animated spinner inside the send button.
+    - On `completed` or `failed` status, automatically reset loading and active run state across the workspace.
+    - Rendered final worker AI messages keyed by run ID, and handled local sanitized row error fallbacks (`err-${runId}`) if worker error broadcasts were missed.
+    - Enforced the invariant that clients never rebroadcast terminal messages from Realtime row updates, preventing duplicate messages across multiple open tabs.
+  - **Shared AI Activity Banner & Compact Status Strip (`components/editor/ai-sidebar.tsx`)**:
+    - Positioned a compact shared AI status strip above the chat input box, displayed exclusively while the current task run is active.
+    - Rendered active step labels (`Starting`, `Analyzing Architecture`, `Generating Components`, `Updating Canvas`), progress bar, and real-time step descriptions from the `ai-status` Broadcast feed.
+  - **Live Collaborative Canvas Reflection & Deduplication (`hooks/use-realtime-flow.ts`, `supabase/functions/_shared/design-agent.ts`, `components/editor/realtime-canvas.tsx`)**:
+    - Connected `aiTaskStatus` and `realtimeChat` seamlessly through React Flow and `EditorChrome` contexts.
+    - Relied on the existing Supabase Realtime `canvas:sync` broadcast handlers to apply AI worker mutations (`nodes:add`, `edges:connect`, `canvas:append`, `nodes:change`, `edges:change`) without manual local node/edge manipulation.
+    - Fixed duplicate broadcast issue in `design-agent.ts` (removed redundant `canvas:append` emission following individual node/edge broadcasts).
+    - Enforced strict ID-based deduplication in `useRealtimeFlow` for `nodes:add`, `edges:connect`, and `canvas:append`, preventing duplicate React component keys during collaborative sync.
+  - **OpenRouter Generation, Key Resolution & Robust Action Normalization (`supabase/functions/_shared/design-agent.ts`)**:
+    - Replaced brittle AI SDK parser wrapper with direct HTTP `fetch` to OpenRouter completions endpoint, including `HTTP-Referer` and `X-Title` metadata headers.
+    - Added `getOpenRouterApiKey()` helper with filesystem fallback to read `.env` / `supabase/functions/.env` if `Deno.env` does not contain the key in local container environments.
+    - Added fallback model routing (`google/gemini-2.0-flash-exp:free`, `meta-llama/llama-3.3-70b-instruct:free`, `openrouter/free`).
+    - Enhanced `parseAndNormalizePlan` to strip `<think>` tags and gracefully convert plain string action lists (common in free LLM outputs) into structured `add_node` canvas actions with semantic shapes/colors, grid layouts, and automatic directional edges.
+  - **Verification**:
+    - Comprehensive unit and integration test suite (`scratch/test-ai-chat-functional.ts`) passing all 6 verification test groups.
+    - `npm run lint` and `npm run build` passing cleanly with 0 errors and 0 warnings.
+
+- 25-sidebar-chat-feed — Real-Time Room Chat Feed via Dedicated `ai-chat` Broadcast Channel, Zod Validation, and Stable ID Deduplication:
+  - **Zod Chat Message Validation (`types/tasks.ts`)**:
+    - Defined `aiChatMessageSenderSchema` (object with `id`, `name`, optional `avatarUrl`) and `aiChatMessageSchema` validating `id`, `sender` (object or string), `role` (`user` | `assistant` | `system`), `content`, `timestamp`, and optional `runId`.
+    - Added `parseAiChatMessage`, `isAiChatMessage`, and `getSenderDisplayName` runtime helpers ensuring malformed payloads are safely rejected before rendering.
+  - **Realtime Broadcast Infrastructure (`lib/realtime.ts`)**:
+    - Added `attachAiChatListener(channel, onEvent)` listening to the dedicated project-scoped `ai-chat` Broadcast channel with automated validation, completely isolated from `ai-status`.
+  - **Chat Context & Hook (`components/editor/ai-chat-context.tsx`, `hooks/use-realtime-chat.ts`)**:
+    - Created `AiChatContext` and provider to manage room messages, sender identity, send handlers, and error notifications.
+    - Created `useRealtimeChat` hook managing deduplication with `seenIdsRef` Set, subscribing to `ai-chat` Broadcast events, formatting user messages with current Supabase Auth identity, and broadcasting via `channel.send`.
+  - **Canvas & Chrome Integration (`components/editor/canvas-wrapper.tsx`, `components/editor/realtime-canvas.tsx`, `components/editor/editor-chrome.tsx`)**:
+    - Wired `incomingAiChatRef` and `attachAiChatListener` in `CanvasWrapper`.
+    - Synchronized `useRealtimeChat` messages and send handler in `RealtimeCanvas` with `AiChatContext`.
+    - Wrapped workspace tree in `AiChatProvider` in `EditorChrome`.
+  - **Collaborative AI Sidebar Chat UI (`components/editor/ai-sidebar.tsx`)**:
+    - Rendered chronological room chat feed showing sender header (differentiating self vs collaborator vs Ghost AI assistant), formatted timestamp, and message bubble.
+    - Connected textarea and send button to `sendMessage`, clearing input upon successful delivery.
+    - Added dismissible error banner when message broadcast fails.
+    - Styled in accordance with `ui-context.md` Google Stitch / Dark mode theme tokens.
+  - **Verification**:
+    - Unit tests (`scratch/test-sidebar-chat.ts`) passing all 28 assertions.
+    - `npm run lint` and `npm run build` passing cleanly with 0 errors and 0 warnings.
+
+- 24-ai-presence-state — Shared AI Activity Indicators, Realtime Presence Thinking State, and Active Status Feed:
+  - **Status Message Validation (`types/tasks.ts`)**:
+    - Defined `parseAiStatusMessage` and `isAiStatusMessage` runtime validators ensuring strict type verification for incoming feed payloads (`runId`, `projectId`, `kind`, `status`, `step`, `message`, optional `text`, optional `progress`, `timestamp`).
+  - **Realtime Broadcast Infrastructure & Presence (`lib/realtime.ts`, `hooks/use-realtime-presence.ts`)**:
+    - Created `attachAiStatusListener(channel, onEvent)` listening to the project-scoped `ai-status` broadcast channel with automated payload validation.
+    - Added `updateThinking(thinking: boolean)` callback in `useRealtimePresence` for local presence tracking.
+  - **Live Cursor Thinking Indicators (`components/editor/live-cursors.tsx`)**:
+    - Updated `CursorPointer` and `LiveCursors` to render a miniature animated `Loader2` spinner inside the collaborator's name badge whenever `thinking: true` is present in presence state, hidden when false or omitted.
+  - **Active State Recovery & Lifecycle Tracking (`hooks/use-ai-task-status.ts`)**:
+    - Created `useAiTaskStatus` to query active `task_runs` rows on mount or reconnection, recovering active generation state across network drops or reloads.
+    - Subscribed to Supabase Realtime `postgres_changes` on the `task_runs` table filtered by `project_id=eq.${projectId}` to track state changes.
+    - Subscribed to Realtime Broadcast `ai-status` on the project channel to track step-by-step progress details.
+  - **AI Status Context (`components/editor/ai-status-context.tsx`, `components/editor/editor-chrome.tsx`, `components/editor/realtime-canvas.tsx`, `components/editor/canvas-wrapper.tsx`)**:
+    - Created `AiStatusContext` and provider to synchronize active generation state and latest progress updates across the workspace.
+  - **AI Sidebar Activity UI (`components/editor/ai-sidebar.tsx`)**:
+    - Added shared AI activity status banner rendering the active step title, progress description, and optional progress bar.
+    - Disabled chat input textarea while generation is active.
+    - Showed loading spinner on the send button during generation.
+    - Disabled starter ideas while active, keeping tab switching and chat history scrolling fully accessible.
+  - **Verification**:
+    - Unit tests (`scratch/test-ai-presence-state.ts`) passing all assertions.
+    - `npm run lint` and `npm run build` passing with 0 errors.
+
+- 23-design-agent-logic — Full AI Design Agent with OpenRouter Inference, Realtime Collaboration, Presence & Cursors, and Storage Persistence:
+  - **Design Agent Handler (`supabase/functions/_shared/design-agent.ts`)**:
+    - Integrated OpenRouter (`openrouter/free`) model inference using the AI SDK with prompt engineering tailored to Ghost AI's system architecture design standards.
+    - Added resilient parser and schema validator (`parseAndNormalizePlan`) supporting both structured JSON and markdown-wrapped payload normalization into strict `{ summary, actions }` contracts.
+    - Supported 7 full canvas operations: `add_node`, `move_node`, `resize_node`, `update_node`, `delete_node`, `add_edge`, and `delete_edge`.
+    - Enforced design system constraints: allowed shapes (`rectangle`, `diamond`, `circle`, `pill`, `cylinder`, `hexagon`), 8-role color palette (`neutral`, `blue`, `purple`, `orange`, `red`, `pink`, `green`, `teal`), default dimension bounds, and column-grid layout coordinates.
+    - Derived deterministic stable IDs from `runId` (`node_<runId>_<tempId>`, `edge_<runId>_<source>_<target>_<idx>`) guaranteeing absolute idempotent graph mutations on replay.
+    - Emitted live project-scoped Realtime Broadcast updates to `project:${projectId}`:
+      - `ai-status`: Step-by-step progress tracking (`start`, `analyzing`, `generating`, `updating_canvas`, `complete`, `failed`).
+      - `cursor:move`: Animated AI agent cursor position over placed coordinates during generation, with guaranteed cleanup (`cursor: null`) in `finally`.
+      - `canvas:sync`: Dispatched collaborative mutations (`nodes:add`, `edges:connect`, `canvas:append`, `nodes:change`, `edges:change`) matching the React Flow event contract.
+    - Persisted full canvas snapshots to Supabase Storage at `canvas/${projectId}.json` and synchronized `projects.canvas_storage_path`.
+    - Classified provider and network errors into `TransientAiError` (429, 5xx, timeouts, network blips) vs `PermanentAiError` (invalid prompt, 401/403 auth, missing project).
+  - **Queue Worker Dispatch (`supabase/functions/ai-worker/index.ts`, `supabase/functions/deno.json`)**:
+    - Dispatched `kind === "design"` to `processDesignTask` under a 120s application deadline.
+    - Handled transient retries up to `MAX_ATTEMPTS` (3) leaving the message in queue, and archived on terminal completion or permanent failure.
+    - Committed Deno configuration with `@ai-sdk/openai`, `ai`, and `zod`.
+  - **Shared Types & Verification (`types/tasks.ts`, `scratch/test-design-agent.ts`, `scratch/test-idempotency.ts`)**:
+    - Created `types/tasks.ts` defining `AiTaskStatus`, `AiStatusStep`, `AiStatusMessage`, and `DesignAction`.
+    - Validated end-to-end flow with real Supabase Auth, PostgreSQL queue, OpenRouter free inference, Realtime broadcast subscription, and Storage snapshot persistence.
+    - Verified strict idempotency and absolute mutation invariants.
+    - `npm run build` and `npm run lint` passing with 0 errors.
+
+- 22-design-agent-api — Durable PostgreSQL Queue, Task Runs Table, Edge Function Worker, and Next.js Design Generation API Route:
+  - **Database Migration (`supabase/migrations/20260817000000_create_task_runs_and_queue.sql`)**:
+    - Created `task_runs` table with columns: `id` (UUID PK), `project_id` (FK to projects), `user_id` (FK to auth.users), `kind` (`design` | `spec`), `status` (`queued` | `running` | `retrying` | `completed` | `failed`), `attempt_count` (smallint >= 0), `error_message`, `created_at`, `updated_at`, `started_at`, `completed_at`.
+    - Added partial unique index `task_runs_active_project_idx` on `(project_id)` WHERE `status IN ('queued', 'running', 'retrying')` strictly enforcing at most one active generation run per project.
+    - Configured RLS on `task_runs` with SELECT policy allowing project owner or collaborator; granted `SELECT` to `authenticated`, granted `ALL` to `service_role`, explicitly revoked `INSERT, UPDATE, DELETE` from `anon, authenticated`.
+    - Added `task_runs` to `supabase_realtime` publication for live client state updates.
+    - Enabled `pgmq` extension and created durable `ai-generation` queue.
+    - Created `pgmq_public` schema with security definer queue functions (`send`, `read`, `archive`, `delete`, `pop`, `set_vt`) granted exclusively to `service_role` and `postgres`, revoked from `PUBLIC, anon, authenticated`.
+    - Created `public.enqueue_task_run(p_project_id, p_user_id, p_kind, p_input)` (SECURITY INVOKER) ensuring atomic `task_runs` insertion and queue send within a single transaction, returning the client-visible `run_id`.
+    - Stored named automation secret in Supabase Vault and created helper `public.get_vault_secret('automations')` and `public.get_cron_job(p_jobname)`.
+    - Scheduled `pg_cron` recovery job `ai-worker-recovery` running every `30 seconds`.
+  - **Supabase Configuration & Seed (`supabase/config.toml`, `supabase/seed.sql`, `.env`, `.env.local`)**:
+    - Configured `config.toml` with `pgmq_public` schema exposure and `[functions.ai-worker]` with `verify_jwt = false`.
+    - Updated `seed.sql` to revoke `insert, update, delete on public.task_runs` and revoke `pgmq`/`pgmq_public` from browser roles so local resets preserve security invariants.
+    - Added `SUPABASE_SERVICE_ROLE_KEY`, `AUTOMATION_SECRET`, and `SUPABASE_SECRET_KEYS` to `.env` and `.env.local`.
+  - **Next.js Server Infrastructure & Route (`lib/supabase/admin.ts`, `lib/ai/task-runs.ts`, `app/api/ai/design/route.ts`)**:
+    - `lib/supabase/admin.ts`: Singleton `createAdminClient()` utilizing `SUPABASE_SERVICE_ROLE_KEY`.
+    - `lib/ai/task-runs.ts`: TypeScript interfaces (`TaskRun`, `TaskRunKind`, `TaskRunStatus`), `ActiveTaskRunConflictError` handling unique violation (23505), `enqueueTaskRun()`, and `invokeAiWorkerFastPath()`.
+    - `app/api/ai/design/route.ts`: `POST /api/ai/design` route validating `prompt` (non-empty string) and `roomId`, authenticating user via Supabase Auth session, checking project access via `hasProjectAccess`, atomically enqueuing task run via `enqueueTaskRun`, translating active project conflict to HTTP 409, dispatching fast-path worker invocation (3s timeout, non-blocking), and returning `{ runId }` with HTTP 202 Accepted.
+  - **Supabase Edge Function Worker (`supabase/functions/ai-worker/index.ts`, `supabase/functions/deno.json`)**:
+    - Authenticated with named automation secret `withSupabase({ auth: "secret:automations" })`.
+    - Reads messages from `ai-generation` queue with 300s visibility timeout.
+    - Registers background execution via `EdgeRuntime.waitUntil`.
+    - Enforces 120s application deadline via `AbortController` before platform shutdown.
+    - Manages task runs lifecycle transitions (`queued` -> `running` -> `completed` / `retrying` / `failed`), logs design prompts, and handles idempotent duplicates and max retry attempts (3).
+  - **Verification**:
+    - Full end-to-end integration and security test suite passing 21/21 assertions.
+    - Local Edge Function verification confirmed atomic enqueue, background execution, completion, and queue archival.
+    - `npm run build` and `npm run lint` passing with 0 errors.
 
 - Import Template modal clipping:
   - **Symptom**: The last two template cards (`Serverless Edge Stack`, `Real-time AI Canvas Engine`) were cut off, hiding their Import buttons.
@@ -127,6 +268,7 @@ Update this file whenever the current phase, active feature, or implementation s
 - Database layer uses Bolt's integrated Supabase database (PostgreSQL) instead of Prisma. Schema is applied via the Supabase migration tool, not a Prisma schema file. All tables use RLS with owner-scoped policies.
 - Artifact storage uses Supabase Storage instead of Vercel Blob. Canvas snapshots and generated specs are stored in Supabase Storage buckets, with the storage path stored as a reference column on the corresponding Supabase table.
 - **Planned AI execution uses Supabase Queues, Edge Functions, and Cron.** A review against current Supabase guidance found that `EdgeRuntime.waitUntil` alone does not provide durable delivery or recovery when a worker reaches its execution limit. Specs 22, 23, 26, 27, and 28 now transactionally create `task_runs` rows and durable `ai-generation` queue messages. API routes invoke the shared `ai-worker` as a low latency fast path, while Cron provides recovery. Queue visibility and delivery count drive bounded retries. Clients track RLS filtered run rows through Realtime Postgres Changes, and room wide progress uses Realtime Broadcast. Provider run tokens and token endpoints remain removed from the plan.
+- **AI generation uses OpenRouter, not Google Gemini.** Design and spec workers call OpenRouter's OpenAI-compatible API (`https://openrouter.ai/api/v1`) with the Deno-compatible AI SDK. `OPENROUTER_API_KEY` is the provider secret. The model ID is `openrouter/free`, OpenRouter's Free Models Router, which picks an available free model that supports the request. Do not pin a paid model or add a Google AI, Anthropic, or OpenAI client. Specs 23 and 27 record this. The dashboard model selector is still display-only until generation is wired; when it is, it must send `openrouter/free`.
 
 ## Bug Fixes
 

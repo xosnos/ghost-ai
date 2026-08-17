@@ -52,10 +52,11 @@
 - Read queue messages with a visibility timeout longer than the maximum configured processing duration. Archive only after success or terminal failure.
 - Use `EdgeRuntime.waitUntil` for processing after the worker returns its accepted response. Keep Supabase Cron as the recovery invocation path.
 - Give external AI calls an application deadline below the Edge Function wall clock limit so failure state can be persisted before shutdown.
+- Call OpenRouter from the Edge Function worker for all model inference. Use model ID `openrouter/free`. Do not add a Google AI, Anthropic, or OpenAI client.
 - Persist `queued`, `running`, `retrying`, `completed`, and `failed` state in `task_runs`. Do not treat ephemeral Broadcast messages as the source of truth.
 - Make every side effect idempotent per task-run ID. Stop retrying permanent failures and archive messages after the configured attempt limit.
 - Pin Edge Function package versions in `supabase/functions/deno.json` and commit the Deno lockfile.
-- Keep secret keys and provider credentials server only. Never return them or embed them in client code.
+- Keep secret keys and provider credentials server only. Never return them or embed them in client code. Store `OPENROUTER_API_KEY` as a Supabase Edge Function secret.
 
 ## File Organization
 
