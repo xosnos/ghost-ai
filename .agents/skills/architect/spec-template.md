@@ -143,8 +143,9 @@ Do not repeat the pros/cons list, explain the reasoning. 1 to 3 paragraphs.>
      criteria in ## Requirements. Each task names the AC(s) it satisfies, so every AC traces to at least
      one task and every task traces to an AC. The ORDER and slicing reflect the project's build approach
      (Tracer Bullet, Skateboard, Facade, Journey, or a variant, read in pre-flight), reasoned about for
-     this feature rather than by a fixed recipe. The data-model migration is normally task 1 (from the
-     confirmed data model) and stays early; a UI-first Facade/prototype approach may lead with the shell.
+     this feature rather than by a fixed recipe. The data model sketch is the coherent target; its
+     migration is sized to the feature (one migration normally; sliced across slices for a large feature
+     or a thin thread Tracer Bullet, deferred under Facade; omitted for a slice touching no schema).
      When a scope feature row links this spec, these tasks are also written into that row's sub-tasks;
      with no scope row, they live here as the source of truth (see /architect's derive-tasks step). -->
 
@@ -233,7 +234,7 @@ N. <Build task>, satisfies **AC-N**
 
 ## Status values
 
-The spec's status mirrors its feature's build lifecycle (scope: planned→`Proposed`, in-progress→`In Progress`, done→`Accepted`):
+The spec's status mirrors its feature's build lifecycle (scope: planned→`Proposed`, in-progress→`In Progress`, done→`Accepted`), with one exception: an `Assumed` spec stays `Assumed` until `/architect` ratifies it, even after the feature is `done`:
 
 | Status | Meaning |
 |---|---|
@@ -241,9 +242,10 @@ The spec's status mirrors its feature's build lifecycle (scope: planned→`Propo
 | `In Progress` | The feature governed by this spec is being built. Set by /develop when the feature goes in-progress. |
 | `Accepted` | The feature is built and verified (scope `done`), the "done and dusted" state. A spec is NOT `Accepted` until its feature ships. Set by /develop on completion or reconciled by /sync. |
 | `Superseded by [NNNN](NNNN-title.md)` | Replaced by a newer spec |
+| `Assumed` | Built on a decision that was never deliberated, via `/develop`'s build now override. Records the assumption, not a deliberated decision. Stays `Assumed`, and never blocks the feature's `done`, until `/architect` ratifies it (which sets `Accepted`) or supersedes it. Only `/develop` creates it; only `/architect` clears it. |
 
 **Which status behavior applies depends on whether a buildable scope feature links this spec:**
-- **Feature linked spec** (a `docs/scope/` row's `spec` cell points to it) → **feature mirrored**: `Proposed` → `In Progress` → `Accepted`, tracking the feature's build lifecycle (table above). Confirmation ratifies content but does not set `Accepted`; /develop advances it.
+- **Feature linked spec** (a `docs/scope/` row's `spec` cell points to it) → **feature mirrored**: `Proposed` → `In Progress` → `Accepted`, tracking the feature's build lifecycle (table above). Confirmation ratifies content but does not set `Accepted`; /develop advances it. Exception: an `Assumed` feature linked spec is not mirrored, it stays `Assumed` (even when the feature is `done`) until `/architect` ratifies it.
 - **Standalone decision spec** (a foundational/stack or cross cutting standard with **no linked buildable feature**) → **decision status**: `Proposed` when written, then **`Accepted` once the engineer ratifies it** (on confirmation). There's no build phase to gate on, so it is not feature mirrored.
 - **spec documenting already shipped work** (the "already built" path, or a feature already `existing`) → **born `Accepted`**, it describes reality that already exists.
 

@@ -1,6 +1,6 @@
 # Review Guide (read by the review subagent)
 
-The review subagent reads this in full before reviewing. It holds the inspection rubric, severity scale, test adequacy bar, and the exact findings format. Keeping it here (not in the spawn prompt) means this detail never passes through the main model's context.
+The review subagent reads this in full before reviewing: the inspection rubric, severity scale, test adequacy bar, and the exact findings format.
 
 ---
 

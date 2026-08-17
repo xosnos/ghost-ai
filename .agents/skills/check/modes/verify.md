@@ -4,18 +4,9 @@ The `verify` mode of `/check`: run the real app and prove the change works. Foll
 
 ## What this skill does
 
-Your role: the acceptance engineer. Trust observed behavior over green checkmarks; a passing suite proves the code the author thought to test, not that the feature exists. Ask: "If I had to sign off that this is real, what would I need to watch happen with my own eyes?" Then drive the actual thing and judge what you see against what the slice was supposed to deliver.
+Your role: the acceptance engineer. Trust observed behavior over green checkmarks; a passing suite proves the code the author thought to test, not that the feature exists. Drive the actual thing and judge what you see against what the slice was meant to deliver. `/check verify` closes the gap between "the tests are green" and "the feature actually works": scope the change into observable behaviors, run the app the project's own way, exercise the flow and observe (screenshots for UI, bodies for APIs, output for CLIs, logs for jobs), then report pass/fail per behavior and per acceptance criterion. It is the runtime counterpart to `/test`, which writes the assertions that then run forever.
 
-`/check verify` closes the gap between "the tests are green" and "the feature actually works":
-
-1. Scopes what changed (from git) into observable behaviors to check, anchored to the spec's acceptance criteria when a governing spec exists.
-2. Runs the app the project's own way, reusing its launch method when one exists.
-3. Exercises the changed flow and observes: screenshots for UI, response bodies for APIs, output for CLIs, logs for jobs.
-4. Reports pass/fail per behavior and per acceptance criterion, anything anomalous, and what `/test` should turn into permanent assertions.
-
-Runtime counterpart to `/test`: `/test` writes assertions that run forever; `/check verify` opens the app once and confirms it's real before review.
-
-Spec conformance gate: when a governing spec has IDed acceptance criteria (`## Requirements`, `AC-1…`), also prove the implementation conforms to the contract: every criterion met, every specced surface (page, route, table) actually built. Green tests and a working happy path never reveal a surface that was specced but never built, or a migration never applied. See Step 0b and Step 4b.
+Spec conformance gate: when a governing spec has IDed acceptance criteria (`## Requirements`, `AC-1…`), also prove conformance: every criterion met, every specced surface (page, route, table) actually built. Green tests and a working happy path never reveal a specced but unbuilt surface, or an unapplied migration. See Step 0b and Step 4b.
 
 ## Asks vs acts
 
@@ -36,7 +27,7 @@ Any Agent Skills client on macOS, Linux, or Windows. Run/launch snippets are ref
 ### Step 0: Pick the mode
 
 - Feature mode (default): the change adds or alters behavior. Confirm it does the new thing (Steps 1 to 5).
-- Refactor / regression mode: the change is behavior preserving (a refactor, a dedup, a rename; the task or spec says "behavior must not change"). "Works" means identical before and after: capture observable outputs before the change, capture them after, and diff. This is the safety net for projects with no test runner, and exactly what a "diff API responses before/after" spec asks for; automate it.
+- Refactor / regression mode: the change is behavior preserving (a refactor, a dedup, a rename; the task or spec says "behavior must not change"). "Works" means identical before and after: capture observable outputs before the change, capture them after, and diff. Automate it; this is the safety net for a project with no test runner.
 
 ### Step 0a: Refactor mode: before/after diff (spawn a subagent)
 
@@ -44,7 +35,7 @@ Only in refactor mode. It drives the app twice and holds two output sets, so run
 - `model`: set explicitly to a strong model, do not inherit the session model (Claude Code: `sonnet`) · `description: "Verify: before/after diff, <scope>"` · Tools: `Read`, `Bash`, `Grep`, `Glob` (+ browser/HTTP driving)
 - Its job:
   1. Identify the affected surfaces from the diff (endpoints, queries, jobs, pages). Pick representative ones per changed area, favoring output that is most observable and most likely to reveal a behavior shift.
-  2. Capture BEFORE (the state before the change). Prefer a throwaway git worktree at the ref before the change (the base branch, or the commit before the refactor): `git worktree add <tmp> <ref>`, start the app in that worktree, hit each surface, save the raw outputs, `git worktree remove <tmp>`. This keeps the working tree and untracked files intact. Only if worktrees aren't available, fall back to `git stash --include-untracked` (plain `git stash` leaves new files behind and contaminates the "before"), restore with `git stash pop` after.
+  2. Capture BEFORE (the state before the change). Prefer a throwaway git worktree at the ref before the change (the base branch, or the commit before the refactor): `git worktree add <tmp> <ref>`, start the app in that worktree, hit each surface, save the raw outputs, `git worktree remove <tmp>`. Only if worktrees aren't available, fall back to `git stash --include-untracked` (plain `git stash` leaves new files behind and contaminates the "before"), restore with `git stash pop` after.
   3. Capture AFTER: with the change applied, start the app, hit the same surfaces the same way, save the outputs.
   4. Diff before vs after per surface. For a behavior preserving change they must be byte identical (modulo intentional, documented differences). Report any diff as a regression.
 - Relay: surfaces diffed, identical vs differing, the exact diff for any that changed → run `/debug`. Then stop (skip the feature mode steps).
@@ -71,9 +62,9 @@ You now hold the `AC-N` list to confirm and the specced surface list to confirm 
 
 ### Step 0c: Calibrate "working" to the build approach
 
-Know what this slice was meant to be. Read the build approach for THIS feature with precedence: the feature's scope row `Approach` override if its row declares one, else the project default (root `AGENTS.md`, else the scope header). This mirrors spec overrides-`AGENTS.md`: a feature declaring its own approach (e.g. a Facade prototype in an otherwise Skateboard project) is verified by ITS approach; every other feature uses the project default. If neither records one, use the reasoned default (an end to end / Tracer Bullet slice for production work) and note the assumption. The wrong bar produces false failures (dinging a prototype for lacking a real backend) or false passes (blessing a slice that never proved the path it existed to prove).
+Know what this slice was meant to be. Read the build approach for THIS feature with precedence: the feature's scope row `Approach` override if its row declares one, else the project default (root `AGENTS.md`, else the scope header). A feature declaring its own approach (e.g. a Facade prototype in a Skateboard project) is verified by ITS approach; others use the project default. If neither records one, use the reasoned default (an end to end / Tracer Bullet slice for production work) and note the assumption. The wrong bar produces false failures or false passes.
 
-Reason as the acceptance engineer about what done means for this slice; no fixed per approach script. The judgment: what did this slice promise to make real, and what is it explicitly still allowed to fake? Verify the former hard; don't fail the slice for the latter. Common framings and their bars: a thin end to end path wired through every layer (the whole path carries a real request to a real result); a thinnest usable whole core loop (that one loop genuinely works, not the trimmings); a UI first shell wired to placeholders (the shell and its placeholder flow render and navigate; a stubbed data source is the plan, not a defect); a full user journey per phase (the journey end to end, not isolated screens). Let the label set the bar, then carry it into the scope and the conformance verdict. Acceptance criteria govern what must be true; the approach tells how much of the stack behind them is expected to be real yet.
+The judgment: what did this slice promise to make real, and what is it still allowed to fake? Verify the former hard; don't fail the slice for the latter. Common framings and their bars: a thin end to end path wired through every layer (the whole path carries a real request to a real result); a thinnest usable core loop (that one loop genuinely works, not the trimmings); a UI first shell wired to placeholders (shell and placeholder flow render and navigate; a stubbed data source is the plan, not a defect); a full user journey per phase (the journey end to end, not isolated screens). Let the label set the bar, then carry it into the scope and conformance verdict. Acceptance criteria say what must be true; the approach says how much of the stack behind them is real yet.
 
 ### Step 1: Scope the observable behaviors *(feature mode)*
 
@@ -85,12 +76,12 @@ No spec? From the changed files write the 2 to 5 concrete things a human could w
 
 ### Step 2: Determine how to run the app
 
-Monorepo: run the specific affected app, not the repo root. Find the workspace the change lives in (`apps/<x>/…`) and use its run command (e.g. `pnpm --filter <x> dev`, `turbo run dev --filter <x>`, or that workspace's `package.json` script). A change to a shared package: run the app(s) that consume it.
+Monorepo: run the specific affected app, not the repo root. Find the workspace the change lives in (`apps/<x>/…`) and use its run command (e.g. `<pkgmgr> --filter <x> dev`, the monorepo task runner's filtered command, or that workspace's `package.json` script). A change to a shared package: run the app(s) that consume it.
 
 In order:
 1. A project run skill / documented command: a project specific "run/start" skill, then `AGENTS.md`, then `package.json` scripts (`dev`, `start`), `Makefile`, `Procfile`, `docker-compose`. Prefer what the project already uses.
 2. Built in patterns by project type if nothing is documented:
-   - Web app → start the dev server, then drive the route: prefer a connected browser/Playwright MCP (real navigation, clicks, form submits, screenshots); else your agent's own browser tool; else, headless, request the route over HTTP and check the returned HTML plus a boot check (server starts, health route responds).
+   - Web app → start the dev server, then drive the route: prefer a connected browser automation MCP (real navigation, clicks, form submits, screenshots); else your agent's own browser tool; else, headless, request the route over HTTP and check the returned HTML plus a boot check (server starts, health route responds).
    - API / backend → start the server, hit the endpoint (curl/HTTP client).
    - CLI → run the command with representative arguments.
    - Library → exercise the public API via a tiny scratch script or the REPL.
@@ -100,7 +91,7 @@ Can't tell how to launch it? Ask the engineer for the start command before proce
 
 ### Step 3: Run and exercise
 
-Launch the app (prefer a background process so you can interact with it). Use a connected MCP where it makes the check real: a browser/Playwright MCP to drive the UI (navigate, click, type, submit, screenshot); a database MCP to confirm the live schema for a data layer criterion (the migration applied check in Step 4b: proof the column really exists, not an assumption). For heavier interaction, spawn a subagent with the tools to drive the browser/CLI and capture evidence, keeping the main context clean. Per scoped behavior:
+Launch the app (prefer a background process so you can interact with it). Use a connected MCP where it makes the check real: a browser automation MCP to drive the UI (navigate, click, type, submit, screenshot); a database MCP to confirm the live schema for a data layer criterion (the migration applied check in Step 4b: proof the column really exists, not an assumption). For heavier interaction, spawn a subagent with the tools to drive the browser/CLI and capture evidence, keeping the main context clean. Per scoped behavior:
 - UI → navigate to the route, interact (click, type, submit), screenshot the result and any error state. Check the rendered output, not just a 200.
 - API → send the request, capture status + body; verify the shape and key fields.
 - CLI / job → run it, capture stdout/stderr and any output artifact.
@@ -146,43 +137,30 @@ Overall verdict PASS requires every behavior verified with cited evidence, and (
 
 ### Step 5: Report
 
-Update the scope: if this feature is on the scope (`docs/scope/`) and the verdict is PASS, tick its `Verify it` box. What happens next depends on the workflow tier (the effective tier: the feature's own tier tag if set, else the scope header `**Workflow:**` default):
+Update the scope: if this feature is on the scope (`docs/scope/`) and the verdict is PASS, tick its `Verify it` box. **Also tick, in this feature's `verify.md`, each step you actually ran and that passed** (`- [ ]` → `- [x]`); leave a step unticked if it failed or you could not run it. This is per feature: only the feature you verified gets ticked, other features' `verify.md` files stay unchecked until you verify them (expected, not a miss). What happens next depends on the workflow tier (the effective tier: the feature's own tier tag if set, else the scope header `**Workflow:**` default):
 
-- **Lean** → `/check verify` is the last required stage, so on PASS also set the feature `done` (At a glance table and heading) and mirror the governing spec's `**Status**:` line `In Progress` → `Accepted` (surgically; not `In Progress` → flag, don't clobber). Exception: an `Assumed` spec blocks `done`, leave it `in-progress` and point to `/architect <feature>` to ratify first. Then point to `/sync`.
-- **Medium / Full** → leave `Test it` and the `done` status to `/test` and `/sync`; point to `/test <feature>` next.
+- **On PASS, offer `done`, don't gate it.** If `Verify it` is the feature's last box (`Alpha` tier), suggest marking it `done`: "Verified and passing, mark it `done`, or keep going, your call." On the engineer's go, set `done` and mirror the spec's `**Status**:` line `In Progress` → `Accepted` (surgically; not `In Progress` → flag). If there are later boxes (`Test it` at `Beta`/`GA`), suggest `/test <feature>` as the next step, but the engineer may mark `done` and skip it. An `Assumed` spec does not block `done`; flag it ("owes ratification, `/architect` when you can") and let them decide.
 
 On FAIL or BLOCKED, tick nothing and report the gaps. Advise `/clear` before moving to a new feature (the spec and `verify.md` hold the state, so a fresh session loses nothing and stays cheap).
 
+**Confirm the update as a closing gate** (don't skip it): state in the report exactly what you ticked in each file, e.g. "Scope: ticked `Verify it`. Spec: status → `Accepted`." No matching scope row → say so ("no scope row matched `<feature>`"), don't finish silently.
+
 ```
-## /check verify complete
+Lead with the verdict; list only what failed or is owed; point to verify.md for the rest (per `docs/conventions.md`). Template:
 
-**Ran**: <how the app was started: the exact command or url. "Not started" if you never ran it, in which case no ✅ or PASS is allowed>
-**Scope**: <N> behaviors checked, <M> not exercised
-**Spec**: spec NNNN <feature> · checklist from verify.md | spec ## Requirements   (omit this line when no governing spec)
+```
+## /check verify <feature> Â· <PASS | FAIL | BLOCKED>
 
-**Verified** ✅  (each line MUST cite its evidence; drop the line if you have none):
-- <behavior>: <what you observed>, evidence: <command + exit code | url + screenshot path | request + status + fields | query + result>
+**<PASS: all N behaviors met, every specced surface built · FAIL: M of N failed · BLOCKED: K couldn't be exercised>.**   (never PASS or ✅ if you did not actually run the app; say "not started")
+Next (this feature's next unticked box in the scope): PASS → `/test <feature>` if a `Test it` box remains, else the next feature · FAIL → `/debug <feature>` · missing surface → `/develop <feature>` · BLOCKED → what's needed to run it
 
-**Failed** ❌:
-- <behavior>: <what went wrong + exact error/screenshot path> → run /debug
+Failing / owed (omit if PASS):
+- <behavior or AC-N>: <what went wrong + evidence path> → <run /debug | build it, specced but missing | apply the migration, built but not live>
 
-**Blocked** ⚠️:
-- <behavior>: <what's needed to verify it (seed data, credentials, env)>
+Ran via <command/url>; verified <N> behaviors (evidence recorded). per AC detail in verify.md.
+```
 
-**Spec conformance**: PASS | FAIL | BLOCKED   (this whole block only when a spec contract was loaded)
-- AC-1 ✅ met: <the observation that confirmed it, with its evidence>
-- AC-2 ✅ met: <the observation that confirmed it, with its evidence>
-- AC-3 🚫 specced-but-missing: <spec requires it, no implementation> → build it before done
-- AC-4 ⚠️ specced-but-not-applied: <built but runtime check fails, e.g. migration not run> → <fix>
-
-**Missed surfaces** 🚫 (specced in spec, not built):
-- <page / route / table>: <where it was expected> → build before done
-
-**Not applied** ⚠️ (built but not live/correct at runtime):
-- <surface / criterion>: <the runtime failure, e.g. "migration committed, column absent from live schema"> → <apply/fix>
-
-**What /test should lock in**:
-- <the behaviors above, as permanent assertions>
+The passing behaviors and their evidence are the record, not the summary; do not list each one. `/test` reads verify.md itself, so no "what to lock in" list here.
 
 **For /check review**:
 - <anything that worked but looked fragile: slow response, console warning, missing empty state>
@@ -192,4 +170,4 @@ Drop the Spec conformance / Missed surfaces / Not applied sections when there wa
 
 Clean up any process you started. `/check verify` confirms reality, never fixes or asserts: `/debug` for failures, `/develop` to build a surface that is missing or not applied, `/test` to make passing behaviors permanent. A FAIL conformance verdict means the feature is not done, even if every test is green.
 
-A BLOCKED verdict is an honest, useful result: it says the change could not be exercised and names what would make it exercisable. A fabricated PASS is the one output this skill must never produce, because every later step trusts it.
+A BLOCKED verdict is honest and useful: it names what would make the change exercisable. A fabricated PASS is the one output this skill must never produce; every later step trusts it.

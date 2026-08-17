@@ -7,7 +7,7 @@ description: "Run /sync as the last step after a change is complete, around merg
 ## Output style (plain words, no dashes, no hyphens)
 
 <!-- OUTPUT-STYLE:START -->
-Write everything this skill produces, files and messages alike, in plain simple language. Keep technical terms that carry real meaning; explain each in plain words. Never use a dash or a hyphen as punctuation: no em dash, no en dash, and no hyphenated compounds. Write `read only`, not `read-only`. Say it in simple words, or reword the sentence. Code, file paths, command flags, and values other skills match on keep their hyphens. Use short sentences, commas, or parentheses. Clear beats clever.
+Write everything this skill produces, files and messages alike, in plain simple language. Talk to the reader as `you`, warm and direct like a colleague, and present every step as a recommendation they may run or skip, never an order. Keep technical terms that carry real meaning; explain each in plain words. Never use a dash or a hyphen as punctuation: no em dash, no en dash, and no hyphenated compounds. Write `read only`, not `read-only`. Say it in simple words, or reword the sentence. Code, file paths, command flags, and values other skills match on keep their hyphens. Use short sentences, commas, or parentheses. Clear beats clever.
 <!-- OUTPUT-STYLE:END -->
 
 ## What this skill does
@@ -18,7 +18,7 @@ Closes the loop on a completed change: syncs AGENTS.md files, the scope, and lin
 
 **Canonical file:** durable context lives in the tool agnostic **`AGENTS.md`**; **`CLAUDE.md` is only a pointer** to it. /sync edits/creates both, treating them only as targets, never as a change source.
 
-## Boundaries (these keep the skill from sprawling)
+## Boundaries
 
 | Action | /sync | Owner |
 |---|---|---|
@@ -28,7 +28,7 @@ Closes the loop on a completed change: syncs AGENTS.md files, the scope, and lin
 | Create nested `<area>/AGENTS.md` for an area **net new in this change** | ✅ creates (diff = full area context) + adds root pointer | /sync |
 | Create nested doc for an **already existing** undocumented area (only sliced by the diff) | ❌ flags "run /audit" | /audit |
 | Create or restructure the **root** AGENTS.md | ❌ flags "run /audit" | /audit |
-| Reconcile a spec's `**Status**:` line to its feature's scope status (`planned`→`Proposed`, `in-progress`→`In Progress`, `done`→`Accepted`) | ✅ Status line only | /sync |
+| Reconcile a spec's `**Status**:` line to its feature's scope status (`planned`→`Proposed`, `in-progress`→`In Progress`, `done`→`Accepted`; an `Assumed` spec is the exception: leave it `Assumed` and surface it, never reconcile it to `Accepted`) | ✅ Status line only | /sync |
 | Clear an `Assumed` spec (move it out of `Assumed`) | ❌ flags as decision debt "run /architect to ratify" (never reconciled to the feature status; only ratification clears it) | /architect |
 | Edit a spec's **content** / supersede it | ❌ flags as stale | /architect |
 | Reconcile the scope, for the **relevant workspace's** scope file only (not all of `docs/scope/`), tick **any** completed sub task from repo **evidence** (code, tests, AGENTS.md), advance status | ✅ corrects | /sync |
@@ -124,40 +124,20 @@ The inputs to apply:
 
 **If the maintenance failed or produced no parseable summary**, report that and do it again, don't fabricate a result (a genuine `NOTHING_TO_SYNC` is a valid success; a crash or empty output is not). Otherwise relay the compact summary:
 
+Lead with what it reconciled in one line; then list only what needs the engineer (per `docs/conventions.md`). The edits themselves are in the files. Template:
+
 ```
-## /sync complete
+## /sync complete Â· reconciled <N> changed files
 
-**Scope**: <N> changed files
-
-**AGENTS.md updated**:
-- `<path>`, <what was added/corrected, one line>   (or "no updates needed")
-
-**AGENTS.md created** (new area):
-- `<area>/AGENTS.md`, <what conventions it captures> (+ root pointer added)
-
-**Orphans cleaned** (after deletions):
-- `<path>`, <removed orphaned nested doc / fixed broken pointer>
-
-**Scope reconciled** (relevant workspace):
-- `<feature>`, <ticked sub-tasks / status planned→in-progress→done to match the diff>   (or "no scope, or already accurate")
-
-**Spec statuses reconciled** (Status line only):
-- `docs/specs/<file>`, <Status Proposed→In Progress→Accepted to match the feature's scope status>
-
-**Specs flagged stale** (run /architect to update or supersede):
-- `docs/specs/<file>`, <why the change makes it stale, or status mismatch sync couldn't safely resolve>
-
-**Assumed decisions, not yet ratified** (run /architect to ratify; the feature can't be `done` until then):
-- `docs/specs/<file>`, <feature> built on an assumption, decision not deliberated
-
-**Context gaps** (run /audit, area too established for /sync to document from the diff alone):
-- `<area>`, <pre-existing undocumented area only sliced by this change>
-
-**Conflicts left for you** (not auto-edited):
-- `<path>`, <curated content that would need rewriting; decide manually>
+**Updated <AGENTS.md files · scope features · spec statuses> to match the diff.**   (or "everything already current, nothing to sync")
+Heads up (need you):
+- Stale spec → /architect: `<file>` (<why, or a status mismatch /sync couldn't safely resolve>)
+- Assumed, not ratified → /architect: `<file>` (<feature>; owes ratification, doesn't block `done`)
+- Context gap → /audit: `<area>` (established area /sync can't document from the diff alone)
+- Conflict, decide manually: `<path>` (<curated content that would need rewriting>)
 ```
 
-Omit any section with no items. If everything was already current and nothing is stale, say so in one line. /sync does not run /architect or /audit for you; it points, you decide.
+Drop any Heads up bullet with no items, and drop the whole Heads up block if there are none. What `/sync` did (AGENTS.md lines, scope ticks, orphan cleanup, status reconciliation) is in the files; don't list it. `/sync` does not run `/architect` or `/audit` for you; it points, you decide.
 
 ---
 

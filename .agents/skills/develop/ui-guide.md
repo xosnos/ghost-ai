@@ -1,24 +1,24 @@
 # /develop: UI track guide
 
-UI build track for `/develop`, read after the spec gate (`SKILL.md` Step 0) classifies a task as UI: components, pages, or full layouts with semantic HTML, design tokens, and strict accessibility. Any web stack (Next.js, Vite, Nuxt, Svelte, plain HTML). The project's `design.md` holds the art direction (character, the build mandate, composition and component rules, and pointers to where the real tokens live); the token values themselves live in the project's CSS (`globals.css` / tailwind config), never duplicated in `design.md`. Read the bar below before you build anything.
+UI build track for `/develop`, read after the spec gate (`SKILL.md` Step 0) classifies a task as UI: components, screens, or full layouts, built to a professional bar with real design tokens and strict accessibility. Any UI platform (web, mobile, desktop): detect the platform and the UI, styling, theming, navigation, and accessibility systems the project already uses, and build with their native idioms. The bar and the phases below are the same on every platform; only the mechanics differ, and you build them the platform's way. The project's `design.md` holds the art direction (character, the build mandate, composition and component rules, and pointers to where the real tokens live); the token values themselves live in the project's own styling or theme system (CSS on web, the platform theme on mobile), never duplicated in `design.md`. Read the bar below before you build anything.
 
 ## The bar: read this first, it is the definition of done
 
-You are a senior product designer shipping a real product, not a developer wiring a form. Every UI page must leave as a complete, professional product surface, the quality you would expect from a top product or from Claude's own chat app, never a bare minimum stub. This is not optional styling advice. It is the definition of done for a UI build, committed here, before you start, so it cannot get crowded out by the token and accessibility rules later in this guide.
+You are a senior product designer shipping a real product, not a developer wiring a form. Every UI page must leave as a complete, professional product surface, the quality you would expect from a top product or from Claude's own chat app, never a bare minimum stub. This is not optional styling advice. It is the definition of done for a UI build.
 
-**Design first, then integrate.** The same model produces beautiful UI in a chat app and plain UI in a codebase because the codebase makes it satisfy tokens, libraries, and accessibility before it has designed anything, and the ambition dies. Build in two passes:
+**Design first, then integrate.** Build in two passes, so the codebase's constraints (tokens, libraries, accessibility) don't crush the design before it exists:
 1. **Design the surface** (bold, complete, opinionated), as if you were shipping it standalone, to the agreed design system. Compose the whole page (`ui/implementation.md` Phase 0).
 2. **Integrate it** into the codebase: installed styling library, real tokens, semantic HTML, accessibility, responsive (Phases 1 to 5).
 
 **Disqualifiers, any one means NOT done, fix before you report:**
 - a lone centered form or single input box floating on an empty page
 - large dead zones, or content stranded in a narrow column with blank canvas around it
-- naked / unstyled / full bleed elements (a raw black bar, an unstyled header, a default browser control)
+- naked / unstyled / full bleed elements (a raw black bar, an unstyled header, a default unstyled platform control)
 - default only styling (one flat button, hairline default borders, system font, no considered accent, no depth)
 - missing states (no empty / loading / error) or orphaned controls (a toggle or quick action with nothing around it)
 - a bare functional widget where a product would ship a full surface (brand, real copy, layout, supporting content, footer)
 
-**Prove it before you report.** Before declaring the UI done, audit the build yourself against these disqualifiers and against the page's `design.md` mandate, and fix every hit. When you have a browser or screenshot tool, render the page and look at it, the way a designer checks their own work, and fix any visual defect you see (the only reliable way to catch a broken render like a stray black bar). Say in the report what you audited.
+**Prove it before you report.** Before declaring the UI done, audit the build yourself against these disqualifiers and against the page's `design.md` mandate, and fix every hit. When you have a browser or screenshot tool, render the page and look at it, and fix any visual defect you see (the only reliable way to catch a broken render like a stray black bar). Say in the report what you audited.
 
 ## Design source (route by what you were given)
 
@@ -27,9 +27,9 @@ You are a senior product designer shipping a real product, not a developer wirin
 3. **A design system already exists** (`design.md` + tokens in CSS) → design the new page WITHIN that system, at the bar above: a full professional surface, consistent with what is already shipped. Route: `ui/existing.md`.
 4. **Nothing provided** → establish the design system first (the `frontend-design` skill when available, else derive it from the rules in `ui/generate.md` B2 and verify its contrast), record it in `design.md` (character + mandate + pointers) with the tokens written to CSS, then build to the bar above, maximalist and complete. Route: `ui/generate.md`.
 
-Cases 3 and 4 get the full chat app treatment (bold, complete, product level); case 2 gets faithful fidelity; case 1 gets Figma fidelity. Follow the source the spec recorded; never default to Figma just because an MCP is connected.
+Cases 3 and 4 get the full chat app treatment (bold, complete, product level); case 2 gets faithful fidelity; case 1 gets Figma fidelity. Follow the source the spec recorded.
 
-All paths converge on: component or screen → stack detection → styling library → dark mode → token sync → font → the implementation phases.
+All paths converge on: component or screen → detect the platform and its systems → token sync → the implementation phases.
 
 ## How the UI build fits the project's approach
 
@@ -39,11 +39,11 @@ The UI build serves the project's build approach (read in `SKILL.md` Step 2), ne
 
 ## Portability (any OS, any agent)
 
-Any Agent Skills client, macOS/Linux/Windows. Detection snippets (`find`, `cat | grep`, `cp`) are POSIX reference, not literal scripts: use your agent's own cross platform file tools to find files and read `package.json`/config. Bundled files (`checklist.md`, `ui/*.md`) are paths relative to this skill's folder, read on demand: read this guide's phases as reached, not all up front. The UI build runs inline (it is interactive); heavy code exploration (finding existing components/tokens to match) goes to a read only subagent per `SKILL.md` Step 2.5. App code/CSS is inherently cross platform. No interactive question picker: ask the prompts as plain text with the same options.
+Any Agent Skills client, macOS/Linux/Windows. Detection snippets (`find`, `cat | grep`, `cp`) are POSIX reference: use your agent's own cross platform file tools. Bundled files (`checklist.md`, `ui/*.md`) are paths relative to this skill's folder, read on demand: read this guide's phases as reached, not all up front. The UI build runs inline (it is interactive); heavy code exploration (finding existing components/tokens to match) goes to a read only subagent per `SKILL.md` Step 2.5. No interactive question picker: ask the prompts as plain text with the same options.
 
 ## Step 0: Where the design comes from (one decision, made once)
 
-Check the governing spec first (`/develop` read it in Step 2). The design source is the engineer's choice and `/architect` already grilled them on it, so follow what the spec recorded, never ask again, and never default to Figma just because an MCP is connected.
+Check the governing spec first (`/develop` read it in Step 2). The design source is the engineer's choice, so follow what the spec recorded, never ask again, and never default to Figma just because an MCP is connected.
 
 Route on what the spec recorded, using the *Design source* table above:
 - Figma or another design MCP → `ui/mcp.md`.
@@ -64,9 +64,9 @@ Not found → **Step 0.2 (brownfield check)**.
 
 ## Step 0.2: Brownfield check (no design.md, but is there existing UI?)
 
-Before generating a fresh design system, check for an existing visual language to match; a new one over an existing app clashes with what's shipped. File search (ignoring `node_modules`) for:
-- Styling/token files: `globals.css`, `tokens.css`, `theme.*`, `tailwind.config.*`.
-- Component directories: a `components/` tree or a `ui` directory.
+Before generating a fresh design system, check for an existing visual language to match; a new one over an existing app clashes with what's shipped. Search the project (ignoring dependency dirs) for:
+- Styling, token, or theme files: wherever this platform keeps them (a CSS/token/theme file on web, the theme or style module on mobile or desktop).
+- Component directories: the existing component or screen tree.
 
 Found (brownfield): ask before proceeding, via your agent's interactive option picker (`AskUserQuestion` on Claude Code) or plain text options with the same choices:
 - **question**: "There's no `design.md`, but this project already has UI. How should I get the design system?"
@@ -80,7 +80,7 @@ No existing UI (greenfield) → **Step 0.5**.
 
 ### Step 0.3: Capture the design direction from existing code
 
-The existing CSS / Tailwind config already holds the token values (the source of truth); do not copy them into `design.md`. Read the token files and 3 to 5 representative components/pages to read the *system*, then write `design.md` as art direction (per `ui/generate.md` B2's schema): `source: extracted-from-code`, the character you observe, the composition and component patterns the app already uses, the build mandate, and a pointer to the CSS token file. Inconsistent codebase: note the dominant patterns and the variance. Show a short summary, confirm before building, then implement to the direction with the CSS as the token source of truth.
+The project's styling or theme system already holds the token values (the source of truth); do not copy them into `design.md`. Read the token/theme files and 3 to 5 representative components/screens to read the *system*, then write `design.md` as art direction (per `ui/generate.md` B2's schema): `source: extracted-from-code`, the character you observe, the composition and component patterns the app already uses, the build mandate, and a pointer to where the tokens live. Inconsistent codebase: note the dominant patterns and the variance. Show a short summary, confirm before building, then implement to the direction with that styling/theme system as the token source of truth.
 
 ---
 
@@ -101,47 +101,23 @@ If ambiguous, ask (as above):
   - Full page / screen: owns layout, integrates with router
 ```
 
-**Component rules** (apply throughout all phases): define the `interface Props` before any markup; named export from its own file; no router imports, no page level data fetching inside the component; Storybook present (`*.stories.*`) → create a story file alongside; file naming matches the convention of existing components.
+**Component rules** (apply throughout all phases): define its props/inputs contract before any markup; export it from its own file the way this codebase does; no navigation imports and no screen level data fetching inside the component; if the project uses a component workbench (stories, previews), add its file alongside; file naming matches the convention of existing components.
 
-**Screen rules** (apply throughout all phases): integrate with the detected router (Next.js App Router, Vite React Router, Nuxt, SvelteKit); include loading, error, and empty states at page level; wrap with the existing layout component if the project has one.
-
----
-
-## Stack detection
-
-File search near the project root (ignoring `node_modules`) for a framework config (`next.config.*`, `vite.config.*`, `nuxt.config.*`, `svelte.config.*`); read `package.json` dependencies for `next`, `vite`, `nuxt`, `svelte`, or `astro`. The framework affects routing integration, image primitives, and font loading.
+**Screen rules** (apply throughout all phases): integrate with the platform's navigation system (its router or navigator); include loading, error, and empty states at screen level; wrap with the existing layout/shell component if the project has one.
 
 ---
 
-## Styling library, dark mode, and icon detection
+## Detect the platform and what it is built with
 
-Using your file search and read tools (ignoring `node_modules`):
-- **Styling**: `package.json` dependencies for `@shadcn`, `@radix-ui`, `@mui`, `antd`, `@chakra-ui`, `@mantine`, `styled-components`, `@emotion`, `tailwindcss`; a `components/ui` directory (shadcn); any `*.module.css` / `*.module.scss` files.
-- **Dark mode strategy**: `next-themes` in `package.json`; `darkMode` setting in any `tailwind.config.*`.
-- **Icon library**: `package.json` dependencies for `lucide-react`, `@heroicons`, `phosphor-react`, `@phosphor-icons`, `react-icons`, `@tabler/icons`.
+Before building, read what the project already uses, from its manifest, config, and existing UI code, then build in that idiom. Never impose a specific tool or framework; use what is installed, the way it is meant to be used. Detect:
 
-**Styling decision:**
+- **Platform and UI framework**: web, native mobile, cross platform mobile, or desktop, and the UI toolkit in use. It drives navigation integration, layout primitives, and image and font handling.
+- **Styling and theming system**: how this project expresses styles and design tokens (a CSS framework, CSS modules with custom properties, or CSS in JS on web; the platform's stylesheet or theme system on mobile and desktop). Build styles its way, and put token values there, not in `design.md`.
+- **Navigation system**: integrate a screen with the project's router or navigator.
+- **Light and dark theme mechanism**: the project's way of switching themes (a class or media query on web; the platform appearance API elsewhere). Support both themes as a first class state, never an afterthought.
+- **Icon set**: use whatever icon system is installed; never emoji or placeholder art. Size icons from a spacing token. Hide decorative icons from assistive tech; give a standalone interactive icon an accessible label.
 
-| Detected | Approach |
-|---|---|
-| `components/ui/` (shadcn) | Use shadcn primitives with `cn()` + Tailwind token classes |
-| `tailwindcss` only | Utility classes only, no `style={}` props |
-| `*.module.css` | One `.module.css` per component |
-| `styled-components` / `@emotion` | Tagged template literals referencing CSS variables |
-| Nothing | Semantic HTML + external CSS referencing CSS custom properties |
-
-Common cases, not exhaustive. Another styling library installed (UnoCSS, Panda, `vanilla-extract`, Stylex, …): use it, follow its idiom. The rule is "use what's installed, the way it's meant to be used," never "only these."
-
-**Dark mode strategy:**
-
-| Detected | Approach |
-|---|---|
-| `next-themes` in package.json | `.dark {}` class only, no `@media` as primary |
-| `darkMode: 'class'` in tailwind config | `.dark {}` class only |
-| `darkMode: 'media'` in tailwind config | `@media (prefers-color-scheme: dark)` |
-| Nothing detected | Both: `@media` query + `.dark {}` fallback |
-
-**Icon library:** use whatever is installed. Nothing installed: note it in the report; never emoji or placeholder SVGs. Icon size always references a spacing token, never hardcoded. Decorative icons: `aria-hidden="true"`. Standalone interactive icons: visually hidden label or `aria-label` on the wrapping button.
+Nothing installed yet for one of these: pick the platform's conventional, current best fit, note the choice in the report, and do not freeze a product name here.
 
 ---
 
@@ -159,6 +135,6 @@ After the selected source has resolved tokens, assets, and design direction, rea
 ## Reference files
 
 - Accessibility checklist: `checklist.md`
-- Project design system: `./design.md` (art direction and the build mandate; token values live in CSS)
+- Project design system: `./design.md` (art direction and the build mandate; token values live in the platform styling/theme system)
 - UI source routes: `ui/mcp.md`, `ui/image.md`, `ui/existing.md`, `ui/generate.md`
 - UI implementation phases and report: `ui/implementation.md`

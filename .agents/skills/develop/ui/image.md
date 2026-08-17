@@ -9,7 +9,7 @@
 
 ## Path A: Pixel-perfect from image
 
-The image was provided in chat (not a repo file); use the one in the conversation. Replicate it faithfully: the image is both the look and the composition, so match it, and do NOT embellish beyond it. The maximalist mandate is for the no-source path; here, fidelity to the reference governs. Tokenize what you see (values into CSS, character into `design.md`), and derive the responsive and accessible behavior a single screenshot cannot show (Phases 3 and 5). If the reference itself is a minimal screen, replicate it as given and note in the report that it is minimal.
+The image was provided in chat (not a repo file); use the one in the conversation. Replicate it faithfully: the image is both the look and the composition, so match it, and do NOT embellish beyond it. The maximalist mandate is for the no-source path; here, fidelity to the reference governs. Tokenize what you see (values into the styling/theme system, character into `design.md`), and derive the responsive and accessible behavior a single screenshot cannot show (Phases 3 and 5). If the reference itself is a minimal screen, replicate it as given and note in the report that it is minimal.
 
 ### A0: Multiple images?
 
@@ -32,7 +32,7 @@ Extract exactly what is visible, never fabricate values.
 
 ### A2: Tokens to CSS, character to design.md
 
-Write the extracted token VALUES into the project's CSS token file (`globals.css` / tailwind config), the single source of truth, using `accent` (not `primary`) as the canonical accent name; include dark values if the design has or implies a dark mode. Record the visual character in `design.md` (art direction, per `ui/generate.md` B2's schema): `source: image`, a character summary, and the pointer to the CSS. Do not dump the token values into `design.md`.
+Write the extracted token VALUES into the project's styling/theme system, the single source of truth, using `accent` (not `primary`) as the canonical accent name; include dark values if the design has or implies a dark mode. Record the visual character in `design.md` (art direction, per `ui/generate.md` B2's schema): `source: image`, a character summary, and the pointer to where the tokens live. Do not dump the token values into `design.md`.
 
 ### A3: Token file conflict check
 

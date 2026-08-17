@@ -25,7 +25,7 @@ Prototype first, wired later. State openly that phase 1 is not production comple
 ## Worked example: async standup app
 1. Foundations (UI only): design system, component library, routing, mock data fixtures.
 2. **Phase 1 (clickable prototype):** every screen on mock data and navigable, sign in, team dashboard, submit standup form, team feed, history, settings. Looks real, persists nothing.
-3. Phase 2: wire real authentication (Clerk) behind the existing sign in screen.
+3. Phase 2: wire in real authentication behind the existing sign in screen.
 4. Phase 3: build the real data model and make the submit form persist.
 5. Phase 4: make the feed and history read real data.
 6. Phase 5: wire reminders, roles, the rest.

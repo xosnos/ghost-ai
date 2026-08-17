@@ -1,6 +1,6 @@
 # Spec Writing Guide (main thread)
 
-You, the main thread, read and follow this when you write the spec after the design conversation. It is a brief with ALL_CAPS placeholders; read each as the matching input you gathered (the list in `SKILL.md`, *Write the spec*). Do not spawn anyone to write, research, or critique the spec; you do it all. The only subagents read the codebase (`scout`) or fetch the web (`researcher`), on the cheapest model.
+You, the main thread, read and follow this when you write the spec after the design conversation. It is a brief with ALL_CAPS placeholders; read each as the matching input you gathered (the list in `SKILL.md`, *Write the spec*). You write it all yourself; the only subagents read the codebase (`scout`) or fetch the web (`researcher`) on the cheapest model.
 
 ---
 
@@ -43,7 +43,7 @@ You are a Staff Engineer and Principal Architect with 15+ years of production ex
 
 **Engineer's answers, staged design conversation (feature specific, stage by stage):**
 ANSWER_ALL_ROUNDS
-<!-- Includes: (1) CONFIRMED, already-IDed acceptance criteria (AC-1, AC-2, …): write verbatim into ## Requirements, they are the contract; plus the CONFIRMED data model (entities/fields/relationships), whose migration is Build-plan task 1. (2) ASK answers (stack/tool picks, API surface, authz, edge cases): treat as fixed requirements. (3) RECOMMEND items: feature-specific decisions assigned to YOU, not answered. Make each call; state the pick + one-line rationale + the runner-up in ## Decision/## Rationale; reflect them in the spec's invariants, config, build plan, and critical test scenarios. Never echo a RECOMMEND item back as an open question. -->
+<!-- Includes: (1) CONFIRMED, already-IDed acceptance criteria (AC-1, AC-2, …): write verbatim into ## Requirements, they are the contract; plus the CONFIRMED data model (entities/fields/relationships), the coherent target whose migration lands in the Build plan sized to the feature (one migration normally; sliced only for a large feature or a thin thread/Facade approach). (2) ASK answers (stack/tool picks, API surface, authz, edge cases): treat as fixed requirements. (3) RECOMMEND items: feature-specific decisions assigned to YOU, not answered. Make each call; state the pick + one-line rationale + the runner-up in ## Decision/## Rationale; reflect them in the spec's invariants, config, build plan, and critical test scenarios. Never echo a RECOMMEND item back as an open question. -->
 **RECOMMEND items (you decide these):** RECOMMEND_ITEMS_OR_NONE
 
 **Spec number**: SPEC_NUMBER
@@ -147,7 +147,7 @@ Also check before proceeding:
 
 - **Scope too large?** A single spec captures one decision. If the topic spans 3+ independently implementable decisions (e.g. "design the whole auth system": login flow, MFA, OAuth, session management, permissions), write in the Premise note: "This topic spans [N] distinct decisions. This spec focuses on [most critical one]. Recommend separate specs for: [list the others]." Then proceed with the narrowed scope only.
 - **Compliance/security constraint active?** If the feature touches regulated data (a compliance scope in the inferred framing or the answers: GDPR/SOC2/HIPAA/PCI-DSS): (1) name the compliance scope explicitly in `## Context`, stating which standard applies; (2) treat the Security model field in `## Feature design` as mandatory, not optional; (3) audit logs are not negotiable, state this explicitly in Consequences.
-- **Unresolved prerequisites?** (FEATURE mode only) Does this feature depend on a decision with no spec in EXISTING_SPEC_SUMMARIES? Common prerequisites: auth/session approach, core entity data model, org isolation model, billing/subscription model, permission system. If a critical prerequisite is missing, add to the Premise note: "This feature assumes [X], e.g. JWT based auth with per user tokens. This assumption has no spec. State these assumptions explicitly as constraints in ## Context, and add a Follow-up item to design [X] before implementation." Then proceed, making every assumption explicit rather than implicit.
+- **Unresolved prerequisites?** (FEATURE mode only) Does this feature depend on a decision with no spec in EXISTING_SPEC_SUMMARIES? Common prerequisites: auth/session approach, core entity data model, org isolation model, billing/subscription model, permission system. If a critical prerequisite is missing, add to the Premise note: "This feature assumes [X], e.g. an existing auth and session model. This assumption has no spec. State these assumptions explicitly as constraints in ## Context, and add a Follow-up item to design [X] before implementation." Then proceed, making every assumption explicit rather than implicit.
 
 **Known failure patterns to watch for:**
 
@@ -170,12 +170,10 @@ Read MODE_FILE_PATH now and follow that mode file as the only mode specific inst
 
 ## Expert rules that apply to all modes
 
-**On output style (plain words, no dashes):**
-- Write the spec (and your report) in plain, simple language. Keep technical terms that carry real meaning, but gloss each in plain words (a short parenthetical) so a busy reader understands fast.
-- Use no dashes of any kind: no em dash, no en dash, no hyphen used as punctuation. Use short sentences, commas, or parentheses instead. (Hyphens inside real compound words and code, like `kebab-case` or `AC-1`, are fine.) Clear beats clever.
+**On output style:** follow the output style block (plain words; no dash or hyphen as punctuation; hyphens only inside code and literals like `kebab-case` or `AC-1`). In the spec, gloss each technical term in a short plain parenthetical so a busy reader keeps up.
 
 **On the `## Summary` (write it first, plain words):**
-- The spec opens with `## Summary` right after the `**Status**:` line and before `## Context`. Write it first. It is the human quick read everyone sees first, technical or not: 2 to 4 short plain sentences saying what this decision is, why it was made, and what it means for building. A busy reader should get the gist in about 20 seconds. Gloss any jargon in plain words. No dashes. (Umbrella children carry no `**Status**:` line, but still open with a plain `## Summary`.)
+- The spec opens with `## Summary` right after the `**Status**:` line and before `## Context`. Write it first. It is the human quick read everyone sees first, technical or not: 2 to 4 short plain sentences saying what this decision is, why it was made, and what it means for building. A busy reader should get the gist in about 20 seconds. Gloss any jargon in plain words. (Umbrella children carry no `**Status**:` line, but still open with a plain `## Summary`.)
 
 **On the initial `**Status**:` line, set it correctly at creation (do not always write `Proposed`):**
 - **Feature linked spec**: a buildable scope feature links (or will link) this spec (typical FEATURE/ENHANCEMENT, or an ARCHITECTURE foundation with a scope row). Write **`Proposed`**. Its status is mirrored from the feature: /develop advances it to `In Progress`, then `Accepted`, as the feature ships.
@@ -193,11 +191,11 @@ Read MODE_FILE_PATH now and follow that mode file as the only mode specific inst
 
 **On value sourcing (trace every produced value to a named source, so `/develop` never has to invent one):**
 - For each action, endpoint, or read path, list every value it must **produce, compute, or display** to satisfy the acceptance criteria, and name the **source** of each: an input param, a DB column, derived from a named value, or decided in another spec. Fill the **Value sourcing** table in the design section. A required value whose source is not an input, a column, or a prior decision is an **undecided input**: resolve it now (ASK the engineer when only they know it, RECOMMEND otherwise), never leave it for the build to fill.
-- This is procedural, not a checklist: trace each value the ACs need to a source; do not work from a fixed list of "sources to check". The gaps that hide here are the ones the API table omits, a value an AC requires that no input carries. Diverse illustrations of the pattern (not rules): a read that must show "the user's local day" names where the timezone comes from; a displayed total names the source of its rounding/currency rule; a per tenant query names how the tenant is resolved.
+- This is procedural, not a checklist: trace each value the ACs need to a source; do not work from a fixed list of "sources to check". The gaps that hide here are the ones the API table omits, a value an AC requires that no input carries (e.g. a read that must show "the user's local day" names where the timezone comes from).
 
 **On the acceptance criteria spine & build plan (any data backed feature, FEATURE / ENHANCEMENT):**
 - Write **`## Requirements`** with the engineer's confirmed, already IDed acceptance criteria (`AC-1`, `AC-2`, …) verbatim, plus the user stories. These are the contract `/develop` builds to and `/check verify` checks; do not weaken or replace them. If one is genuinely missing, add it and flag it in `## Follow-up`.
-- Write **`## Build plan`**: an ordered list of build tasks derived from the confirmed surface (data model, API, config) and the acceptance criteria. Order and slice it through the project's build approach (BUILD_APPROACH), reasoning in your Staff/Principal role about what the approach implies for this feature, not a fixed recipe: a Tracer Bullet plan stands up a working end to end slice through every layer before thickening it; a Skateboard plan delivers the thinnest usable whole first; a Facade/prototype plan puts the UI shell first and wires the backend later; a Journey plan sequences one complete user path per phase. The data model migration is normally task 1 (from the confirmed data model) and stays early; a UI first Facade path may legitimately lead with the shell and follow with the migration. Tag each task with the AC(s) it satisfies (`, satisfies AC-2`). Every AC traces to at least one task; every task to at least one AC.
+- Write **`## Build plan`**: an ordered list of build tasks derived from the confirmed surface (data model, API, config) and the acceptance criteria. Order and slice it through the project's build approach (BUILD_APPROACH, see the Build approach note above), reasoning in your Staff/Principal role about what it implies for this feature, not a fixed recipe. The confirmed data model is the coherent **target** (designed whole for this feature); its migration lands in the Build plan **sized to the feature**, not as one mandatory up front task: one migration for a normal feature; sliced across the slices that need it when the feature is large or the approach wants a thin thread first (Tracer Bullet), deferred under Facade; omitted for a slice touching no schema. The build realizes the target incrementally; a real model change mid build routes back through `/architect`. Tag each task with the AC(s) it satisfies (`, satisfies AC-2`). Every AC traces to at least one task; every task to at least one AC.
 - **Decision only specs record the decision, NOT an implementation build plan.** An **ARCHITECTURE** (stack) decision and a **CROSS-CUTTING** standard do not write a `## Build plan` of implementation steps, and do not invent meta acceptance criteria like "spec records the stack." Their spec IS the decision section: `## Proposed stack` for architecture, `## Standard definition` for cross cutting. The steps that execute the decision belong to the feature that runs it (for a stack decision, the scaffold sub task) and are derived by `/develop` at build time, not written here in advance; otherwise the same work is specced twice.
 
 **On making the recommendation:**
@@ -230,20 +228,18 @@ Read MODE_FILE_PATH now and follow that mode file as the only mode specific inst
 - Keep it lean: cite the load bearing decisions, not every sentence. Verify on the web only the few links genuinely worth including; don't search for the sake of it.
 
 **Output rule:**
-- Keep the spec itself in the file (write it with your file tools). Don't paste the whole spec back into the chat. When the write is done, produce the short report block below as your own working summary; `after-subagent.md` uses its Decision and Key tradeoff lines to drive the confirmation panel.
+- Write the spec to the file with your file tools; do not paste it back into the chat. Then produce the report block below as your working summary; `after-subagent.md` uses its Decision and Key tradeoff lines to drive the confirmation panel.
 
 ---
 
 ## Report format
 
-```
-## /architect complete
+Lead with the decision; the mode, operation, and follow-up detail are in the spec (per `docs/conventions.md`). This block feeds the preview and the spoken summary in `after-subagent.md`. Template:
 
-**Mode**: <feature | architecture | enhancement | cross-cutting>
-**Operation**: <create | update | supersede>
-**Spec written**: <file path>
-**Decision**: <one sentence: what was decided>
-**Key tradeoff**: <one sentence: the main thing being traded away>
-**Premise challenged**: <yes, [what was challenged] | no>
-**Follow-up items**: <count or "none">
+```
+## /architect complete Â· <create | update | supersede> <mode> spec
+
+**Decided: <one sentence>.** Key tradeoff: <one sentence>.
+Spec written to <file path>.
+Heads up: <premise challenged: what · N follow-up items enrolled>   (omit if neither)
 ```

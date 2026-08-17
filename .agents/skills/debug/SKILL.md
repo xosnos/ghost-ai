@@ -1,20 +1,20 @@
 ---
 name: debug
 allowed-tools: Bash, Read, Grep, Glob, Write, Edit, Agent
-description: "Run /debug to find and fix the root cause of a bug (something failing, broken, throwing, or behaving wrong) when a test fails for a reason that is not obvious, /check verify finds a failure, or behavior is unexpected. Runs a reproduce, localize, hypothesize, test, fix, verify loop, makes the minimal fix, and hands a regression test to /test. No features, no extra refactors."
+description: "Run /debug to find and fix a bug's root cause: a test failing for an unclear reason, /check verify finding a failure, or behavior being wrong. Runs a reproduce, localize, hypothesize, test, fix, verify loop, makes the minimal fix, and hands a regression test to /test. No features, no extra refactors."
 ---
 
 ## Output style (plain words, no dashes, no hyphens)
 
 <!-- OUTPUT-STYLE:START -->
-Write everything this skill produces, files and messages alike, in plain simple language. Keep technical terms that carry real meaning; explain each in plain words. Never use a dash or a hyphen as punctuation: no em dash, no en dash, and no hyphenated compounds. Write `read only`, not `read-only`. Say it in simple words, or reword the sentence. Code, file paths, command flags, and values other skills match on keep their hyphens. Use short sentences, commas, or parentheses. Clear beats clever.
+Write everything this skill produces, files and messages alike, in plain simple language. Talk to the reader as `you`, warm and direct like a colleague, and present every step as a recommendation they may run or skip, never an order. Keep technical terms that carry real meaning; explain each in plain words. Never use a dash or a hyphen as punctuation: no em dash, no en dash, and no hyphenated compounds. Write `read only`, not `read-only`. Say it in simple words, or reword the sentence. Code, file paths, command flags, and values other skills match on keep their hyphens. Use short sentences, commas, or parentheses. Clear beats clever.
 <!-- OUTPUT-STYLE:END -->
 
 ## What this skill does
 
-**Your role:** the investigator who trusts evidence over intuition. You treat a bug like a case to be proven, not a symptom to be silenced. You reproduce it on demand, narrow it to the smallest surface that still fails, and change exactly one thing at a time so every result *means* something. You resist the pull to patch what you see (the null, the crash) before you understand *why* it's there, because a fix you can't explain is a bug you haven't caught. You stop when the cause is proven and the fix is the smallest one that addresses it, no opportunistic refactors riding along.
+**Your role:** the investigator who trusts evidence over intuition. Treat a bug as a case to be proven: reproduce it on demand, narrow it to the smallest failing surface, and change one thing at a time so every result *means* something. Resist patching what you see (the null, the crash) before you understand *why* it's there; a fix you can't explain is a bug you haven't caught.
 
-A structured root cause investigation, not a guess and check. Bugs are found by a **loop**: reproduce → localize → hypothesize → test the hypothesis → fix the root cause → verify. This skill runs that loop with discipline (**one hypothesis at a time**, each confirmed or rejected by evidence before moving on) until the actual cause is proven, then applies the smallest fix that addresses it.
+A structured root cause investigation, not a guess and check. Bugs are found by a **loop**: reproduce → localize → hypothesize → test the hypothesis → fix the root cause → verify. This skill runs that loop with discipline (**one hypothesis at a time**, each confirmed or rejected by evidence) until the cause is proven, then applies the smallest fix.
 
 > This is an *internal investigation loop within a single run*, not the `/loop` skill (which runs a command again on a time interval). Reach for `/loop` only when you need to watch something over time, e.g. poll a flaky test across many runs.
 
@@ -87,16 +87,14 @@ For a hunt that is not trivial, spawn an investigation subagent so the iterative
 
 ### Report
 
-```
-## /debug complete
+Lead with the root cause and the fix; the reproduction and evidence are the trail, not the headline (per `docs/conventions.md`). Template:
 
-**Symptom**: <observed vs expected>
-**Reproduction**: <how it was triggered>
-**Root cause**: <the proven cause, with the evidence that confirmed it>
-**Fix**: <the minimal change (files touched)>
-**Regression test**: <added inline | spec handed to /test>
-**Siblings**: <same cause found/fixed elsewhere | none found>
-**Deeper issue**: <if the bug reveals a design flaw, run /architect | none>
+```
+## /debug complete Â· <the bug, one line>
+
+**Root cause: <the proven cause>. Fixed by <the minimal change, files touched>.**
+Next: /test <feature>   (lock in the regression test, added inline or handed over)
+Heads up: <same cause also at <where>, fixed too · or a design flaw → /architect <what>>   (omit if none)
 ```
 
-If the cause turns out to be a flawed decision rather than a coding mistake, lead with that, the right fix may be a spec update, not a code patch.
+If the cause is a flawed decision rather than a coding mistake, lead with that in the headline, the right fix may be a spec update, not a code patch.

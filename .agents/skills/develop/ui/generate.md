@@ -4,7 +4,7 @@
 
 This is case 4 from the guide: nothing was provided, so you establish the design system, then build to the bar. Design first, integrate second.
 
-**Prefer a proven design skill when one is available** (Anthropic's `frontend-design` on Claude Code, Codex's frontend skill, or a design MCP): it sets the visual direction with the same craft that makes the chat app's output good. With none available, derive the system from B2. Either way the token values land in CSS and the art direction lands in `design.md`.
+**Prefer a proven design skill when one is available** (Anthropic's `frontend-design` on Claude Code, Codex's frontend skill, or a design MCP): it sets the visual direction with the same craft that makes the chat app's output good. With none available, derive the system from B2. Either way the token values land in the project's styling/theme system and the art direction lands in `design.md`.
 
 There are no bundled brand templates. You do not copy a design system, you derive one and prove it holds up.
 
@@ -76,7 +76,7 @@ Check **light and dark separately**. A ladder that passes in light frequently fa
 
 **6. Radius and motion.** Three steps each, no more. Radius: small (inputs, buttons), medium (cards), full (pills, avatars). Motion: instant (about 80ms), base (about 160ms), slow (about 240ms), with one standard ease and one spring. Zero radius and zero motion are valid choices for a brutalist direction; say so deliberately.
 
-**7. Write the values into the project's CSS** (`app/globals.css` / `src/styles/tokens.css`, plus the tailwind config if used), per B3. That file is the single source of truth for colors, typography, spacing, radius, shadows, and motion.
+**7. Write the values into the project's styling/theme system** (its token or theme file), per B3. That is the single source of truth for colors, typography, spacing, radius, shadows, and motion.
 
 **8. Write `design.md` as ART DIRECTION only**, never a copy of the token values, those live in CSS:
 
@@ -85,8 +85,8 @@ Check **light and dark separately**. A ladder that passes in light frequently fa
 name: <style>-design-system
 source: derived              # or url:<url> | skill:frontend-design
 character: "<2 to 3 sentences: the visual personality and mood>"
-tokens: "real values live in app/globals.css (and tailwind config); read them there, never duplicated here"
-contrast: "<the ratios you verified, e.g. body 7.1:1 light / 8.4:1 dark; on-accent 5.2:1>"
+tokens: "real values live in the project's styling/theme system; read them there, never duplicated here"
+contrast: "<the ratios you verified, e.g. body 7.1:1 light / 8.4:1 dark; on accent 5.2:1>"
 ---
 
 ## Build mandate
@@ -116,16 +116,16 @@ You are a senior product designer. Every page ships as a complete, professional 
 
 Fill every design.md section with real, specific direction. No placeholders, and no token value dumps (values live in CSS).
 
-### B3: Create CSS token file
+### B3: Write the token file
 
-Create `app/globals.css`, `src/styles/tokens.css`, or add to an existing globals file. Define CSS custom properties for:
-- All colors (light): `--color-canvas`, `--color-surface`, `--color-ink`, `--color-body`, `--color-muted`, `--color-accent`, `--color-on-accent`, `--color-border`, `--color-success`, `--color-error`
-- Icon sizes: `--icon-sm: 16px`, `--icon-md: 20px`, `--icon-lg: 24px`
-- Typography: `--font-sans`, size scale (`--text-xs` through `--text-4xl`), weight scale
-- Spacing: `--space-xxs` through `--space-section`
-- Radius: `--radius-sm` through `--radius-full`
-- Motion: `--duration-instant` through `--duration-slow`, `--ease-standard`, `--ease-out`, `--ease-spring`
+Write the token values into the project's styling/theme system, however this platform expresses tokens (CSS custom properties in a stylesheet on web; the theme or token object elsewhere). Define:
+- All colours (light theme): canvas, surface, ink, body, muted, accent, on accent, border, success, error
+- Icon sizes: small, medium, large
+- Typography: the type family, a size scale, a weight scale
+- Spacing: the scale from the smallest step to the section step
+- Radius: the steps from small to full
+- Motion: the durations from instant to slow, plus the easings
 
-Apply dark overrides via the detected strategy (`.dark {}` or `@media (prefers-color-scheme: dark)`); only override tokens that differ in dark mode. If Tailwind is in use, also extend `tailwind.config.ts` under `theme.extend` with all token values, wiring color tokens via `var(--color-*)` so dark mode works automatically.
+Provide the dark theme through the platform's light/dark mechanism; only override the tokens that differ in dark mode. If the styling system has its own theme config (e.g. a utility framework's config), wire the token values through it so dark mode follows automatically.
 
 ---

@@ -15,9 +15,9 @@ Identify fonts from `design.md` `typography.*.fontFamily`. System fonts (`system
 | Tiempos | Libre Baskerville |
 | SF Pro | Inter |
 
-A proprietary font not in this table: substitute the closest free font of the same classification (geometric sans → Jost/Poppins, grotesque/neo grotesque → Inter/Manrope, humanist sans → Source Sans, transitional/old style serif → nearest free serif) and say what you swapped. The table is a starting set, not the whole world of fonts.
+A proprietary font not in this table: substitute the closest free font of the same classification (geometric sans → Jost/Poppins, grotesque/neo grotesque → Inter/Manrope, humanist sans → Source Sans, transitional/old style serif → nearest free serif) and say what you swapped.
 
-**Loading:** Next.js → `next/font/google` with the `variable` option, applied to `<html>` in the root layout. Vite / other → `@import url(...)` at the top of the globals CSS, or `<link>` in the HTML entry point. Update `--font-sans` to match whatever was loaded.
+**Loading:** load the family through the platform's font mechanism (its font loader or bundler on web, its font registration/asset system elsewhere), then point the type token (e.g. `--font-sans`) at what loaded.
 
 ---
 
@@ -39,7 +39,7 @@ Resolve where hero images, avatars, product/gallery photos, logos, illustrations
 
 The tool appends "Other" automatically.
 
-**Placeholder services** (option 2), pick per need, exact dimensions, swappable behind a token/constant: photos → `https://picsum.photos/<w>/<h>` (Lorem Picsum) or Unsplash Source-style stock URLs by keyword for topical imagery; avatars → `https://i.pravatar.cc/<size>` or DiceBear (`https://api.dicebear.com/…`); logos/illustrations → a neutral local SVG placeholder, not a random remote logo.
+**Placeholder assets** (option 2), pick per need, correct dimensions, swappable behind one token/constant: use placeholder sources appropriate to the platform (on web, a reputable placeholder or stock photo/avatar service; elsewhere, bundled placeholder assets or the platform's asset catalog). For logos/illustrations use a neutral local placeholder, never a random remote logo.
 
 Placeholder rules: real `width`/`height` (or aspect-ratio box) to avoid layout shift; meaningful `alt` describing the intended content, not "placeholder"; centralise URLs/paths in one constant or token so the swap to real assets is one edit. Note placeholders and where to replace them in the report.
 
@@ -61,225 +61,113 @@ When the real source lands (the feature's data integration task, or the Facade w
 
 ### Phase 0: Design the full product surface (the gate, screen builds)
 
-This is Pass 1 from the guide's bar: design before you integrate, and it is a gate, not advice. You do not write markup until you have designed the whole surface, and the build is not done until it clears the bar's disqualifiers. You are a senior product designer, not a form wirer. Applies to every screen of any kind (sign in, dashboard, feed, pricing, profile, item detail, list or search results, onboarding, settings, checkout, empty state, even a 404), not just auth.
+Pass 1 from the guide's bar: design before you integrate. A gate, not advice, on every screen (auth, dashboard, feed, pricing, profile, detail, list/search, onboarding, settings, checkout, empty state, 404). No markup until the whole surface is designed; not done until it clears the bar's disqualifiers. You are a senior product designer, not a form wirer.
 
-**Commit the composition first, in writing, before any markup.** List the sections this page will carry, top to bottom, and the brand, copy, and supporting content in each, in the chosen design system's language. Design it as if you were shipping it standalone in a chat app, to that level of ambition, then build it. Never ship the bare functional widget (a lone centered form, an unstyled table on a white page, a single box of inputs, a raw list with no header or context); that is the exact stub the bar disqualifies.
+**Commit the composition first, in writing.** List the sections top to bottom and the brand, copy, and content in each, in the design system's language. Ship to the ambition of a standalone product; never the bare functional widget (a lone form, an unstyled table, a raw list with no header), the exact stub the bar disqualifies.
 
-A complete product screen has, cohesive and branded:
-- **Brand presence**: a logo or wordmark, used consistently. No asset: derive one from the product name (styled wordmark or simple mark); never leave the corner empty.
-- **Product context and copy**: real, product specific copy saying what this is and why, written from the product's purpose (`AGENTS.md`, the spec's intent, or the scope; never lorem ipsum): a headline or tagline, a supporting line, honest microcopy.
-- **A considered layout, not a lone box.** Compose the page as a whole. The same completeness applies to every page; the list below is a sample to calibrate on, not a checklist, and not the only pages treated. Reason about what a senior designer would ship for THIS screen and product:
-  - **Auth (sign in / up):** a branded card, or two pane (brand, value proposition, and a visual on one side; the form on the other), secondary links (forgot password, switch mode, terms), often light social proof. Not a naked input box.
-  - **Dashboard / feed:** an app shell (header with logo, primary nav, user menu), clear page title and context, main content with real hierarchy, a proper empty state.
-  - **List / table / search results:** header and filters/search, the collection with real hierarchy and pagination, designed empty and no results states, not a raw table.
-  - **Detail / profile / item page:** header with the entity's identity and key actions, well grouped sections, related or secondary content, not a bare field dump.
-  - **Landing / marketing:** a hero (headline, subcopy, primary CTA, a visual), supporting sections (how it works, features, social proof), a footer.
-  - **Settings / long forms / onboarding / checkout:** grouped sections with labels and help text, clear progress or a clear save action.
-  - **Any other page** (pricing, error/404, confirmation, empty state, and so on): the same treatment: brand, context, a real layout with hierarchy, supporting content, and the functional core, composed the way a product would ship it.
-- **Supporting content**: a short value prop or trust signals where they fit, secondary CTAs, and a footer with the links a product is expected to have (where the page type warrants one).
-- **The functional core**: the form, table, or flow itself, done well (validation, Phase 4 states, Phase 5 accessibility).
+A complete product screen carries, cohesive and branded:
+- **Brand**: logo/wordmark, consistent; none → derive one from the product name, never an empty corner.
+- **Context and copy**: real product specific copy (headline, supporting line, honest microcopy) from the product's purpose (`AGENTS.md`, spec intent, scope), never lorem ipsum.
+- **A considered layout, not a lone box.** Compose the whole page. Calibrate to what a senior designer ships for THIS screen; the list is a sample, not a checklist:
+  - **Auth**: branded card or two pane (brand/value/visual + form), secondary links, light social proof.
+  - **Dashboard / feed**: app shell (header, nav, user menu), title/context, real hierarchy, a proper empty state.
+  - **List / table / search**: header, filters/search, the collection with hierarchy and pagination, empty and no results states.
+  - **Detail / profile**: identity header + key actions, grouped sections, related content.
+  - **Landing**: hero (headline, subcopy, CTA, visual), supporting sections, footer.
+  - **Settings / forms / onboarding / checkout**: grouped labelled sections with help text, clear progress/save.
+  - **Any other** (pricing, 404, confirmation): same treatment, brand + context + real layout + the functional core.
+- **Supporting content**: value prop/trust signals where they fit, secondary CTAs, a footer where the page type warrants.
+- **The functional core**: the form/table/flow itself, done well (validation, Phase 4 states, Phase 5 accessibility).
 
-This is composition (completeness), not look: the design source (a reference, a derived system, or a described style) decides the visual language; this step decides the page is a whole product, not a stub. It applies whichever design source was used, default system or engineer requested style.
-
-Nothing provided: derive a wordmark from the product name; use a tasteful visual (gradient, subtle pattern, abstract illustration, or a placeholder image via *Asset resolution*) rather than blank space; write real copy from the product's purpose. Invent tastefully to make it feel like a product, but surface what you invented: list the brand name/wordmark, the copy, and any placeholder assets in the completion report so the engineer can correct them. A product feel is wanted; pretending invented brand and copy are final is not.
-
-If the spec already settled the page composition (`/architect`'s page design stage), execute that; this phase fills the gap only when it didn't. Keep it real, not busy: a complete surface is not a cluttered one; every element earns its place in the design system's spacing and hierarchy.
+Composition (completeness), not look, the design source decides the visual language. Nothing provided → derive a wordmark, use a tasteful visual (gradient, pattern, illustration, or a placeholder via *Asset resolution*) over blank space, write real copy from purpose. Invent tastefully, but **surface everything invented** (brand, copy, placeholder assets) in the report for correction. If `/architect`'s page design stage already settled the composition, execute that; this phase fills the gap only when it didn't. Real, not busy: every element earns its place.
 
 ### Phase 1: Semantic structure
 
-Use the HTML element that most precisely describes the content; the element carries meaning browsers, assistive technologies, and search engines rely on.
+Build from the platform's semantic, accessible primitives: for each piece of content use the element or component that most precisely describes it, because that meaning is what assistive tech relies on, not a generic container styled to look right.
 
-- **Document landmarks**: exactly one `<main>` per page. `<header>`, `<footer>`, `<nav>`, `<aside>` as landmarks. More than one `<nav>`: each needs an `aria-label` (e.g. `aria-label="Primary"`, `aria-label="Footer"`).
-- **Heading hierarchy**: one `<h1>` per page, always the primary page title. Never skip levels (`<h1>` → `<h3>` is wrong). Headings structure content, not visual size; control size with CSS.
-- **Interactive elements**: `<button>` for any action that doesn't navigate (submit, toggle, open modal, increment); `<a href="...">` for anything that navigates. Never `<a>` without `href`, never `<div onClick>`, never `<button>` and `<a>` nested inside each other.
-- **Lists**: `<ul>` / `<ol>` / `<li>` for any repeated set of items, never repeated `<div>`s. `<dl>` / `<dt>` / `<dd>` for term definition pairs (glossaries, metadata tables, key value pairs).
-- **Tables**: `<table>` with `<thead>`, `<tbody>`, `<th scope="col">` (column headers), `<th scope="row">` (row headers) for tabular data. Never tables for layout.
-- **Media**: `<figure>` + `<figcaption>` for captioned images, diagrams, or code blocks. `<picture>` for art direction or format fallback. SVG rules: Phase 5 "Images and media".
-- **Time and data**: `<time datetime="ISO-8601">` for any date or time. `<address>` for contact information. `<data value="">` for machine readable values alongside human readable text.
-- **Text semantics**: `<strong>` importance, `<em>` stress emphasis. `<del>` / `<ins>` content changes (e.g. crossed out original price). `<abbr title="...">` abbreviations on first use. `<code>` inline, `<pre><code>` blocks.
-- **Expandable content**: `<details>` + `<summary>` for accordion content needing no JavaScript. `<dialog>` for modals: built in focus trapping, `showModal()`, native Escape.
-- **Progress and meters**: `<progress>` for upload/task progress; `<meter>` for a scalar in a known range (battery, storage). Never a styled `<div>` for these.
+- **Landmarks and hierarchy**: one primary content region and one primary title per screen; a correct heading/section order that never skips levels; structure comes from semantics, visual size from styling.
+- **Action vs navigation**: use the platform's real action primitive for anything that acts (submit, toggle, open) and its real navigation primitive for anything that navigates; never fake one with a styled tap target.
+- **Content primitives**: use the platform's list, table, media, time/date, and disclosure (accordion, modal) primitives for those content types rather than repeated generic containers.
 
-**Component build type application:** *Component*: `interface Props` first, named export, no layout wrapper, no router imports. *Screen*: include `<main>`, integrate with the detected router, loading / error / empty states at top level.
+(On web this is semantic HTML: one `<main>` and one `<h1>`, `<button>` vs `<a href>`, `<ul>`/`<ol>`, `<table>` with headers and scope, `<figure>`, `<time>`, `<details>`/`<dialog>`, `<progress>`/`<meter>`; other platforms have their equivalents.)
+
+**Component build type application:** *Component*: props contract first, exported the codebase's way, no layout wrapper, no navigation imports. *Screen*: include the primary content region, integrate with the platform's navigation system, loading / error / empty states at top level.
 
 ---
 
 ### Phase 2: Token application
 
-Every visual value (colour, font, size, spacing, radius, shadow, duration, easing) comes from the token file's CSS custom properties. No hardcoded hex, no hardcoded `px` duplicating a token.
+Every visual value (colour, font, size, spacing, radius, shadow, duration, easing) comes from a token in the project's styling/theme system. No raw literal that duplicates a token.
 
-Before calling the phase complete, search the changed files for hardcoded values: hex colors (e.g. `#fff`, `#1a2b3c`), `rgb(`/`hsl(` functions, raw pixel values (e.g. `: 16px`). Any match that isn't a `0`, a `1px` border with no token equivalent, or a known constant is a violation: replace with the corresponding `var(--token)`. Cross check against `design.md ## Do's and Don'ts`. Fix every violation before moving on.
+Before calling the phase complete, search the changed files for hardcoded values (raw colours, raw sizes) that duplicate a token. Any match that isn't a genuine one off constant is a violation: replace it with the matching token reference. Cross check against `design.md ## Do's and Don'ts`. Fix every violation before moving on.
 
 ---
 
 ### Phase 3: Responsive layout
 
-- Mobile first CSS: start at the smallest viewport, layer up with `min-width` breakpoints.
-- Breakpoints from `design.md ## Responsive Behavior` if specified; else `sm 640px`, `md 768px`, `lg 1024px`, `xl 1280px`.
+Adapt the layout to the container/screen size using the platform's layout system.
+
+- Start from the smallest size and layer up. Use the breakpoints/size classes in `design.md ## Responsive Behavior` if specified.
 - Path A images at multiple widths: use the layout changes extracted in A0.
-- Minimum touch target for any interactive element: 44×44px; reach it with padding without affecting visual size.
-- Minimum body text: 16px on every viewport.
-- Prefer `gap`, `grid`, `flex` over `margin` for spacing. `max-width` on the layout container, centered with `margin-inline: auto`.
-- Text containers: `max-width` 60 to 75 characters (`ch` unit); never let long form text stretch full width on large viewports.
+- Minimum touch target for any interactive element: about 44 by 44 (points/px); reach it with padding without changing the visual size.
+- Keep body text readable (about 16px equivalent) at every size.
+- Prefer the platform's layout primitives (grid, stack, flex) over manual margins; constrain the content container's width and center it.
+- Constrain long form text line length (about 60 to 75 characters); never let it stretch full width on large screens.
 
 ---
 
 ### Phase 4: States and motion
 
-Every interactive element needs a visible, distinct style for:
-- **Default**: base token styles
-- **Hover**: `--color-surface` shift or lightened/darkened accent; never remove the cursor affordance
-- **Focus visible**: 2px offset ring using `--color-accent` (`:focus-visible`, not `:focus`)
-- **Active / pressed**: deeper colour shift using `accent-pressed` token if defined
-- **Disabled**: `--color-muted` text and icon; `cursor: not-allowed`; `aria-disabled="true"` or native `disabled`
-- **Loading**: skeleton or spinner; announce via `role="status"` or `aria-live="polite"`
-- **Error**: `--color-error` border and icon; error message below the element linked via `aria-describedby`
-- **Empty**: informative empty state, not blank space
+Every interactive element needs a visible, distinct treatment for each state its platform supports:
+- **Default**: base token styles.
+- **Hover** (where a pointer exists): a token driven shift; keep the affordance.
+- **Focus visible**: a clear focus ring/indicator using an accent token, on keyboard/assistive focus.
+- **Active / pressed**: a deeper token shift.
+- **Disabled**: muted token styles, and expose the disabled state through the platform's accessibility API.
+- **Loading**: skeleton or spinner, and announce it through the platform's live region/status mechanism.
+- **Error**: an error token treatment with the message tied to the field through the accessibility API.
+- **Empty**: an informative empty state, never blank space.
 
-Motion uses token values:
-```
-transition: <property> var(--duration-fast) var(--ease-out)
-```
-`--duration-fast` for colour/opacity; `--duration-normal` for layout shifts and reveals; `--duration-slow` for larger panel transitions.
-
-Always include (not negotiable; some users get motion sickness):
-```css
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-```
+Motion uses token durations/easings (fast for colour/opacity, normal for layout reveals, slower for large panels). Always respect the platform's reduced motion setting and cut or minimise motion when it is on; some users get motion sickness.
 
 ---
 
-### Phase 5: Web standards and accessibility
+### Phase 5: Accessibility (platform native)
 
-Not an end of build checklist; it is built into every decision in Phases 1 to 4. Review and enforce here.
+Not an end of build checklist; it is built into every decision in Phases 1 to 4. Review and enforce here, checking light and dark themes separately.
 
-**This section and `checklist.md` do different jobs.** This is the reference for HOW to build it: the patterns, the attributes, the snippets. `checklist.md` is the pass/fail gate you work through before reporting, and it owns the thresholds (contrast ratios, touch target sizes, focus ring widths). Read them there rather than restating them here, and check light and dark mode separately against them.
+**This section and `checklist.md` do different jobs.** This is the reference for HOW to build it; `checklist.md` is the pass/fail gate you work through before reporting, and it owns the thresholds (contrast ratios, touch target sizes, focus indicator). Read them there rather than restating them here.
 
-#### Keyboard navigation
+Build accessibility with the platform's own semantic primitives and accessibility API. The requirements are the same on every platform; the mechanics are the platform's (on web that is ARIA over semantic HTML; mobile toolkits expose the same ideas through their own accessibility properties):
 
-Every interactive element reachable and operable by keyboard alone. Tab order follows the visual reading order; never use `tabindex` greater than `0` (it breaks the natural order).
-
-Composite widgets follow the ARIA Authoring Practices Guide patterns:
-- **Tabs**: Arrow keys move between tabs; Tab moves into the active panel
-- **Dropdown menus**: Arrow keys navigate items; Escape closes; Enter/Space select
-- **Modal / dialog**: focus traps inside; Escape closes; focus returns to the trigger on close
-- **Accordion**: Enter/Space toggles the panel; focus stays on the `<button>`
-- **Listbox / combobox**: Arrow keys navigate options; Enter selects
-
-Modals: on open, focus the first focusable element inside (or the dialog `<h2>` if no input); on close, return focus to the opener.
-
-Skip navigation link as the first focusable element on the page:
-```html
-<a href="#main-content" class="sr-only focus:not-sr-only">Skip to main content</a>
-```
-Use the project's visually hidden utility class (create one if none exists).
-
-#### Screen reader semantics
-
-Native HTML element before ARIA; ARIA supplements HTML, never replaces it. When needed:
-- `aria-label`: no visible text label (icon only buttons)
-- `aria-labelledby`: the label is a visible element (point to its `id`)
-- `aria-describedby`: supplemental descriptions (input hint text, error message, tooltip)
-- `aria-expanded`: on dropdown/accordion/nav menu triggers; toggles `true`/`false`
-- `aria-selected`: tab and listbox options
-- `aria-checked`: custom checkboxes and radio buttons
-- `aria-disabled`: visually disabled but kept in the tab order (e.g. a tooltip bearing button)
-- `aria-hidden="true"`: decorative icons, SVGs, anything that adds noise for screen reader users
-- `aria-live="polite"`: regions updating without reload (search results, cart total, notification count)
-- `aria-live="assertive"`: only critical time sensitive announcements (session timeout warning)
-- `role="alert"`: errors that must announce immediately on injection
-- `role="status"`: not urgent status updates (saved, loading complete)
-
-Common component patterns:
-- **Toast / notification**: `role="alert"` for errors, `role="status"` for success; inject into a persistent live region already in the DOM (injecting container and message together suppresses announcement in some readers)
-- **Breadcrumb**: `<nav aria-label="Breadcrumb"><ol>` with `aria-current="page"` on the last item
-- **Modal**: `<dialog aria-labelledby="dialog-title">` or `role="dialog"` + `aria-modal="true"` + `aria-labelledby`
-- **Progress bar**: `<progress>`, or `role="progressbar"` with `aria-valuenow`, `aria-valuemin`, `aria-valuemax`, `aria-valuetext` for human readable value
-- **Tabs**: `role="tablist"` container, `role="tab"` + `aria-selected` per tab, `role="tabpanel"` + `aria-labelledby` per panel
-- **Tooltip**: `role="tooltip"` on the tooltip; `aria-describedby` on the trigger pointing to it; never interactive content inside a tooltip
-
-#### Images and media
-
-- Meaningful images: `alt` describing content and purpose, not "image of…". A logo: `alt="Acme"`. A chart: `alt="Bar chart showing monthly revenue growth of 24% from Q1 to Q4"`.
-- Decorative images: `alt=""` (empty string, not omitted).
-- Complex diagrams/infographics: brief `alt` + longer description in adjacent text or `<figure><figcaption>`.
-- Decorative SVG icons: `aria-hidden="true"`, no `<title>`. Meaningful SVG: `role="img"` + `aria-label="..."` or an internal `<title>` referenced by `aria-labelledby`.
-
-#### Document structure
-
-- `<html lang="en">`: set the correct language; inline `lang` for phrases in another language
-- `<title>`: unique and descriptive per page; apps: `Page Name: App Name`
-- One `<main>` per page with `id="main-content"` for the skip link
-- `<link rel="canonical">` for pages reachable at multiple URLs
-
-#### Visually hidden content
-
-For content available to screen readers but not visible:
-```css
-.sr-only {
-  position: absolute;
-  width: 1px; height: 1px;
-  padding: 0; margin: -1px;
-  overflow: hidden;
-  clip: rect(0,0,0,0);
-  white-space: nowrap;
-  border: 0;
-}
-```
-Never `display: none` or `visibility: hidden` for this; those hide from assistive technology too.
-
-#### Logical properties for layout direction
-
-Use CSS logical properties, not physical, so layouts work for RTL without overrides: `margin-inline-start` not `margin-left`; `padding-inline` not `padding-left`/`padding-right`; `inset-inline-start` not `left`; `border-inline-start` not `border-left`; `text-align: start` not `text-align: left`.
+- **Operable without a pointer.** Every interactive element is reachable and operable by keyboard (web/desktop) or the platform's assistive navigation (mobile), in reading order. Composite widgets (tabs, menus, dialogs, accordions, listboxes) follow the platform's accessibility guidance for that pattern. Opening an overlay moves focus into it and returns focus to the trigger on close; offer a skip to content affordance where the platform has one.
+- **Name, role, state.** Prefer native accessible primitives; supplement with the accessibility API only to fill gaps: an accessible name for a control with no visible label (an icon only button), a description for hint/error text, the expanded/selected/checked/disabled state of a control, and live announcements for dynamic updates at the right urgency (alert for errors, status for non urgent). Hide decorative elements from assistive tech.
+- **Images and media.** A meaningful image carries a description of its content and purpose; a decorative one is hidden from assistive tech; a complex visual gets a longer description nearby.
+- **Content hidden but announced.** Expose content to assistive tech that is not shown visually using the platform's visually hidden mechanism, never one that also hides it from assistive tech.
+- **Screen metadata and direction.** Set the platform's per screen metadata (language, a unique descriptive title/label), and support right to left layouts using the platform's direction aware layout, not hardcoded left/right.
 
 ---
 
 ### Phase 6: Audit your own work before you report (the enforcement)
 
-The build is not done until you have checked it. Ambition in prose is not enough; this is the step that catches a build that quietly fell back to bare minimum.
+The build is not done until you have checked it. This step catches a build that quietly fell back to bare minimum.
 
 - **Audit against the bar's disqualifiers** (guide top) and this page's `design.md` mandate: lone form, dead space, naked or unstyled elements, default only styling, missing states, orphaned controls, a widget where a full surface was owed. Any hit → fix it, do not report around it.
-- **Look at it, if you can.** With a browser or screenshot tool, render the page (a desktop and one mobile width) and actually look. Fix any visual defect you see: a stray unstyled bar, broken spacing, a blank half page, a collapsed element. This is the only reliable catch for a render defect the code did not reveal.
+- **Look at it, if you can.** Render it and actually look, on whatever the platform gives you (a browser or screenshot on web, a simulator/preview on mobile), at a couple of representative sizes. Fix any visual defect you see: a stray unstyled bar, broken spacing, a blank half screen, a collapsed element. This is the only reliable catch for a render defect the code did not reveal.
 - **Report the audit.** State what you checked, and if you rendered it, what you saw and fixed.
 
 ---
 
 ## Report
 
-```
-## /develop complete (UI)
+Lead with the headline, then Next, then a Heads up only if there is one (per `docs/conventions.md`). Everything else is in the files. Template:
 
-**Build type**: Component | Screen
-**Stack**: Next.js | Vite | Nuxt | SvelteKit | Plain HTML
-**Styling**: <tailwind | shadcn | css-modules | styled-components | plain css>
-**Dark mode strategy**: .dark class | @media | both
-**Icon library**: <library name> | none (install needed)
-**Path**: Design.md (existing) | A (image) | A (multi: <what each image represented>) | B (derived: <mood> | url: <url> | custom: "<style>")
-**design.md**: pre-existing | created | fetched from <url>
-**Token conflicts**: none | <list, verify manually before next run>
-**Token file**: created | updated | unchanged (<path>)
-**Fonts**: <family> via <method> | <proprietary> to <substitute> | system
-**Assets**: project files | placeholders (<service>, swap at <where>) | none needed
-**Surface composed**: bare component | full product surface (brand, copy, layout, footer) | per spec composition
-**Self-audit**: disqualifiers checked (none found | fixed: <list>) · rendered and looked (yes: <what you saw/fixed> | no browser tool)
-**Invented (for review, swap when you have the real thing)**: <brand name/wordmark · tagline/headline · body copy · placeholder assets>, or "none (all provided)"
-**Built**: <name> (<file paths>)
-**Token adherence**: all sourced from design.md | <deviations>
-**Accessibility**: WCAG AA passed | <items deferred>
-**Semantic HTML**: correct elements used | <issues noted>
-**Keyboard**: fully navigable | <gaps>
-**Screen reader**: announced correctly | <gaps>
-**What /test should verify**:
-- <observable behaviour>
-- Keyboard-only navigation through all interactive elements
-- VoiceOver / NVDA announces interactive elements and live regions correctly
-- Dark mode rendering
-- Reduced-motion mode (all transitions suppressed)
 ```
+**Built <name> (<file paths>) Â· <full product surface | component>, WCAG AA, self check passed.**
+Next: /check verify <feature>
+Heads up: invented for you to review, swap for the real thing Â· <brand/wordmark · tagline · copy · placeholder assets>.   (omit the whole line if nothing was invented)
+```
+
+Say it plainly if the self check found and fixed a defect, or if a token/asset issue needs a manual look; otherwise do not list the passing checks (semantic HTML, keyboard, screen reader, tokens are the guide's bar, not a report field). The design source, stack, fonts, and token file are recorded in `design.md` and the code, not here. `/test` reads the acceptance criteria and `verify.md`, so it needs no "what to verify" list in this summary.
 
 ---

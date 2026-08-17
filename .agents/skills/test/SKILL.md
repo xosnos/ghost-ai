@@ -7,14 +7,14 @@ description: "Run /test to write a test suite for code you just built or changed
 ## Output style (plain words, no dashes, no hyphens)
 
 <!-- OUTPUT-STYLE:START -->
-Write everything this skill produces, files and messages alike, in plain simple language. Keep technical terms that carry real meaning; explain each in plain words. Never use a dash or a hyphen as punctuation: no em dash, no en dash, and no hyphenated compounds. Write `read only`, not `read-only`. Say it in simple words, or reword the sentence. Code, file paths, command flags, and values other skills match on keep their hyphens. Use short sentences, commas, or parentheses. Clear beats clever.
+Write everything this skill produces, files and messages alike, in plain simple language. Talk to the reader as `you`, warm and direct like a colleague, and present every step as a recommendation they may run or skip, never an order. Keep technical terms that carry real meaning; explain each in plain words. Never use a dash or a hyphen as punctuation: no em dash, no en dash, and no hyphenated compounds. Write `read only`, not `read-only`. Say it in simple words, or reword the sentence. Code, file paths, command flags, and values other skills match on keep their hyphens. Use short sentences, commas, or parentheses. Clear beats clever.
 <!-- OUTPUT-STYLE:END -->
 
 ## What this skill does
 
-Role: a senior test engineer writing the suite the code deserves, no more, no less. Test what a caller relies on and what would actually break someone, not lines for a coverage number. Pick a strategy per file by reading what the thing is. Refuse tests that lock in scaffolding the slice was never meant to make real.
+Role: a senior test engineer writing the suite the code deserves. Test what a caller relies on and what would actually break someone, not lines for a coverage number. Pick a strategy per file by reading what it is. Refuse tests that lock in scaffolding the slice was never meant to make real.
 
-Target: the code changed in this branch but not yet committed. Each changed file is classified (pure logic, component, API route, page/flow) and tested with the right strategy; tests verify real behavior and catch regressions, not coverage farming. The main thread writes the tests itself (a read only `scout` may do the heavy file reading for a large set); with a governing spec, tests trace to its acceptance criteria (Steps 7 and 8).
+Target: the code changed in this branch but not yet committed. Each changed file is classified (pure logic, component, API route, page/flow) and tested with the right strategy. The main thread writes the tests itself (a read only `scout` may do the heavy file reading for a large set); with a governing spec, tests trace to its acceptance criteria (Steps 7 and 8).
 
 Does not write application code. Does not update `AGENTS.md`/`CLAUDE.md` context files (/sync owns that).
 
@@ -130,15 +130,15 @@ Ask: "<missing tools> not installed. Install now?"  (header: "Install")
 - "No, write runnable stubs": "Skip install; write tests I can run once I install the tools myself"
 ```
 
-Yes: install with the project's package manager (`pnpm` shown; substitute the detected npm/yarn/bun, or the language's manager for Python/Go):
+Yes: install with the detected package manager, shown here as `<pkgmgr>` (the detected npm / yarn / pnpm / bun; for Python/Go use the language's manager):
 
 ```bash
-pnpm add -D vitest                                            # unit
-pnpm add -D @testing-library/react @testing-library/user-event @testing-library/jest-dom  # addon
-pnpm add -D @playwright/test && pnpm exec playwright install  # E2E (Playwright)
-pnpm add -D cypress                                          # E2E (Cypress)
-pip install pytest pytest-mock                                # Python
-go get github.com/stretchr/testify                           # Go
+<pkgmgr> add -D vitest                                            # unit
+<pkgmgr> add -D @testing-library/<framework> @testing-library/user-event @testing-library/jest-dom  # addon
+<pkgmgr> add -D @playwright/test && <pkgmgr> exec playwright install  # E2E (Playwright)
+<pkgmgr> add -D cypress                                          # E2E (Cypress)
+pip install pytest pytest-mock                                    # Python
+go get <testify module path>                                      # Go
 ```
 
 "No": record `INSTALL=deferred`; write complete tests anyway, the run command is reported as "run after installing".
@@ -147,14 +147,14 @@ go get github.com/stretchr/testify                           # Go
 
 #### 7. Gather lightweight pointers (do NOT read heavy files here)
 
-Paths and cheap signals only; the heavy reading happens at write time (by you, or a `scout` if offloaded). Do not read specs or `design.md` in full here. Don't read source files here; they're read at write time.
+Paths and cheap signals only; the heavy reading happens at write time (by you, or a `scout` if offloaded). Do not read specs, `design.md`, or source files in full here.
 
 With file tools:
 - List the 3 most recently modified spec paths under `docs/specs/` (paths only).
 - Identify the governing spec: the feature dir `docs/specs/NNNN-<feature>/` (or single `docs/specs/NNNN-<feature>.md`) these files implement, matched by branch/feature name or touched surfaces (a `docs/scope/` entry, if present, points to it). Note its path and whether a `verify.md` sits beside it (`docs/specs/NNNN-<feature>/verify.md`). This contract is what tests trace to; it may not be among the 3 recent paths. Set `TRACE_TO_CONTRACT = yes` when a governing spec exists, else `no`.
 - Note whether `design.md` exists at the project root; use its path only when a **component** or **page/flow** file is in scope, else `none`.
 - Read `AGENTS.md` (canonical; `CLAUDE.md` if absent) as project context (short and cheap). Also note the build approach as one line: the slice shaping approach the team chose, recorded in the scope header (or root `AGENTS.md`), e.g. thin end to end path, thinnest usable whole core loop, UI first shell on placeholders, full user journey per phase. It doesn't branch the logic; it calibrates your judgment when writing (Step 8, rule a).
-- Read `package.json`, note `scripts.test`. `RUN_COMMAND` = `<pkgmgr> test` when a `test` script exists (`<pkgmgr> run test` for npm); a raw invocation (e.g. `pnpm exec vitest run`) only when none does.
+- Read `package.json`, note `scripts.test`. `RUN_COMMAND` = `<pkgmgr> test` when a `test` script exists (`<pkgmgr> run test` for npm); a raw invocation (e.g. `<pkgmgr> exec vitest run`) only when none does.
 
 ---
 
@@ -170,7 +170,7 @@ Set `RUN_AFTER = yes | no` and apply it at write time.
 
 #### 8. Write the suite (main thread)
 
-The main thread writes the tests itself. Do not spawn a writer. Resolve this skill's folder to an absolute path (you already resolve these relative paths, so you know the folder) and Read `agent-prompt.md` and `writing-guide.md` now (only now, at write time): `agent-prompt.md` is your operating template, `writing-guide.md` is the strategy, tool rules, iteration loop, and report format you follow. Reading the changed files under test is the one expensive part; for a large or unfamiliar set, offload just the reading to a read only `scout` subagent on the cheapest model (Claude Code: `haiku`, not inheriting the session model) that returns a compact map, then write from it.
+The main thread writes the tests itself. Do not spawn a writer. Resolve this skill's folder to an absolute path and Read `agent-prompt.md` and `writing-guide.md` now (only now, at write time): `agent-prompt.md` is your operating template, `writing-guide.md` is the strategy, tool rules, iteration loop, and report format you follow. Reading the changed files under test is the one expensive part; for a large or unfamiliar set, offload just the reading to a read only `scout` subagent on the cheapest model (Claude Code: `haiku`, not inheriting the session model) that returns a compact map, then write from it.
 
 The inputs to apply (the labeled values you gathered):
 1. unit tool, E2E tool, additional tools, `INSTALL` state; `testDir`, `filePattern`, package manager, stack/framework, `packageRoot`; the classified scope (each file path with its class: logic / component / page flow / api server / cli); `RUN_COMMAND`, `RUN_AFTER`; project context plus the build approach line; the 3 recent spec paths or `none` (read only if relevant to what you're testing); the design.md path or `none`; `TRACE_TO_CONTRACT`, the governing spec path, and the `verify.md` path (each `none` if absent).
@@ -184,36 +184,19 @@ Monorepo (multiple package roots from Step 1b): write each root's suite in turn,
 
 If the write failed or produced no report: say so and do it again; never report a passing or failing suite you didn't actually produce. Otherwise relay the format matching `RUN_AFTER`.
 
-Update the scope: if this feature is on the scope (`docs/scope/`) and the suite passes, tick its `Test it` box. If `Design`, `Build` (+ its milestones), `Verify`, and `Test` are now all ticked, set the feature's status to `done` (in the At a glance table and beside the heading), unless its governing spec is still `Assumed` (a decision built on an unratified assumption): then leave it `in-progress` and point to `/architect <feature>` to ratify first. If tests fail or coverage is partial, leave `Test it` unticked and the status `in-progress`. On `done`, advise `/clear` before the next feature: the scope and spec hold everything, a fresh session keeps the next build cheap. (`/test` is the closer for the `Medium` and `Full` workflow tiers; `Vibe` closes at `/develop` and `Lean` at `/check verify`, so on those tiers this feature would already be `done` or not use `/test`.)
+Update the scope: if this feature is on the scope (`docs/scope/`) and the suite passes, tick its `Test it` box, then **offer `done`, don't gate it**: "Tests are in and passing, mark it `done`?" On the engineer's go, set the status `done` (At a glance table and heading) and mirror the spec `**Status**:` → `Accepted`. An `Assumed` spec does not block `done`; flag it ("owes ratification, `/architect` when you can") and let them decide. If tests fail or coverage is partial, leave `Test it` unticked and report. **Confirm the update as a closing gate** (don't skip it): report exactly what you ticked in each file, e.g. "Scope: ticked `Test it`, status → `done`. Spec: status → `Accepted`." No matching scope row → say so, don't finish silently. On `done`, advise `/clear` before the next feature: the scope and spec hold everything, a fresh session keeps the next build cheap. **Git:** if the nearest `AGENTS.md` `## Git` says `integration: on` and `commit` is not `manual`, offer to commit the suite with a one line subject (`test(<scope>): …`) plus the `Co-Authored-By` trailer; never push. (Effective tier = the feature's own tier tag if set, else the project `**Workflow:**` default. `/test` is the closer at `Beta`/`GA`; `Prototype` closes at `/develop`, `Alpha` at `/check verify`, so on those tiers this feature is already `done` or does not use `/test`. Honor an override tag; never default to a fixed chain.)
 
-Parse from the report: `TESTS_WRITTEN`, `NOT_COVERED`, plus `RUN_RESULT` and `BUGS_FOUND` when `RUN_AFTER = yes`, or `MANUAL_INSTRUCTIONS` when `RUN_AFTER = no`. Relay this template: keep lines marked `← yes` only when `RUN_AFTER = yes`, `← no` only when `RUN_AFTER = no` (a marked heading carries its list lines), unmarked lines always; strip the markers.
+Lead with the result; the per file list and AC traceability are in the test files (per `docs/conventions.md`). Template:
 
 ```
-## /test complete (suite run)      ← yes; when no, use: ## /test complete (not run)
+## /test <feature> Â· <all N passed | Y failed | not run>
 
-**Scope**: <N> changed files (uncommitted)
-**Tool**: <unit tool> [+ E2E tool] [+ addons]
-**Preferences**: loaded | saved to test-preferences.json
+**Wrote <N> tests across <M> files (happy path / edges / errors / a11y). <X passed, Y failed via `<RUN_COMMAND>` | not run>.**
+Next (this feature's next unticked box in the scope): all pass → `/check review` if a `Review it` box remains, else `/sync` or the next feature · Y failed → fix them, or `/debug <feature>` if the code is wrong · not run → `<RUN_COMMAND>`
+Heads up: <bugs the tests caught Â· file:line + the failing expectation> · <uncovered AC-N or area, why>   (omit the whole line if none)
+```
 
-**Tests written**:
-- `<file path>`, <N tests> covering <happy path / edges / errors / a11y> [→ AC-1, AC-3]
-
-**Run result**: <X passed, Y failed> via `<RUN_COMMAND>`   ← yes
-
-**Traceability** (only when TRACE_TO_CONTRACT=yes, spec NNNN):
-- AC-1 ✅ locked in, `<test file · test name>`
-- AC-3 ✅ locked in, `<test file · test name>`
-
-**Bugs caught** (tests failing because the code is wrong, not the test):   ← yes
-- <file:line, what's broken and the failing expectation>   ← only if BUGS_FOUND is non-empty
-
-**How to run them**:   ← no
-1. <setup step, e.g. install if INSTALL=deferred>
-2. Run: `<RUN_COMMAND>`
-3. Watch a single file: `<focused command>`
-
-**What you should see**: <expected pass output, and which tests prove which behaviour>   ← no
-**If something fails**: <how to read the failure, is it a test gap or a real bug>   ← no
+Only when `RUN_AFTER = no`, append the run steps: `<setup if INSTALL=deferred>` then `<RUN_COMMAND>` (watch one file with `<focused command>`). The framework choice is in `test-preferences.json`; the per test detail and AC traceability live in the test files, so don't reprint them.
 
 **Not covered** (consider adding):
 - <gap and why>

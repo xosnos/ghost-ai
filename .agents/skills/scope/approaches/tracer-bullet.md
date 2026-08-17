@@ -24,7 +24,7 @@ Production, minimal. Everything built is real and shippable, just narrow in scop
 
 ## Worked example: async standup app
 1. Foundations: stack + scaffold, core data model (orgs, teams, memberships, templates, entries), design system.
-2. **Slice 1 (core loop, = skeleton):** sign in (real Clerk) → create a team → submit today's standup on a default template → see it in the team feed. Real DB, real auth, real UI. No invites, no custom templates, no reminders, no history yet.
+2. **Slice 1 (core loop, = skeleton):** sign in (real auth) → create a team → submit today's standup on a default template → see it in the team feed. Real DB, real auth, real UI. No invites, no custom templates, no reminders, no history yet.
 3. Slice 2: invite teammates to a team.
 4. Slice 3: editable custom templates.
 5. Slice 4: reminders / scheduling.

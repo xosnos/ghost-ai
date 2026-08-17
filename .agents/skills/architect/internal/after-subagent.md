@@ -2,13 +2,13 @@
 
 ### After the spec is written
 
-You wrote the spec yourself on the main thread. Now check your own work for completeness, offer the engineer a cross check, and confirm it. That check and every fix stay on the main thread; the only thing you may delegate is an optional read only cross check the engineer asks for (it reads the spec and returns a critique, writing nothing). Never fetch any of the spec's links again, at any point (they were fetched once during the design conversation and are now human facing).
+You wrote the spec yourself on the main thread. Now check your own work for completeness, offer the engineer a cross check, and confirm it. The check and every fix stay on the main thread; the only thing you may delegate is an optional read only cross check the engineer asks for (it reads the spec, returns a critique, writes nothing). Never fetch the spec's links again (fetched once during the conversation, now human facing).
 
 **First: did the write land?** If the spec file is missing or empty, something went wrong in the write; report it and write it again, never fabricate a spec summary. Only if the file exists, continue:
 
 **Check your own work before presenting**: Read the spec you just wrote again. For a directory spec read both `index.md` and its `rationale.md` (the decision record sections live in `rationale.md`; the single file shape has everything in the one file). Verify all required sections exist across the file(s):
 - All modes: `## Summary` (the plain words human quick read, no dashes, in `index.md`/the file), `## Requirements` (IDed acceptance criteria, the confirmed spine), `## Decision`, `## Consequences` (build spec, in `index.md`/the file); and `## Context`, `## Options considered` (unless "Documenting a made decision"), `## Rationale` (decision record, in `rationale.md` for a directory spec, inline otherwise). A directory `index.md` also carries the one line `## Rationale` pointer to `rationale.md`.
-- Data backed modes: `## Build plan`: ordered tasks, each tagged with the AC(s) it satisfies, migration first; every AC traces to at least one task
+- Data backed modes: `## Build plan`: ordered tasks, each tagged with the AC(s) it satisfies, the data model migration sized to the feature (one normally; sliced for a large feature or thin thread/Facade); every AC traces to at least one task
 - Feature mode: `## Feature design` with the confirmed data model, the **Value sourcing** table (every value each action produces, computes, or displays has a named source; no blank source for a value an AC requires, that would be an undecided input left for the build), and Critical test scenarios (mapped to ACs) populated
 - Architecture mode: `## Proposed stack` with every relevant layer filled
 - Decision only specs (Architecture, Cross cutting): no `## Build plan` of implementation steps and no invented meta ACs; the spec is `## Proposed stack` / `## Standard definition`, and the executing feature (e.g. the scaffold sub task) derives its steps at `/develop` time. If a scaffold style build plan appears in a stack spec, strip it before presenting.
@@ -17,10 +17,10 @@ You wrote the spec yourself on the main thread. Now check your own work for comp
 
 If a required section is missing or a field is blank/placeholder, add this line directly after the spec path in the presentation: `⚠️ Incomplete: [section name] came out blank, e.g. "⚠️ Incomplete: ## Feature design > Security model was left as a placeholder. Request it in your feedback."`
 
-**Cross check (independent read of the spec, especially for decision completeness).** An independent model catches load bearing gaps the author is blind to (see spec 0002). **Always ASK; never run it, and never skip it, on the engineer's behalf** (the point is to keep the engineer aware of load bearing decisions, so the decision to run it is theirs). Present the panel below; set the recommended option by the feature's effective workflow tier (its own tier tag if set, else the project default on the scope `**Workflow:**` line, read in pre-flight), and always make the recommendation explicit with a one line why:
-- **`Full` or `Medium` tier** → recommend `Another model` **strongly**: these are where a load bearing gap does real damage, and the bug that motivated this (spec 0002) was a `Medium` feature. Recommend it clearly, but the engineer chooses.
-- **`Lean` tier** → recommend `Another model` for a foundational or risky spec, else offer without a strong push.
-- **`Vibe` tier, or no scope row** → recommend `Skip` (or `Same model` for a foundational spec).
+**Cross check (independent read of the spec, especially for decision completeness).** An independent model catches load bearing gaps the author is blind to. **Always ASK; never run it, and never skip it, on the engineer's behalf** (the point is to keep the engineer aware of load bearing decisions, so the decision to run it is theirs). Present the panel below; set the recommended option by the feature's effective workflow tier (its own tier tag if set, else the project default on the scope `**Workflow:**` line, read in pre-flight), and always make the recommendation explicit with a one line why:
+- **`GA` or `Beta` tier** → recommend `Another model` **strongly**: these are where a load bearing gap does real damage, and the kind of bug that motivates it is typically a `Beta` feature. Recommend it clearly, but the engineer chooses.
+- **`Alpha` tier** → recommend `Another model` for a foundational or risky spec, else offer without a strong push.
+- **`Prototype` tier, or no scope row** → recommend `Skip` (or `Same model` for a foundational spec).
 
 Present the panel (capability first: `AskUserQuestion` on Claude Code, else the same options as plain text; exactly one option marked recommended per the tier rule above, the picker adds the custom slot):
 - **question**: "Cross check this spec before you review it? (Recommended: `<tier-based pick>`.)"
@@ -39,7 +39,7 @@ Act on the pick:
 - **I'll review it myself** → run no AI critique. Present the spec for the engineer to read, and say they are reviewing it themselves.
 - **Skip** → no critique.
 
-**All four branches then go to step 1.** The cross check never ends the run and never decides anything: it only produces a note. The moment it is done, whether a subagent critiqued the spec, the engineer read it themselves, or nothing ran at all, you present the spec and ask whether to accept it. Never treat a finished cross check as acceptance, and never accept the spec on the engineer's behalf.
+**All four branches then go to step 1.** The cross check only produces a note; it never ends the run or decides anything. When it is done (subagent critique, self review, or nothing ran), present the spec and ask whether to accept. Never treat a finished cross check as acceptance, or accept on the engineer's behalf.
 
 1. Tell the engineer the spec path, a one line preview from your report, and (if a cross check ran) its note:
 
@@ -68,7 +68,7 @@ Act on the pick:
      1. Tick the decision box `[x]` (located as above) and remove the `· needs a decision` tag from the heading (it is decided now).
      2. Link the spec on the feature's pointer line, computed as a relative path from the scope file to the spec: from `docs/scope/api/…` to `docs/specs/api/0001-x.md` is `[0001](../../specs/api/0001-x.md)`; to a directory spec (umbrella or single with files), `[0001](../../specs/api/0001-x/index.md)`; single repo `docs/scope/` → `docs/specs/` is `../specs/…`.
      3. Define the build milestones, a rollup, never the atomic dump: add a `- [ ] Build it: /develop <feature>` box, and under it 2 to 5 milestone sub items rolled up from the spec's `## Build plan` by grouping its atomic tasks into coherent chunks (by AC cluster or by layer), each tagged with the ACs it covers. The atomic tasks and per task detail stay in the spec's `## Build plan`. The 2-to 5 is a guideline you reason about, not a rule: if it won't fit in about five milestones the feature is too big and should be split. Never a fixed milestone list; derive them from THIS spec's Build plan.
-     4. Add `- [ ] Verify it: /check verify <feature>` and `- [ ] Test it: /test <feature>` boxes after Build.
+     4. Add the closing boxes after Build, per the feature's **effective tier** (its own tier tag if set, else the project `**Workflow:**` default), so every box the feature will run has an owner: `- [ ] Verify it: /check verify <feature>` (Alpha and up) and `- [ ] Test it: /test <feature>` (Beta and up); for a `GA` tier feature also `- [ ] Review it (fresh model): /check review <feature>` and `- [ ] Document it: /document <feature>`. A `Prototype` feature needs none of these (it closes at `/develop`). Match the boxes to the effective tier; if a later tag change moves the tier, reconcile the boxes to it.
      5. Move the feature's status to `in-progress` (designing is progress) in the At a glance table and beside the heading.
      6. Enroll what the spec surfaced: a `## Follow-up` item that is really a separate feature (not part of this one) becomes a new scope feature tagged `from spec NNNN`. Deferred follow ups that block nothing go to the Deferred list.
 

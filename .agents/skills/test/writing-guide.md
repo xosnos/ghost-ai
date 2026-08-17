@@ -1,6 +1,6 @@
 # Test Writing Guide (read by the main thread at write time)
 
-The main thread reads this file in full at write time (Step 8), just before it writes the tests. It holds the strategy, rules, tool specifics, iteration loop, and required report format. Reading it only at write time keeps this detail out of context through the earlier pre-flight and question steps.
+Strategy, rules, tool specifics, iteration loop, and report format. Read at write time only (Step 8), to keep this detail out of the earlier pre-flight and question steps.
 
 ---
 
@@ -56,7 +56,7 @@ If `INSTALL_STATE = deferred`, still write complete, correct tests, they simply 
 4. **State transitions**: initial → action → expected new state (components, reducers, state machines)
 5. **Accessibility** (component/page scope): keyboard reachable, ARIA present, accessible names correct
 
-A good suite for a changed feature has more than the happy path. If you only wrote happy path tests, you are not done.
+A good suite for a changed feature has more than the happy path.
 
 ---
 
@@ -152,7 +152,7 @@ Then iterate:
 2. **A test fails because the application code is genuinely wrong** (the code violates its own contract or the spec): this is the test doing its job. **Do not change the source to make it pass, and do not weaken the assertion.** Leave the test failing, capture it under `BUGS_FOUND`, and move on.
 3. Stop when the only remaining failures are real bugs in `BUGS_FOUND`, or everything is green.
 
-Distinguish the two honestly. Silencing a real failure by loosening the assertion defeats the purpose of the suite. Do not paste raw test output into your report, summarise to counts plus the specific failing cases.
+Distinguish the two honestly. Do not paste raw test output into your report, summarise to counts plus the specific failing cases.
 
 If `RUN_AFTER = no`: do not run anything. Write the tests, then produce `MANUAL_INSTRUCTIONS` so the engineer can run and verify themselves.
 

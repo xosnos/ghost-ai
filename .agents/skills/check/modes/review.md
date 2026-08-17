@@ -4,7 +4,7 @@ The `review` mode of `/check`: a senior code review, before merge, on a differen
 
 ## What this skill does
 
-Your role: the senior reviewer with fresh eyes, the one who didn't write the code. Read the diff for what it actually does, not what it was meant to do; rank findings by the harm they'd cause in production. The one rule that never bends: the review runs on a different model than wrote the code, because a model reviewing its own output shares its own blind spots; a second model catches what the first missed. Reviews the change set as a senior engineer reviews a teammate's pull request, and writes severity ranked findings.
+Your role: the senior reviewer with fresh eyes, the one who didn't write the code. Read the diff for what it actually does, not what it was meant to do; rank findings by the harm they'd cause in production. The one rule that never bends: the review runs on a different model than wrote the code, because a model reviewing its own output shares its blind spots. Write severity ranked findings.
 
 - Different Claude model, automatically: the review runs in a subagent on the contrasting Claude model. No API keys, no external setup.
 - Read only on code: produces findings, never edits the code under review.
@@ -37,7 +37,7 @@ Any Agent Skills client on macOS, Linux, or Windows:
 
 ### 1. Determine the author model, then pick a DIFFERENT reviewer
 
-Do not rely on self-introspection: the model executing this skill cannot reliably name itself, and the "You are powered by…" line in the system prompt is written at session start and goes stale the moment the user switches with `/model`. Detect from durable config, then confirm.
+Do not rely on self-introspection or the "You are powered by…" system prompt line (written at session start, stale the moment the user switches with `/model`): the model cannot reliably name itself. Detect from durable config, then confirm.
 
 **1a: Detect the author model (best effort).** The author model is whatever is generating code in this session. Using your file tools, read `ANTHROPIC_MODEL` from the env if set, and check `.claude/settings.local.json`, `.claude/settings.json`, and the user-level `.claude/settings.json` in the home directory for a `"model"` value. Map ids to families: `claude-opus-*` → `opus`, `claude-sonnet-*` → `sonnet`, `claude-haiku-*` → `haiku`, `claude-fable-*` → `fable`. Use the system-prompt value only as a last-resort weak hint, possibly stale.
 
@@ -98,7 +98,7 @@ Paths and cheap signals only; the subagent reads on demand. Using your file tool
 - `TESTS = none-by-design`: `test-preferences.json` has `"tool": null` and a `"gate"` (e.g. `"typecheck+verify"`), or the nearest `AGENTS.md`/governing spec states a "no test runner" convention. Deliberate: the gate is typecheck + `/check verify`, not a suite.
 - `TESTS = none-yet`: no `test-preferences.json` at all, and no stated convention. A genuine gap.
 
-Pass to the subagent: project-context contents inline (read `AGENTS.md`, canonical, or `CLAUDE.md` as fallback; short), the 3 recent spec paths, the base ref / merge-base, and the diff scope. The subagent reads specs only if they govern the changed code, runs `git diff` itself, and reads the changed files and their tests.
+Pass to the subagent: project-context contents inline (read `AGENTS.md`, canonical, or `CLAUDE.md` as fallback; short), the 3 recent spec paths, the base ref / merge-base, and the diff scope. The subagent reads a governing spec's **build-spec sections only** (`index.md`: Requirements, Decision, the design section, Consequences), the contract to review against; not `rationale.md` (decision history), unless a specific finding hinges on the reasoning. It runs `git diff` itself and reads the changed files and their tests.
 
 ### 4. Spawn the review subagent: on the contrasting Claude model
 
@@ -120,31 +120,23 @@ Resolve this skill's folder to an absolute path (you, the main agent, already re
 If the subagent errored or wrote no findings file, report the failure and offer to re-run; don't relay an empty or fabricated review. Otherwise it writes the findings file and returns a compact summary. Relay:
 
 ```
-## /check review complete
+## /check review <feature> Â· <Approve | Approve with nits | Changes requested | Blocked>
 
-**Reviewed by**: <reviewer-model> (you're on <author-model>)
-**Scope**: <N> files, <branch vs base | uncommitted>
-**Findings file**: `docs/reviews/<date>-<branch>.md`
-
-**Verdict**: <Approve | Approve with nits | Changes requested | Blocked>
-
-**Blockers** (<count>):
-- <file:line, one line each>
-
-**Major** (<count>):
-- <file:line, one line each>
-
-**Minor / nits**: <count>, see the findings file
-
-**Strengths**: <one or two genuine positives>
+Blockers (<count>) Â· fix before merge:
+- <file:line Â· one line>
+Major (<count>):
+- <file:line Â· one line>
+<count> minor/nits · strengths: <one line> · reviewed by <reviewer-model> over <N> files. Full findings in docs/reviews/<date>-<branch>.md.
 ```
 
-Show all blockers and majors in chat; collapse minors/nits to a count with a pointer to the file. If there are zero blockers and zero majors, lead with the verdict and keep it short.
+Lead with the verdict; show every blocker and major (they are the action); collapse minors/nits, strengths, and the reviewer/scope to the one tail line plus the file pointer. Zero blockers and zero majors → just the verdict line and the tail, nothing more.
 
 For a high-stakes change (verdict was Blocked or Changes requested, or the change is high/critical severity), append one line:
 > "For an independent second opinion from a different provider, switch your model with `/model` (or paste the diff into another assistant) and re-run /check review, no API keys needed."
 
-This skill is complete after relaying. It does not fix the findings (the implementer does that) and does not invoke other skills. If the engineer wants the issues fixed, that's a normal follow-up; /check review's job is the assessment.
+**Tick the scope box (closing gate).** If the reviewed feature has a row in `docs/scope/`, tick its `Review it` box (the review ran; the box marks that, not that it passed) and confirm it in the report: "Scope: ticked `Review it`." No matching row → say so ("no scope row matched `<feature>`, tick it manually or enroll it"). This is the only scope edit review makes; it writes no code, tests, or specs.
+
+This skill is complete after relaying. It does not fix findings (the implementer does) or invoke other skills; its job is the assessment.
 
 ---
 

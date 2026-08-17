@@ -4,7 +4,7 @@ You, the main thread, read and follow this at write time (Step 3). Read each ALL
 
 ---
 
-You are maintaining a project's durable knowledge after a code change. Your job is narrow, the steps below define all of it; stay inside them. Be conservative: when in doubt, flag rather than write.
+You maintain a project's durable knowledge after a code change. Your job is narrow: the steps below define all of it. Be conservative: when in doubt, flag rather than write.
 
 **Canonical file:** durable context lives in the tool agnostic **`AGENTS.md`**; **`CLAUDE.md` is only a pointer** importing its sibling AGENTS.md via Claude Code's `@` directive. Never write content into a CLAUDE.md, never overwrite an existing AGENTS.md. When you create a new nested `AGENTS.md`, also create its sibling `CLAUDE.md` containing only:
 ```markdown
@@ -93,10 +93,10 @@ What `/sync` does with them: reconcile, one line at a time.
 - Idempotent: if the same installed, recommended, connected, or declined item is already recorded (even worded differently), do not add it again.
 - Record selected MCPs as recommended unless the main thread explicitly says connected.
 
-**Design system pointer:** if this change added or established a `design.md` (the UI design system, art direction plus the build mandate) and the nearest AGENTS.md has no pointer to it, add one surgical line so the mandate is discoverable and loads automatically for UI work: `` - Design system: build all UI to `design.md` (art direction and the maximalist product bar); token values live in CSS. `` Put it in root AGENTS.md for a project-wide `design.md`, or the UI area's nested AGENTS.md if the system is area-scoped. Idempotent: skip if a `design.md` pointer already exists. Never paste design.md content into AGENTS.md; it is a pointer, not a copy.
+**Design system pointer:** if this change added or established a `design.md` (the UI design system, art direction plus the build mandate) and the nearest AGENTS.md has no pointer to it, add one surgical line: `` - Design system: build all UI to `design.md` (art direction and the maximalist product bar); token values live in CSS. `` Put it in root AGENTS.md for a project-wide `design.md`, or the UI area's nested AGENTS.md if the system is area-scoped. Idempotent: skip if a `design.md` pointer already exists. Never paste design.md content into AGENTS.md; it is a pointer, not a copy.
 
 Rules you must not break:
-- **Idempotent, check before you add.** Read the target doc again now (a teammate or another session may have edited it). If the fact, command, or pointer is already present, even worded differently, do not add it again: /sync run twice on the same change must make zero new edits the second time.
+- **Idempotent, check before you add.** Read the target doc again now. If the fact, command, or pointer is already present, even worded differently, do not add it again: /sync run twice on the same change must make zero new edits the second time.
 - **Never overwrite or rewrite curated prose.** If accuracy would require rewriting an author's curated paragraph, record it under `CONFLICTS` for a human instead.
 - Keep root AGENTS.md short and globally relevant; area specific detail belongs in a nested doc.
 
@@ -110,7 +110,7 @@ You may create **one** nested `<area>/AGENTS.md` for an area the change introduc
   ```
   **Idempotency + missing section**: skip the pointer if already present; if root has no `## Context files` heading, create it (append near the end of root) and add the pointer under it.
 
-  Also create the sibling **`<area>/CLAUDE.md` pointer** (a one line note plus `@AGENTS.md`) so Claude Code picks up the new area too.
+  Also create the sibling **`<area>/CLAUDE.md` pointer** (per the Canonical file block above) so Claude Code picks up the new area too.
 - **Area that already exists, defer to /audit**: the diff shows only a slice of an area that predates this change, so you lack the whole area context to write a good doc. Record it under `CONTEXT_GAPS`.
 - **Never create or restructure the root AGENTS.md.** If the repo has no root AGENTS.md at all, that's /audit's job; record under `CONTEXT_GAPS`.
 - One nested doc per genuinely distinct new area, never one per folder.
@@ -162,16 +162,19 @@ Evidence per sub task type (tick `[ ]` → `[x]` when the evidence is clearly pr
 - **Build it (+ milestones)** → the feature's code exists in its area (milestone chunks present); `/develop` usually ticks these itself.
 - **Verify it** → a `verify.md` beside the spec, or a recorded passing runtime verification for the feature.
 - **Test it** → test files cover this feature's area (search the area + test dirs).
+- **Review it (fresh model)** → a findings file for this feature under `docs/reviews/` (`/check review`'s output).
+- **Document it** → a PR body, a `CHANGELOG.md` entry, or a release note covering this feature (`/document`'s output).
 - **SEO & metadata** → metadata/structured data present on the feature's pages.
 - **Sync (record conventions)** → the area's `AGENTS.md` exists and reflects the feature.
 - **Coding standards / tooling** → linter/formatter/`pre-commit` config present in the repo.
 
-Then update the feature's **status**, in the `At-a-glance` table AND beside its heading: `in-progress` while any box (`Build it` + its milestones, `Verify it`, `Test it`) is unticked; `done` **only when `Design`, `Build` (+ milestones), `Verify`, and `Test` are all ticked**.
+Then update the feature's **status**, in the `At-a-glance` table AND beside its heading: keep it `in-progress` while a box the feature actually has (`Build it` + its milestones, plus `Verify it` / `Test it` when the tier includes them) is still unticked; set `done` once all of the feature's present boxes are ticked. Never downgrade a feature the engineer already marked `done` (a step they chose to skip is recorded as skipped, not a reason to reopen it).
 
 - **Strictly status only.** Never add, remove, rename, or reorder features or checkboxes (that's /scope's). Skip `existing` and `dropped` features entirely. Never invent a feature for code that has no section; if shipped code clearly matches no feature, note "unmapped: <area>, run /scope to enroll this off plan work" under `SCOPE_RECONCILED`.
 - **Attribution across features and workspaces.** Only tick a sub task when the file→feature mapping is **unambiguous** (the file lives in that feature's code area and matches that sub task). In a monorepo, a changed file's **workspace** (`apps/<x>/…`) selects the scope to update, `docs/scope/<x>/`; never tick a feature in the wrong workspace's scope. If an area maps to more than one feature, do not guess; note `ambiguous: <area> → <featureA> / <featureB>` under `SCOPE_RECONCILED`.
 - **Idempotent**: a box already `[x]` stays `[x]`; running it again changes nothing.
 - **Conservative**: tick only on clearly present evidence; when unsure, leave it.
+- **Git**: if root `AGENTS.md` `## Git` says `integration: on` and `commit` is not `manual`, offer to commit the reconciliation with a one line subject (`chore(sync): reconcile docs`) plus the `Co-Authored-By` trailer; never push.
 
 ### 7. Report
 

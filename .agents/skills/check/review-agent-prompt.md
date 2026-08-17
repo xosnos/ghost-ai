@@ -2,7 +2,7 @@
 
 You may receive this file as a path plus a Placeholder values list; substitute each placeholder with its given value as you read.
 
-The main model fills this template and passes it as the review subagent's prompt, **spawned on a model different from the one that wrote the code**. The full rubric, severity definitions, and findings format live in `review-guide.md`; the main model supplies it via `REVIEW_GUIDE` below, normally as an absolute file path for you to Read, or as inlined full text (portable across any agent/OS). Placeholders are in ALL_CAPS.
+The main model fills this template and passes it as the review subagent's prompt, **spawned on a model different from the one that wrote the code**. The full rubric, severity, and findings format live in `review-guide.md`, supplied via `REVIEW_GUIDE` below as an absolute path to Read or inlined full text. Placeholders are in ALL_CAPS.
 
 ---
 
