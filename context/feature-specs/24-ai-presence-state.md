@@ -5,6 +5,7 @@ Add shared AI activity indicators so everyone in the room can see when generatio
 1. Add AI thinking state to the sidebar.
    - show a small status indicator when AI is working
    - make the status visible to everyone in the room
+   - read active state from the project member visible `task_runs` row so reconnecting clients recover current state
    - disable the chat input while generation is active
    - show a loading state on the send button
    - keep the rest of the sidebar usable
@@ -13,7 +14,7 @@ Add shared AI activity indicators so everyone in the room can see when generatio
    - check the existing Supabase Realtime setup and installed agent-related features first
    - follow Realtime best practices for broadcast/presence instead of creating parallel realtime state
    - create or reuse a Realtime Broadcast channel named `ai-status` on the project channel
-   - subscribe to the latest broadcast message in the sidebar
+   - subscribe to the latest broadcast message in the sidebar for progress detail
    - show only the most recent status message
    - keep the broadcast generic enough for design and spec generation later
 
@@ -36,7 +37,7 @@ Add shared AI activity indicators so everyone in the room can see when generatio
 
 ## Check When Done
 
-- Sidebar can render shared AI status from the `ai-status` broadcast channel.
+- Sidebar derives active state from `task_runs` and renders progress detail from the `ai-status` broadcast channel.
 - Chat input and send button respond to active generation state.
 - Cursor badges read `thinking` from presence.
 - Feed messages are validated through the task schema.

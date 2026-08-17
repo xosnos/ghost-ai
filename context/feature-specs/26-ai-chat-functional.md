@@ -1,87 +1,61 @@
-Wire up the AI sidebar so users can submit design prompts, track AI run status
-in real time, and reflect AI-driven canvas updates through Supabase Realtime.
+Wire up the AI sidebar so users can submit design prompts, track Edge Function run status in real time, and reflect AI-driven canvas updates through Supabase Realtime.
 
 ### Implementation
 
-1. Submit from AI sidebar
+1. Submit from the AI sidebar
 
 - On submit:
-  - push the user message to the `ai-chat` broadcast channel
+  - push the user message to the `ai-chat` Broadcast channel
   - call `POST /api/ai/design` with `{ prompt, roomId }`
-  - read `{ runId, publicToken }` from the response
-- store `runId` and `publicToken` in local state
+  - read `{ runId }` from the HTTP 202 response
+- store only `runId` in local state; no provider run token is needed
 
 2. Run status tracking
 
-- Use `useRealtimeRun(runId, { accessToken: publicToken })`
-- While the run is active:
+- Subscribe to Realtime Postgres Changes for the authorized `task_runs` row, filtered by `id = runId`.
+- Treat `queued`, `running`, and `retrying` as active states.
+- While active:
   - disable the chat input
-  - show a loading state (spinner in the button is enough)
+  - show a loading spinner in the send button
 - When the run completes:
-  - push a final AI message to `ai-chat`
-  - reset loading + run state
+  - reset loading and local run state
+  - render the final AI message emitted once by the worker on `ai-chat`, keyed by the run ID
+- When the run fails:
+  - reset loading and local run state
+  - render the sanitized row error locally if the worker error broadcast was missed
+- Let the worker publish shared completion or failure chat messages with stable IDs. Clients must not rebroadcast terminal messages from Realtime row updates.
+- Fetch the run once when subscribing so a missed Realtime event cannot leave the UI stuck.
 
-3. Canvas updates (realtime)
+3. Canvas updates
 
-- Do not manually update nodes/edges
-- Rely on the Supabase Realtime canvas sync hook (e.g. `useRealtimeFlow`) to reflect changes in real time
-- AI updates to nodes, edges, and presence should appear automatically via Broadcast events
+- Do not manually update nodes or edges.
+- Rely on the Supabase Realtime canvas sync hook to apply Broadcast events emitted by the AI worker.
 
-4. Status display
+4. Shared status display
 
-- Read the latest message from the `ai-status` broadcast channel
-- Show a compact status strip above the input only when a run is active
+- Read the latest message from the project-scoped `ai-status` Broadcast channel.
+- Show a compact status strip above the input only while the current run is active.
 
 ### UI Details
 
-- Use existing design tokens from `global.css` (do not introduce new colors)
-- Follow `ui-context.md` for layout and visual consistency
-
-Chat bubbles
-
-- User: green accent background (`#62C073`), readable contrast text
-- AI: dark background, light text
-
-Submit button
-
-- Enabled: green accent (`#62C073`)
-- Disabled: dimmed state
-- While running: show spinner
-
-Status strip
-
-- Compact bar above input
-- Dark base + green accent
-- Subtle animated indicator is fine
-
-General
-
-- Use Tailwind + shadcn/ui only
-- Keep current layout intact
-- Show errors as messages in `ai-chat` feed
+- Use existing design tokens; do not introduce raw colors.
+- Follow `ui-context.md` and keep the current sidebar layout intact.
+- Show failures as messages in the existing `ai-chat` feed.
 
 ### Scope Limits
 
-- Do not implement backend or Trigger.dev logic
-- Do not fetch final graph data
-- Do not redesign the sidebar
-- Do not hardcode a new theme outside existing tokens
-- Do not manually sync canvas state
-
----
-
-### Notes
-
-- Follow Supabase Realtime best practices for broadcast channels (`ai-chat`, `ai-status`)
-- Keep everything collaborative, all updates should be visible across clients
-
----
+- Do not implement backend or Edge Function logic in this unit.
+- Do not fetch final graph data.
+- Do not redesign the sidebar.
+- Do not manually sync canvas state.
+- Do not add a token endpoint or third-party run-status hook.
 
 ### Check When Done
 
-- Submitting a prompt calls `/api/ai/design` and returns a `runId`
-- `useRealtimeRun` connects using the returned token
-- Input is disabled while the run is active
-- Status strip appears only during active runs
-- Chat updates appear across multiple sessions
-- No TypeScript or build errors
+- Submitting a prompt calls `/api/ai/design` and receives a `runId`.
+- The client tracks the authorized `task_runs` row through Postgres Changes.
+- Input is disabled only while the run is queued, running, or retrying.
+- Status and chat updates appear across multiple sessions.
+- Completion and failure both clear active UI state.
+- Multiple tabs do not duplicate terminal AI chat messages.
+- No TypeScript or build errors.

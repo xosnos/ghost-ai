@@ -2,20 +2,22 @@
 
 ## Stack
 
-| Layer            | Technology              | Role                                                           |
-| ---------------- | ----------------------- | -------------------------------------------------------------- |
-| Framework        | Next.js 16 + TypeScript | Full-stack app with server/client boundaries                   |
-| UI               | Tailwind + shadcn/ui    | Component composition and styling                              |
-| Auth             | Supabase Auth           | User identity and route protection                             |
-| Database         | Supabase (PostgreSQL)   | Relational metadata: projects, collaborators, specs, task runs |
+| Layer            | Technology                    | Role                                                           |
+| ---------------- | ----------------------------- | -------------------------------------------------------------- |
+| Framework        | Next.js 16 + TypeScript       | Full-stack app with server/client boundaries                   |
+| UI               | Tailwind + shadcn/ui          | Component composition and styling                              |
+| Auth             | Supabase Auth                 | User identity and route protection                             |
+| Database         | Supabase (PostgreSQL)         | Relational metadata: projects, collaborators, specs, task runs |
 | Canvas           | Supabase Realtime + React Flow | Real-time collaborative canvas, presence, and cursors          |
-| Background tasks | Trigger.dev             | Durable AI generation workflows                                |
-| Artifact storage | Supabase Storage        | Canvas snapshots and generated Markdown specs                  |
+| Background tasks | Supabase Queues + Edge Functions + Cron | Durable delivery and asynchronous AI generation                |
+| Artifact storage | Supabase Storage              | Canvas snapshots and generated Markdown specs                  |
 
 ## System Boundaries
 
-- `app/api` — Authenticated request handlers: input validation, ownership checks, task triggering, and persistence.
-- `trigger` — Long-running background jobs: AI design generation and spec generation.
+- `app/api` — Authenticated request handlers: input validation, ownership checks, transactional task enqueueing, and best effort worker invocation.
+- `supabase/functions` — Queue consumers and asynchronous AI workflows: design generation and spec generation.
+- Supabase Queues — Durable delivery, visibility timeouts, and retryable AI work messages.
+- Supabase Cron — Recovery path that invokes the queue worker when an immediate invocation is missed or interrupted.
 - `lib` — Shared infrastructure: Supabase client, access control helpers, and utilities.
 - `components` — UI composition: canvas surfaces, sidebars, dialogs, and interactive elements.
 - `data` — Legacy local directory. Not used for new artifacts.
@@ -23,7 +25,7 @@
 ## Storage Model
 
 - **Database**: metadata, ownership, relationships, and task run records.
-- **Supabase Storage**: generated artifacts — canvas snapshots at `canvas/{projectId}.json` and specs at `specs/{projectId}/{specId}.md`.
+- **Supabase Storage**: generated artifacts — canvas snapshots at `canvas/{projectId}.json` and specs at the retry safe path `specs/{projectId}/{runId}.md`.
 - Project records, spec records, and task run records belong in PostgreSQL.
 - Canvas content and Markdown output are stored in and retrieved from Supabase Storage.
 - The storage path is stored in the database (`canvasStoragePath`, `filePath`) as the reference to the artifact.
@@ -55,18 +57,31 @@
 ### Design Generation
 
 - Input: user prompt, project context, and current canvas state.
-- Execution: durable background task via Trigger.dev.
+- Execution: the API transactionally creates a task run and a durable queue message, then invokes the shared AI worker as a low latency fast path. The worker registers processing with `EdgeRuntime.waitUntil`.
 - Output: structured node and edge updates written into the shared Realtime channel via Broadcast.
 
 ### Spec Generation
 
 - Input: current canvas graph and project context.
-- Execution: durable background task via Trigger.dev.
+- Execution: the same queue and worker path as design generation, dispatched by the task kind.
 - Output: Markdown technical spec saved to Supabase Storage and linked to the project in the database.
+
+### Task Run Lifecycle
+
+- The API route authenticates the caller and resolves project access from the route input. One database function then creates the `task_runs` row and sends the validated work payload to a durable basic queue in the same transaction.
+- The `task_runs.id` UUID is the public run ID. No provider-specific run token or token endpoint is required.
+- After enqueueing, the API invokes the `ai-worker` Edge Function as a best effort fast path. A Supabase Cron job also invokes the worker on a short interval so persisted messages recover from a missed invocation or terminated worker.
+- The worker reads one message with a visibility timeout longer than the configured maximum job duration. It archives the message only after terminal success or failure. A transient failure leaves the message for another delivery.
+- The worker moves the run through `queued`, `running`, `retrying`, `completed`, or `failed` and records attempt count, timestamps, and a sanitized error message when applicable.
+- Project members track authorized `task_runs` rows through Supabase Realtime Postgres Changes. A partial unique index permits only one active AI run per project. Room-wide progress details remain on the project-scoped `ai-status` Broadcast channel.
+- Queue messages contain the trusted task payload and are not exposed to browser clients. The browser receives only the task-run ID and its RLS filtered status row.
+- The worker accepts only a named Supabase secret key through `withSupabase({ auth: "secret:automations" })`. Its function config disables the legacy gateway JWT check because secret key authentication happens in the handler. The secret is stored in the Next.js server environment and Supabase Vault for Cron, never in browser code.
+- Processing must be idempotent for a task-run ID. Retries are bounded by queue delivery count. Edge work must remain under 256 MB memory, 2 seconds CPU time per request, and the deployment tier wall clock limit of 150 seconds on Free or 400 seconds on paid plans.
+- Each AI provider call has an application deadline below the platform wall clock limit so the worker has time to record retry state before shutdown. If normal generation cannot stay within that budget, Edge Functions are not a suitable execution layer for that workload.
 
 ## Invariants
 
-1. Request handlers do not run long-lived AI work — that belongs in background tasks.
+1. Request handlers do not run AI generation. They enqueue work for Supabase Edge Functions.
 2. Metadata and large generated artifacts are stored in separate layers.
 3. Auth and ownership are enforced at every mutation boundary.
 4. Client components are used only where browser interactivity or real-time state requires them.

@@ -51,7 +51,7 @@ Ghost AI is a real-time collaborative system design workspace. Users describe a 
 
 - AI generates a system design from a user-supplied prompt.
 - Output is structured as canvas nodes and edges written into the shared canvas via Realtime broadcast.
-- Generation runs as a durable background task.
+- Generation is queued durably in Supabase Queues and processed asynchronously by a Supabase Edge Function, with progress and terminal state persisted in PostgreSQL.
 
 ### Spec Generation
 

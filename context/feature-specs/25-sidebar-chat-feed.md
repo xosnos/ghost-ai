@@ -26,8 +26,9 @@ This is only for chat messages. Keep it separate from the `ai-status` broadcast 
 
 4. Add message validation.
    - define or reuse a Zod schema in `types/tasks.ts`
-   - message shape should include sender, role, content, and timestamp
+   - message shape should include a stable message ID, sender, role, content, and timestamp, plus an optional run ID
    - validate broadcast messages before rendering them
+   - ignore a repeated stable message ID
 
 ## Scope Limits
 

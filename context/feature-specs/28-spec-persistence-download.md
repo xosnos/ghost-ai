@@ -1,26 +1,28 @@
-Persist generated specs with Supabase Storage and the Supabase database, then add a secure download route so users can retrieve their generated spec files.
+Expose Edge Function-generated specs through project-scoped metadata APIs and a secure download route.
 
 ### Implementation
 
-1. project_specs table
+1. Project spec metadata
 
-Ensure a `project_specs` Supabase table exists with:
+Use the `project_specs` table created by the spec generation flow:
 
 - `id` (uuid, primary key)
-- `projectId` (uuid, foreign key to `projects`)
-- `filePath` (storage path)
-- `createdAt` (timestamp)
+- `task_run_id` (uuid, unique foreign key to `task_runs`)
+- `project_id` (uuid, foreign key to `projects`)
+- `file_path` (storage path)
+- `created_at` (timestamp)
 
-Enable RLS with owner-scoped policies through the `projects` table. Use this table for metadata only. The actual spec content should live in Supabase Storage.
+Enable RLS with project-member access policies through the `projects` table. Use this table for metadata only. The actual spec content should live in Supabase Storage.
 
-2. Save generated spec
+Add an index on `project_id`. Grant only the privileges required by the authenticated read path, and keep insert, update, and delete access restricted to the privileged worker path.
 
-After a spec is generated:
+2. List generated specs
 
-- upload the Markdown content to a Supabase Storage bucket
-- store the storage path in `project_specs.filePath`
-- link the record to the correct project
-- follow the same metadata + storage pattern used for canvas persistence
+Create a project-scoped endpoint that:
+- authenticates the user
+- verifies project access
+- lists spec IDs and creation metadata without exposing storage paths
+- returns newest specs first
 
 3. Download route
 
@@ -31,7 +33,7 @@ It should:
 - authenticate the user
 - verify access to the project
 - verify the spec belongs to that project
-- fetch the file using the storage path from `project_specs.filePath`
+- fetch the file using the storage path from `project_specs.file_path`
 - return it as a downloadable Markdown file
 - handle not found and forbidden cases properly
 
@@ -41,6 +43,7 @@ It should:
 - do not store spec content in the Supabase table
 - do not expose storage paths without access checks
 - do not modify existing canvas persistence
+- do not regenerate or duplicate artifacts already persisted by the Edge Function
 
 ### Notes
 
@@ -51,8 +54,7 @@ It should:
 ### Check When Done
 
 - `project_specs` table exists with required fields
-- spec is uploaded to Supabase Storage
-- `filePath` is saved correctly
+- generated spec metadata can be listed by authorized project members
 - download route validates access before returning file
 - response is a Markdown attachment
 - TypeScript and build pass
