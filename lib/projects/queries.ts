@@ -161,12 +161,10 @@ export async function renameProject(
 
 export async function deleteProject(
   supabase: SupabaseClient,
-  projectId: string,
-  ownerId: string
+  projectId: string
 ): Promise<void> {
   const { error } = await supabase.rpc("delete_project", {
     project_uuid: projectId,
-    owner_uuid: ownerId,
   });
 
   if (error) {

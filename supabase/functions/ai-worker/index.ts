@@ -64,9 +64,10 @@ export function withSupabase(
       const expectedSecret =
         (secretName && secretKeysObj[secretName]) ||
         Deno.env.get("AUTOMATION_SECRET") ||
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+        Deno.env.get("SUPABASE_SECRET_KEY") ||
+        "";
 
-      if (!apiKeyHeader || (expectedSecret && apiKeyHeader !== expectedSecret)) {
+      if (!expectedSecret || !apiKeyHeader || apiKeyHeader !== expectedSecret) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401,
           headers: {
@@ -249,9 +250,6 @@ async function processQueueMessage(
   const msgId = msg.msg_id;
   const payload = msg.message;
   const runId = payload?.run_id;
-  const kind = payload?.kind;
-  const projectId = payload?.project_id;
-  const input = payload?.input;
   const readCt = Number(msg.read_ct || 1);
 
   if (!runId) {
@@ -263,7 +261,7 @@ async function processQueueMessage(
   // 1. Fetch current task_runs state
   const { data: run, error: fetchError } = await supabaseAdmin
     .from("task_runs")
-    .select("id, project_id, status, attempt_count, started_at")
+    .select("id, project_id, user_id, kind, status, attempt_count, started_at")
     .eq("id", runId)
     .maybeSingle();
 
@@ -288,6 +286,10 @@ async function processQueueMessage(
   }
 
   const currentAttempt = (run.attempt_count ?? 0) + 1;
+  const kind = run.kind === "spec" || run.kind === "design" ? run.kind : payload?.kind;
+  const projectId = run.project_id;
+  const userId = run.user_id || payload?.user_id || "";
+  const input = payload?.input || {};
 
   // 3. Check attempt limit
   if (currentAttempt > MAX_ATTEMPTS || readCt > MAX_ATTEMPTS) {
@@ -335,15 +337,14 @@ async function processQueueMessage(
       if (signal.aborted) throw signal.reason;
 
       if (kind === "design") {
-        const prompt = input?.prompt || "";
         console.log(
-          `[ai-worker] Processing design task run ${runId} for project ${projectId} (attempt ${currentAttempt}): prompt="${prompt}"`
+          `[ai-worker] Processing design task run ${runId} for project ${projectId} (attempt ${currentAttempt})`
         );
         await processDesignTask(supabaseAdmin, {
           runId,
           projectId,
-          userId: payload?.user_id || "",
-          input: input || {},
+          userId,
+          input,
           signal,
         });
       } else if (kind === "spec") {
@@ -353,8 +354,8 @@ async function processQueueMessage(
         await processSpecTask(supabaseAdmin, {
           runId,
           projectId,
-          userId: payload?.user_id || "",
-          input: input || {},
+          userId,
+          input,
           signal,
         });
       } else {

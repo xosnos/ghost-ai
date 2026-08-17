@@ -24,6 +24,8 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Completed
 
+- **Supabase backend review (2026-08-17)**: Full audit of migrations, RLS, grants, Storage, Realtime, Queues/Cron, SSR clients, Edge Functions, and `ai-worker` against the Supabase skills. Findings in `docs/reviews/supabase-backend-2026-08-17.md`. Remediations: owner RPCs now authorize with `auth.uid()` (no client `owner_uuid`); `delete_project` EXECUTE revoked from `PUBLIC`/`anon`; `seed.sql` no longer re-grants sensitive function EXECUTE to `anon`; leaked Vault automation placeholder rotated; Cron worker URL stored in Vault; `ai-worker` named-secret auth fails closed; fast path requires `AUTOMATION_SECRET`; worker uses `task_runs` as source of truth for kind/project.
+
 - **Codebase Security Audit & Supabase Production Environment Standardization**:
   - Consolidated Edge Functions environment to single canonical location: `supabase/functions/.env` (deleted duplicate/stale `.env` files in subdirectories).
   - Aligned Edge Functions with standard Supabase Deno runtime practices (`Deno.env.get()`) for both production secrets (set via `supabase secrets set`) and local development.
