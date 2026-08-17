@@ -34,6 +34,7 @@
 }
 
 :root {
+  /* Default Dark Mode */
   --bg-base: #080809;
   --bg-surface: #111114;
   --bg-elevated: #18181c;
@@ -55,6 +56,66 @@
   --state-error: #ff4d4f;
   --state-success: #34d399;
   --state-warning: #fbbf24;
+
+  --dot-grid-color: rgba(255, 255, 255, 0.08);
+  --dot-grid-subtle-color: rgba(255, 255, 255, 0.04);
+}
+
+.light,
+[data-theme="light"] {
+  /* Google Stitch Clean Light Mode */
+  --bg-base: #f9fafb;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f3f4f6;
+  --bg-subtle: #e5e7eb;
+
+  --border-default: #e5e7eb;
+  --border-subtle: #d1d5db;
+
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-muted: #6b7280;
+  --text-faint: #9ca3af;
+
+  --accent-primary: #0096a6;
+  --accent-primary-dim: rgba(0, 150, 166, 0.12);
+  --accent-ai: #5046e5;
+  --accent-ai-text: #6366f1;
+
+  --state-error: #ef4444;
+  --state-success: #10b981;
+  --state-warning: #f59e0b;
+
+  --dot-grid-color: rgba(0, 0, 0, 0.07);
+  --dot-grid-subtle-color: rgba(0, 0, 0, 0.035);
+}
+
+.dark,
+[data-theme="dark"] {
+  --bg-base: #080809;
+  --bg-surface: #111114;
+  --bg-elevated: #18181c;
+  --bg-subtle: #1e1e23;
+
+  --border-default: #2a2a30;
+  --border-subtle: #3a3a42;
+
+  --text-primary: #f0f0f4;
+  --text-secondary: #c0c0cc;
+  --text-muted: #808090;
+  --text-faint: #505060;
+
+  --accent-primary: #00c8d4;
+  --accent-primary-dim: rgba(0, 200, 212, 0.12);
+  --accent-ai: #6457f9;
+  --accent-ai-text: #8b82ff;
+
+  --state-error: #ff4d4f;
+  --state-success: #34d399;
+  --state-warning: #fbbf24;
+
+  --dot-grid-color: rgba(255, 255, 255, 0.08);
+  --dot-grid-subtle-color: rgba(255, 255, 255, 0.04);
 }
 
 body {
@@ -62,4 +123,79 @@ body {
   color: var(--text-primary);
   font-family: var(--font-sans), Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
+
+input,
+textarea,
+select {
+  color: var(--text-primary);
+}
+
+/* Google Stitch-inspired Dot Grid Canvas Background */
+.bg-dot-grid {
+  background-image: radial-gradient(var(--dot-grid-color) 1.25px, transparent 1.25px);
+  background-size: 20px 20px;
+}
+
+.bg-dot-grid-subtle {
+  background-image: radial-gradient(var(--dot-grid-subtle-color) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* Custom sleek scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-subtle);
+}
+
+/* React Flow Theme Overrides for dynamic Light & Dark mode */
+.react-flow {
+  --xy-background-color: var(--bg-base);
+  --xy-background-color-default: var(--bg-base);
+  --xy-node-background-color: var(--bg-surface);
+  --xy-edge-label-background-color: var(--bg-elevated);
+  --xy-edge-label-color: var(--text-primary);
+  background-color: var(--bg-base) !important;
+}
+
+.react-flow__background {
+  background-color: var(--bg-base) !important;
+}
+
+.react-flow__panel {
+  color: var(--text-primary);
+}
+
+/* React Flow Connection & Arrow Styles */
+.react-flow--connecting .react-flow__handle,
+.react-flow.connecting .react-flow__handle {
+  opacity: 1 !important;
+}
+
+.react-flow__arrowhead polyline {
+  fill: var(--text-muted);
+  stroke: var(--text-muted);
+  transition: fill 150ms ease, stroke 150ms ease;
+}
+
+.react-flow__edge.selected .react-flow__arrowhead polyline,
+.react-flow__edge:hover .react-flow__arrowhead polyline {
+  fill: var(--text-secondary);
+  stroke: var(--text-secondary);
+}
+
+

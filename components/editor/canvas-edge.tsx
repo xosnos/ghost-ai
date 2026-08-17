@@ -31,6 +31,7 @@ function CanvasEdgeInner({
   targetPosition,
   data,
   selected,
+  markerEnd,
 }: EdgeProps) {
   const [hovered, setHovered] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -53,6 +54,10 @@ function CanvasEdgeInner({
   const opacity = active ? ACTIVE_OPACITY : REST_OPACITY;
   const stroke = active ? "var(--text-secondary)" : "var(--text-muted)";
   const strokeWidth = active ? 2 : 1.5;
+  const resolvedMarkerEnd =
+    typeof markerEnd === "string"
+      ? markerEnd
+      : `url(#canvas-edge-arrow-${id})`;
 
   const commitLabel = useCallback(
     (value: string) => {
@@ -125,10 +130,26 @@ function CanvasEdgeInner({
         stroke={stroke}
         strokeWidth={strokeWidth}
         strokeLinecap="round"
-        markerEnd="url(#canvas-edge-arrow)"
+        markerEnd={resolvedMarkerEnd}
         opacity={opacity}
         style={{ pointerEvents: "none", transition: "opacity 150ms ease, stroke 150ms ease" }}
       />
+      <defs>
+        <marker
+          id={`canvas-edge-arrow-${id}`}
+          markerWidth="16"
+          markerHeight="16"
+          refX="12"
+          refY="6"
+          orient="auto"
+          markerUnits="userSpaceOnUse"
+        >
+          <path
+            d="M0,0 L12,6 L0,12 Z"
+            fill="var(--text-secondary)"
+          />
+        </marker>
+      </defs>
       <EdgeLabelRenderer>
         <div
           style={{

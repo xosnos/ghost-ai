@@ -9,11 +9,13 @@ import {
   type NodeProps,
 } from "@xyflow/react";
 import {
-  DEFAULT_NODE_COLOR,
+  resolveNodeColor,
   type CanvasNodeData,
   type NodeShape,
 } from "@/types/canvas";
 import { NodeColorToolbar } from "@/components/editor/node-color-toolbar";
+import { useRemoteHighlights } from "@/components/editor/remote-selection-context";
+import { useTheme } from "@/lib/theme-provider";
 
 const CSS_SHAPE_RADIUS: Partial<Record<NodeShape, string>> = {
   rectangle: "12px",
@@ -111,20 +113,94 @@ function SvgShape({
 const MIN_NODE_WIDTH = 60;
 const MIN_NODE_HEIGHT = 40;
 
+function RemoteSelectionRings({
+  shape,
+  width,
+  height,
+  highlights,
+}: {
+  shape: NodeShape;
+  width: number;
+  height: number;
+  highlights: { userId: string; color: string; name: string }[];
+}) {
+  if (highlights.length === 0) return null;
+
+  return (
+    <>
+      {highlights.map((person, index) => {
+        const pad = 4 + index * 3;
+        const ringWidth = width + pad * 2;
+        const ringHeight = height + pad * 2;
+        const names = highlights.map((h) => h.name).join(", ");
+
+        if (isCssShape(shape)) {
+          return (
+            <div
+              key={person.userId}
+              className="pointer-events-none absolute"
+              title={names}
+              aria-hidden="true"
+              style={{
+                left: -pad,
+                top: -pad,
+                width: ringWidth,
+                height: ringHeight,
+                border: `2px solid ${person.color}`,
+                borderRadius: CSS_SHAPE_RADIUS[shape],
+              }}
+            />
+          );
+        }
+
+        return (
+          <div
+            key={person.userId}
+            className="pointer-events-none absolute"
+            title={names}
+            aria-hidden="true"
+            style={{
+              left: -pad,
+              top: -pad,
+              width: ringWidth,
+              height: ringHeight,
+            }}
+          >
+            <SvgShape
+              shape={shape}
+              width={ringWidth}
+              height={ringHeight}
+              fill="none"
+              stroke={person.color}
+              strokeWidth={2}
+            />
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
   const nodeData = data as CanvasNodeData;
-  const color = nodeData.color ?? DEFAULT_NODE_COLOR;
+  const { resolvedTheme } = useTheme();
+  const resolvedColor = resolveNodeColor(nodeData.color, resolvedTheme);
   const shape = nodeData.shape ?? "rectangle";
   const w = width ?? 176;
   const h = height ?? 64;
   const { updateNodeData } = useReactFlow();
+  const remoteHighlights = useRemoteHighlights(id);
 
   const [editing, setEditing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const stroke = selected ? color.text : "var(--border-default)";
-  const strokeWidth = selected ? 1.5 : 1;
-  const labelColor = color.text;
+  const stroke = selected
+    ? resolvedColor.text
+    : resolvedTheme === "light"
+    ? resolvedColor.border
+    : "var(--border-default)";
+  const strokeWidth = selected ? 2 : 1.25;
+  const labelColor = resolvedColor.text;
 
   const startEditing = useCallback(() => {
     setEditing(true);
@@ -165,12 +241,12 @@ function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
       onBlur={stopEditing}
       onKeyDown={handleKeyDown}
       rows={1}
-      className="nodrag nopan nowheel absolute inset-0 z-10 h-full w-full resize-none appearance-none overflow-hidden border-0 bg-transparent p-3 text-center text-sm font-medium leading-[1.5] outline-none shadow-none ring-0 focus:border-transparent focus:outline-none focus:ring-0"
+      className="nodrag nopan nowheel absolute inset-0 z-10 h-full w-full resize-none appearance-none overflow-hidden border-0 bg-transparent p-3 text-center text-sm font-semibold leading-[1.5] outline-none shadow-none ring-0 focus:border-transparent focus:outline-none focus:ring-0"
       style={{ color: labelColor, alignContent: "center" }}
     />
   ) : (
     <span
-      className="pointer-events-none relative z-10 px-3 text-center text-sm font-medium"
+      className="pointer-events-none relative z-10 px-3 text-center text-sm font-semibold tracking-tight"
       style={{ color: labelColor }}
     >
       {nodeData.label || (
@@ -184,9 +260,9 @@ function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
   if (isCssShape(shape)) {
     content = (
       <div
-        className="relative flex h-full w-full items-center justify-center"
+        className="relative flex h-full w-full items-center justify-center transition-colors"
         style={{
-          backgroundColor: color.fill,
+          backgroundColor: resolvedColor.fill,
           border: `${strokeWidth}px solid ${stroke}`,
           borderRadius: CSS_SHAPE_RADIUS[shape],
         }}
@@ -198,14 +274,14 @@ function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
   } else {
     content = (
       <div
-        className="relative flex h-full w-full items-center justify-center"
+        className="relative flex h-full w-full items-center justify-center transition-colors"
         onDoubleClick={startEditing}
       >
         <SvgShape
           shape={shape}
           width={w}
           height={h}
-          fill={color.fill}
+          fill={resolvedColor.fill}
           stroke={stroke}
           strokeWidth={strokeWidth}
         />
@@ -216,35 +292,34 @@ function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
 
   return (
     <div
-      className="group relative flex items-center justify-center"
+      className="group relative flex items-center justify-center overflow-visible"
       style={{ width: w, height: h }}
     >
+      <RemoteSelectionRings
+        shape={shape}
+        width={w}
+        height={h}
+        highlights={remoteHighlights}
+      />
       <NodeResizer
         minWidth={MIN_NODE_WIDTH}
         minHeight={MIN_NODE_HEIGHT}
         isVisible={!!selected}
-        lineClassName="!border-[var(--accent-primary)]"
-        handleClassName="!h-2 !w-2 !rounded-sm !border-[var(--accent-primary)] !bg-[var(--bg-elevated)]"
+        lineClassName="border-[var(--accent-primary)]!"
+        handleClassName="h-2! w-2! rounded-sm! border-[var(--accent-primary)]! bg-[var(--bg-elevated)]!"
       />
       {content}
       <NodeColorToolbar id={id} data={nodeData} selected={!!selected} width={width} height={height} />
       {(
         [Position.Top, Position.Right, Position.Bottom, Position.Left] as const
       ).map((pos) => (
-        <span key={pos}>
-          <Handle
-            type="source"
-            position={pos}
-            id={`${pos}-source`}
-            className="!z-20 !h-2.5 !w-2.5 !rounded-full !border !bg-white !border-[var(--bg-base)] opacity-0 transition-opacity duration-150 group-hover:opacity-100"
-          />
-          <Handle
-            type="target"
-            position={pos}
-            id={`${pos}-target`}
-            className="!z-20 !h-2.5 !w-2.5 !rounded-full !border !bg-white !border-[var(--bg-base)] opacity-0 transition-opacity duration-150 group-hover:opacity-100"
-          />
-        </span>
+        <Handle
+          key={pos}
+          type="source"
+          position={pos}
+          id={pos}
+          className="z-20! h-3! w-3! rounded-full! border-2! bg-[var(--accent-primary)]! border-[var(--bg-surface)]! opacity-0 transition-all duration-150 group-hover:opacity-100 after:absolute after:-inset-3 after:content-[''] after:cursor-crosshair hover:scale-125!"
+        />
       ))}
     </div>
   );

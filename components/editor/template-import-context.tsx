@@ -26,3 +26,29 @@ export function TemplateImportProvider({
 export function useTemplateImportRef(): TemplateImportRef | null {
   return useContext(TemplateImportContext);
 }
+
+const TemplateSelectionContext = createContext<(() => void) | null>(null);
+
+export function TemplateSelectionProvider({
+  onOpen,
+  children,
+}: {
+  onOpen: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <TemplateSelectionContext.Provider value={onOpen}>
+      {children}
+    </TemplateSelectionContext.Provider>
+  );
+}
+
+export function useTemplateSelection(): () => void {
+  const onOpen = useContext(TemplateSelectionContext);
+  if (!onOpen) {
+    throw new Error(
+      "useTemplateSelection must be used within a TemplateSelectionProvider",
+    );
+  }
+  return onOpen;
+}

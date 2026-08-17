@@ -6,6 +6,7 @@ import {
   listCollaborators,
   removeCollaborator,
   normalizeEmail,
+  withProjectOwner,
 } from "@/lib/projects/collaborators";
 import { hasProjectAccess } from "@/lib/project-access";
 
@@ -40,7 +41,15 @@ export async function GET(_req: Request, ctx: RouteContext) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const collaborators = await listCollaborators(supabase, projectId);
+    const collaborators = withProjectOwner(
+      await listCollaborators(supabase, projectId),
+      {
+        ownerId: project.ownerId,
+        projectId,
+        createdAt: project.createdAt,
+        currentUser: user,
+      }
+    );
     const isOwner = project.ownerId === user.id;
 
     return NextResponse.json({ collaborators, isOwner });
@@ -140,14 +149,22 @@ export async function DELETE(req: Request, ctx: RouteContext) {
     }
 
     try {
-      await removeCollaborator(supabase, { projectId, email, ownerId: user.id });
+      await removeCollaborator(supabase, {
+        projectId,
+        email,
+        ownerId: user.id,
+        ownerEmail: user.email ?? undefined,
+      });
       return NextResponse.json({ ok: true });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Remove failed";
       if (message === "Collaborator not found") {
         return NextResponse.json({ error: message }, { status: 404 });
       }
-      if (message === "Enter a valid email address") {
+      if (
+        message === "Enter a valid email address" ||
+        message === "Cannot remove the project owner"
+      ) {
         return NextResponse.json({ error: message }, { status: 400 });
       }
       throw err;

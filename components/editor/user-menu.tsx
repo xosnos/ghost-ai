@@ -2,8 +2,9 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut } from "lucide-react";
+import { LogOut, Sun, Moon } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { useTheme } from "@/lib/theme-provider";
 
 interface UserMenuProps {
   email: string;
@@ -13,6 +14,7 @@ export function UserMenu({ email }: UserMenuProps) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const { resolvedTheme, toggleTheme } = useTheme();
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -75,15 +77,37 @@ export function UserMenu({ email }: UserMenuProps) {
           role="menu"
         >
           <div className="px-3 py-2 mb-1" style={{ borderBottom: "1px solid var(--border-default)" }}>
-            <p className="text-xs truncate" style={{ color: "var(--text-secondary)" }}>
+            <p className="text-xs truncate font-medium" style={{ color: "var(--text-secondary)" }}>
               {email}
             </p>
           </div>
 
           <button
             type="button"
+            onClick={toggleTheme}
+            className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors hover:bg-[var(--bg-subtle)]"
+            style={{ color: "var(--text-secondary)" }}
+            role="menuitem"
+          >
+            <div className="flex items-center gap-2">
+              {resolvedTheme === "dark" ? (
+                <Sun className="h-4 w-4 text-amber-400" />
+              ) : (
+                <Moon className="h-4 w-4 text-indigo-500" />
+              )}
+              <span>Theme</span>
+            </div>
+            <span className="text-xs text-[var(--text-muted)] capitalize">
+              {resolvedTheme}
+            </span>
+          </button>
+
+          <div className="my-1 border-t border-[var(--border-default)]" />
+
+          <button
+            type="button"
             onClick={handleSignOut}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-(--bg-subtle)"
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-[var(--bg-subtle)] hover:text-[var(--state-error)]"
             style={{ color: "var(--text-secondary)" }}
             role="menuitem"
           >

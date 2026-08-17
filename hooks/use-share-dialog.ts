@@ -137,6 +137,10 @@ export function useShareDialog(
   const removeCollaboratorByEmail = useCallback(
     async (email: string) => {
       if (!projectId) return;
+      const target = collaborators.find(
+        (person) => person.email.toLowerCase() === email.toLowerCase()
+      );
+      if (target?.role === "owner") return;
       setRemovingEmail(email);
       setError(null);
       try {
@@ -155,7 +159,7 @@ export function useShareDialog(
         setRemovingEmail(null);
       }
     },
-    [projectId]
+    [projectId, collaborators]
   );
 
   const copyLink = useCallback(async () => {

@@ -1,9 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { RealtimeChannel } from "@supabase/supabase-js";
-import { createRealtimeChannel, buildUserMeta } from "@/lib/realtime";
+import { useEffect, useRef, useState } from "react";
+import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
+import {
+  connectRealtimeChannel,
+  buildUserMeta,
+  attachPresenceListeners,
+  attachCanvasSyncListener,
+  attachCursorMoveListener,
+  attachSelectionChangeListener,
+} from "@/lib/realtime";
 import { RealtimeCanvas } from "@/components/editor/realtime-canvas";
+import type {
+  CursorMovePayload,
+  PresencePayload,
+  SelectionChangePayload,
+} from "@/types/realtime";
 
 interface CanvasWrapperProps {
   projectId: string;
@@ -19,30 +31,70 @@ type Status = "connecting" | "connected" | "error";
 export function CanvasWrapper({ projectId, user }: CanvasWrapperProps) {
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
   const [status, setStatus] = useState<Status>("connecting");
+  const [presenceEntries, setPresenceEntries] = useState<PresencePayload[]>([]);
+  const incomingBroadcastRef = useRef<((event: unknown) => void) | null>(null);
+  const incomingCursorRef = useRef<((payload: CursorMovePayload) => void) | null>(
+    null,
+  );
+  const incomingSelectionRef = useRef<
+    ((payload: SelectionChangePayload) => void) | null
+  >(null);
+  const userRef = useRef(user);
+  userRef.current = user;
 
   useEffect(() => {
-    const ch = createRealtimeChannel(projectId);
-    setChannel(ch);
+    let cancelled = false;
+    let supabase: SupabaseClient | null = null;
+    let ch: RealtimeChannel | null = null;
 
-    ch
-      .on("presence", { event: "sync" }, () => {
-        setStatus("connected");
-      })
-      .subscribe(async (state) => {
+    async function start() {
+      const connection = await connectRealtimeChannel(projectId, user.id);
+      supabase = connection.supabase;
+      ch = connection.channel;
+
+      if (cancelled) {
+        await supabase.removeChannel(ch);
+        return;
+      }
+      attachPresenceListeners(ch, setPresenceEntries);
+      attachCanvasSyncListener(ch, (payload) => {
+        incomingBroadcastRef.current?.(payload);
+      });
+      attachCursorMoveListener(ch, (payload) => {
+        incomingCursorRef.current?.(payload);
+      });
+      attachSelectionChangeListener(ch, (payload) => {
+        incomingSelectionRef.current?.(payload);
+      });
+      setChannel(ch);
+
+      ch.subscribe(async (state) => {
+        if (cancelled) return;
         if (state === "SUBSCRIBED") {
-          await ch.track({
-            ...buildUserMeta(user),
+          await ch?.track({
+            ...buildUserMeta(userRef.current),
             cursor: null,
+            thinking: false,
           });
+          if (!cancelled) setStatus("connected");
         } else if (state === "CHANNEL_ERROR" || state === "TIMED_OUT") {
           setStatus("error");
         }
       });
+    }
+
+    void start();
 
     return () => {
-      ch.unsubscribe();
+      cancelled = true;
+      setPresenceEntries([]);
+      setChannel(null);
+      setStatus("connecting");
+      if (supabase && ch) {
+        void supabase.removeChannel(ch);
+      }
     };
-  }, [projectId, user]);
+  }, [projectId, user.id]);
 
   if (status === "error") {
     return (
@@ -72,7 +124,15 @@ export function CanvasWrapper({ projectId, user }: CanvasWrapperProps) {
 
   return (
     <div className="flex flex-1">
-      <RealtimeCanvas channel={channel} />
+      <RealtimeCanvas
+        projectId={projectId}
+        channel={channel}
+        user={user}
+        presenceEntries={presenceEntries}
+        incomingBroadcastRef={incomingBroadcastRef}
+        incomingCursorRef={incomingCursorRef}
+        incomingSelectionRef={incomingSelectionRef}
+      />
     </div>
   );
 }

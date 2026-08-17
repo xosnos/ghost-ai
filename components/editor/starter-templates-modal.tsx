@@ -9,13 +9,13 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Download } from "lucide-react";
 import {
-  CANVAS_TEMPLATES,
   type CanvasTemplate,
+  CANVAS_TEMPLATES,
 } from "@/components/editor/starter-templates";
-import type { CanvasNode, NodeShape } from "@/types/canvas";
+import { type NodeShape, type CanvasNode, resolveNodeColor } from "@/types/canvas";
+import { useTheme } from "@/lib/theme-provider";
 
 const PREVIEW_W = 280;
 const PREVIEW_H = 184;
@@ -118,7 +118,8 @@ function shapeSvg(
   }
 }
 
-function TemplatePreview({ template }: { template: CanvasTemplate }) {
+export function TemplatePreview({ template }: { template: CanvasTemplate }) {
+  const { resolvedTheme } = useTheme();
   const { nodes, edges, bounds } = useMemo(() => {
     let minX = Infinity;
     let minY = Infinity;
@@ -221,20 +222,49 @@ function TemplatePreview({ template }: { template: CanvasTemplate }) {
           sourceCenterX,
           sourceCenterY,
         );
+        const label = (edge.data as { label?: string } | undefined)?.label;
+        const midX = (sourcePoint.x + targetPoint.x) / 2;
+        const midY = (sourcePoint.y + targetPoint.y) / 2;
 
         return (
-          <line
-            key={edge.id}
-            x1={sourcePoint.x}
-            y1={sourcePoint.y}
-            x2={targetPoint.x}
-            y2={targetPoint.y}
-            stroke="var(--text-secondary)"
-            strokeWidth={1.2}
-            strokeLinecap="round"
-            opacity={0.72}
-            markerEnd={`url(#${markerId})`}
-          />
+          <g key={edge.id}>
+            <line
+              x1={sourcePoint.x}
+              y1={sourcePoint.y}
+              x2={targetPoint.x}
+              y2={targetPoint.y}
+              stroke="var(--text-secondary)"
+              strokeWidth={1.2}
+              strokeLinecap="round"
+              opacity={0.72}
+              markerEnd={`url(#${markerId})`}
+            />
+            {label && (
+              <g transform={`translate(${midX},${midY})`}>
+                <rect
+                  x={-(label.length * 2.1 + 4)}
+                  y={-4.5}
+                  width={label.length * 4.2 + 8}
+                  height={9}
+                  rx={4.5}
+                  fill="var(--bg-elevated)"
+                  stroke="var(--border-default)"
+                  strokeWidth={0.6}
+                />
+                <text
+                  x={0}
+                  y={0.5}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fontSize={4.5}
+                  fill="var(--text-secondary)"
+                  style={{ pointerEvents: "none" }}
+                >
+                  {label}
+                </text>
+              </g>
+            )}
+          </g>
         );
       })}
       {nodes.map((node) => {
@@ -242,8 +272,9 @@ function TemplatePreview({ template }: { template: CanvasTemplate }) {
         const height = (node.height ?? 64) * scale;
         const x = node.position.x * scale + offsetX;
         const y = node.position.y * scale + offsetY;
-        const fill = node.data.color?.fill ?? "var(--bg-subtle)";
-        const stroke = node.data.color?.text ?? "var(--border-subtle)";
+        const resolved = resolveNodeColor(node.data.color, resolvedTheme);
+        const fill = resolved.fill;
+        const stroke = resolvedTheme === "light" ? resolved.border : resolved.text;
         const fontSize = Math.max(5, Math.min(width, height) * 0.18);
 
         return (
@@ -256,7 +287,8 @@ function TemplatePreview({ template }: { template: CanvasTemplate }) {
                 textAnchor="middle"
                 dominantBaseline="middle"
                 fontSize={fontSize}
-                fill={node.data.color?.text ?? "var(--text-primary)"}
+                fill={resolved.text}
+                fontWeight="600"
                 style={{ pointerEvents: "none" }}
               >
                 {node.data.label.length > Math.floor(width / 6)
@@ -278,7 +310,7 @@ export function StarterTemplatesModal({
 }: StarterTemplatesModalProps) {
   return (
     <Dialog open={open} onOpenChange={(value) => !value && onClose()}>
-      <DialogContent className="flex max-h-[85vh] max-w-5xl flex-col gap-0 overflow-hidden p-0">
+      <DialogContent className="flex h-[min(90dvh,920px)] max-w-5xl flex-col gap-0 overflow-hidden p-0">
         <DialogHeader className="shrink-0 px-7 pb-5 pt-7 sm:px-8 sm:pt-8">
           <DialogTitle className="text-2xl tracking-tight">
             Import Template
@@ -288,7 +320,7 @@ export function StarterTemplatesModal({
             nodes and edges will stay in place.
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="flex-1 px-7 pb-7 sm:px-8 sm:pb-8">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-7 pb-7 sm:px-8 sm:pb-8">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
             {CANVAS_TEMPLATES.map((template) => (
               <article
@@ -336,7 +368,7 @@ export function StarterTemplatesModal({
               </article>
             ))}
           </div>
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );

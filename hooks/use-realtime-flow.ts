@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type MutableRefObject } from "react";
 import {
   addEdge,
   applyEdgeChanges,
   applyNodeChanges,
+  MarkerType,
   type Connection,
   type EdgeChange,
   type NodeChange,
@@ -13,15 +14,72 @@ import {
   type OnNodesChange,
 } from "@xyflow/react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import { asUnselected, withoutSharedSelection } from "@/lib/canvas-sync";
 import type { CanvasNode, CanvasEdge } from "@/types/canvas";
 
-type BroadcastEvent =
+export type BroadcastEvent =
   | { type: "nodes:change"; changes: NodeChange[] }
   | { type: "edges:change"; changes: EdgeChange[] }
   | { type: "edges:connect"; edge: CanvasEdge }
   | { type: "nodes:add"; node: CanvasNode }
   | { type: "edges:label"; edgeId: string; label: string }
   | { type: "canvas:append"; nodes: CanvasNode[]; edges: CanvasEdge[] };
+
+function isBroadcastEvent(value: unknown): value is BroadcastEvent {
+  if (!value || typeof value !== "object" || !("type" in value)) return false;
+  const event = value as Record<string, unknown>;
+  switch (event.type) {
+    case "nodes:change":
+    case "edges:change":
+      return (
+        Array.isArray(event.changes) &&
+        event.changes.every(
+          (change) => isRecord(change) && typeof change.type === "string",
+        )
+      );
+    case "edges:connect":
+      return isRecord(event.edge) &&
+        typeof event.edge.id === "string" &&
+        typeof event.edge.source === "string" &&
+        typeof event.edge.target === "string";
+    case "nodes:add":
+      return isCanvasNodeLike(event.node);
+    case "edges:label":
+      return typeof event.edgeId === "string" && typeof event.label === "string";
+    case "canvas:append":
+      return (
+        Array.isArray(event.nodes) &&
+        Array.isArray(event.edges) &&
+        event.nodes.every(isCanvasNodeLike) &&
+        event.edges.every(isCanvasEdgeLike)
+      );
+    default:
+      return false;
+  }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isCanvasNodeLike(value: unknown): boolean {
+  if (!isRecord(value) || typeof value.id !== "string") return false;
+  return (
+    isRecord(value.position) &&
+    typeof value.position.x === "number" &&
+    typeof value.position.y === "number" &&
+    isRecord(value.data)
+  );
+}
+
+function isCanvasEdgeLike(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.source === "string" &&
+    typeof value.target === "string"
+  );
+}
 
 interface HistorySnapshot {
   nodes: CanvasNode[];
@@ -39,6 +97,7 @@ export interface UseRealtimeFlowReturn {
   addNode: (node: CanvasNode) => void;
   updateEdgeLabel: (edgeId: string, label: string) => void;
   appendTemplate: (nodes: CanvasNode[], edges: CanvasEdge[]) => void;
+  loadInitialState: (nodes: CanvasNode[], edges: CanvasEdge[]) => void;
   undo: () => void;
   redo: () => void;
   canUndo: boolean;
@@ -47,11 +106,11 @@ export interface UseRealtimeFlowReturn {
 
 export function useRealtimeFlow(
   channel: RealtimeChannel | null,
+  incomingRef?: MutableRefObject<((event: unknown) => void) | null>,
+  receivedEventRef?: MutableRefObject<boolean>,
 ): UseRealtimeFlowReturn {
   const [nodes, setNodes] = useState<CanvasNode[]>([]);
   const [edges, setEdges] = useState<CanvasEdge[]>([]);
-  const skipBroadcast = useRef(false);
-  const skipHistory = useRef(false);
 
   const past = useRef<HistorySnapshot[]>([]);
   const future = useRef<HistorySnapshot[]>([]);
@@ -74,105 +133,142 @@ export function useRealtimeFlow(
   }, []);
 
   const snapshotRef = useRef<HistorySnapshot>({ nodes: [], edges: [] });
-  const captureSnapshot = useCallback(() => {
-    snapshotRef.current = {
-      nodes: nodes.map((n) => ({ ...n, data: { ...n.data } })),
-      edges: edges.map((e) => ({ ...e, data: { ...e.data } })),
-    };
+  const nodesRef = useRef(nodes);
+  const edgesRef = useRef(edges);
+
+  useEffect(() => {
+    nodesRef.current = nodes;
+    edgesRef.current = edges;
   }, [nodes, edges]);
 
   useEffect(() => {
-    if (!channel) return;
-
-    const handler = (payload: { payload: BroadcastEvent }) => {
-      const event = payload.payload;
-      skipBroadcast.current = true;
-      skipHistory.current = true;
-      if (event.type === "nodes:change") {
-        setNodes((prev) => applyNodeChanges(event.changes, prev) as CanvasNode[]);
-      } else if (event.type === "edges:change") {
-        setEdges((prev) => applyEdgeChanges(event.changes, prev) as CanvasEdge[]);
-      } else if (event.type === "edges:connect") {
-        setEdges((prev) => addEdge(event.edge, prev) as CanvasEdge[]);
-      } else if (event.type === "edges:label") {
-        setEdges((prev) =>
-          prev.map((e) =>
-            e.id === event.edgeId
-              ? { ...e, data: { ...e.data, label: event.label } }
-              : e,
-          ) as CanvasEdge[],
-        );
-      } else if (event.type === "nodes:add") {
-        setNodes((prev) => [...prev, event.node]);
-      } else if (event.type === "canvas:append") {
-        setNodes((prev) => [...prev, ...event.nodes]);
-        setEdges((prev) => [...prev, ...event.edges]);
+    const applyRemote = (raw: unknown) => {
+      if (receivedEventRef) {
+        receivedEventRef.current = true;
+      }
+      if (!isBroadcastEvent(raw)) return;
+      if (raw.type === "nodes:change") {
+        const changes = withoutSharedSelection(raw.changes);
+        if (changes.length === 0) return;
+        const next = applyNodeChanges(changes, nodesRef.current) as CanvasNode[];
+        nodesRef.current = next;
+        setNodes(next);
+      } else if (raw.type === "edges:change") {
+        const changes = withoutSharedSelection(raw.changes);
+        if (changes.length === 0) return;
+        const next = applyEdgeChanges(changes, edgesRef.current) as CanvasEdge[];
+        edgesRef.current = next;
+        setEdges(next);
+      } else if (raw.type === "edges:connect") {
+        const next = addEdge(asUnselected(raw.edge), edgesRef.current) as CanvasEdge[];
+        edgesRef.current = next;
+        setEdges(next);
+      } else if (raw.type === "edges:label") {
+        const next = edgesRef.current.map((e) =>
+          e.id === raw.edgeId
+            ? { ...e, data: { ...e.data, label: raw.label } }
+            : e,
+        ) as CanvasEdge[];
+        edgesRef.current = next;
+        setEdges(next);
+      } else if (raw.type === "nodes:add") {
+        const next = [...nodesRef.current, asUnselected(raw.node)];
+        nodesRef.current = next;
+        setNodes(next);
+      } else if (raw.type === "canvas:append") {
+        const nextNodes = [...nodesRef.current, ...raw.nodes.map(asUnselected)];
+        const nextEdges = [...edgesRef.current, ...raw.edges.map(asUnselected)];
+        nodesRef.current = nextNodes;
+        edgesRef.current = nextEdges;
+        snapshotRef.current = {
+          nodes: nextNodes.map((n) => ({ ...n, data: { ...n.data } })),
+          edges: nextEdges.map((e) => ({ ...e, data: { ...e.data } })),
+        };
+        setNodes(nextNodes);
+        setEdges(nextEdges);
       }
     };
 
+    if (incomingRef) {
+      incomingRef.current = applyRemote;
+      return () => {
+        incomingRef.current = null;
+      };
+    }
+
+    if (!channel) return;
+    const handler = (payload: { payload?: unknown }) => {
+      applyRemote(payload.payload);
+    };
     channel.on("broadcast", { event: "canvas:sync" }, handler);
-  }, [channel]);
+  }, [channel, incomingRef, receivedEventRef]);
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
-      if (!skipHistory.current) {
+      const synced = withoutSharedSelection(changes);
+      if (synced.length > 0) {
         pushHistory(snapshotRef.current);
       }
-      setNodes((prev) => {
-        const next = applyNodeChanges(changes, prev) as CanvasNode[];
+      const next = applyNodeChanges(changes, nodesRef.current) as CanvasNode[];
+      nodesRef.current = next;
+      if (synced.length > 0) {
         snapshotRef.current = {
           nodes: next.map((n) => ({ ...n, data: { ...n.data } })),
           edges: snapshotRef.current.edges,
         };
-        return next;
-      });
-      if (!skipBroadcast.current) {
-        send({ type: "nodes:change", changes });
       }
-      skipBroadcast.current = false;
-      skipHistory.current = false;
+      setNodes(next);
+      if (synced.length > 0) {
+        send({ type: "nodes:change", changes: synced });
+      }
     },
     [send, pushHistory],
   );
 
   const onEdgesChange: OnEdgesChange = useCallback(
     (changes) => {
-      if (!skipHistory.current) {
+      const synced = withoutSharedSelection(changes);
+      if (synced.length > 0) {
         pushHistory(snapshotRef.current);
       }
-      setEdges((prev) => {
-        const next = applyEdgeChanges(changes, prev) as CanvasEdge[];
+      const next = applyEdgeChanges(changes, edgesRef.current) as CanvasEdge[];
+      edgesRef.current = next;
+      if (synced.length > 0) {
         snapshotRef.current = {
           nodes: snapshotRef.current.nodes,
           edges: next.map((e) => ({ ...e, data: { ...e.data } })),
         };
-        return next;
-      });
-      if (!skipBroadcast.current) {
-        send({ type: "edges:change", changes });
       }
-      skipBroadcast.current = false;
-      skipHistory.current = false;
+      setEdges(next);
+      if (synced.length > 0) {
+        send({ type: "edges:change", changes: synced });
+      }
     },
     [send, pushHistory],
   );
 
   const onConnect: OnConnect = useCallback(
     (connection: Connection) => {
+      if (!connection.source || !connection.target) return;
       pushHistory(snapshotRef.current);
       const edge: CanvasEdge = {
         ...connection,
         id: `${connection.source}-${connection.target}-${Date.now()}`,
+        type: "canvasEdge",
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          width: 16,
+          height: 16,
+        },
       };
-      setEdges((prev) => {
-        const next = addEdge(edge, prev) as CanvasEdge[];
-        snapshotRef.current = {
-          nodes: snapshotRef.current.nodes,
-          edges: next.map((e) => ({ ...e, data: { ...e.data } })),
-        };
-        return next;
-      });
-      send({ type: "edges:connect", edge });
+      const next = addEdge(edge, edgesRef.current) as CanvasEdge[];
+      edgesRef.current = next;
+      snapshotRef.current = {
+        nodes: snapshotRef.current.nodes,
+        edges: next.map((e) => ({ ...e, data: { ...e.data } })),
+      };
+      setEdges(next);
+      send({ type: "edges:connect", edge: asUnselected(edge) });
     },
     [send, pushHistory],
   );
@@ -180,15 +276,14 @@ export function useRealtimeFlow(
   const addNode = useCallback(
     (node: CanvasNode) => {
       pushHistory(snapshotRef.current);
-      setNodes((prev) => {
-        const next = [...prev, node];
-        snapshotRef.current = {
-          nodes: next.map((n) => ({ ...n, data: { ...n.data } })),
-          edges: snapshotRef.current.edges,
-        };
-        return next;
-      });
-      send({ type: "nodes:add", node });
+      const next = [...nodesRef.current, node];
+      nodesRef.current = next;
+      snapshotRef.current = {
+        nodes: next.map((n) => ({ ...n, data: { ...n.data } })),
+        edges: snapshotRef.current.edges,
+      };
+      setNodes(next);
+      send({ type: "nodes:add", node: asUnselected(node) });
     },
     [send, pushHistory],
   );
@@ -196,18 +291,15 @@ export function useRealtimeFlow(
   const updateEdgeLabel = useCallback(
     (edgeId: string, label: string) => {
       pushHistory(snapshotRef.current);
-      setEdges((prev) => {
-        const next = prev.map((e) =>
-          e.id === edgeId
-            ? { ...e, data: { ...e.data, label } }
-            : e,
-        ) as CanvasEdge[];
-        snapshotRef.current = {
-          nodes: snapshotRef.current.nodes,
-          edges: next.map((e) => ({ ...e, data: { ...e.data } })),
-        };
-        return next;
-      });
+      const next = edgesRef.current.map((e) =>
+        e.id === edgeId ? { ...e, data: { ...e.data, label } } : e,
+      ) as CanvasEdge[];
+      edgesRef.current = next;
+      snapshotRef.current = {
+        nodes: snapshotRef.current.nodes,
+        edges: next.map((e) => ({ ...e, data: { ...e.data } })),
+      };
+      setEdges(next);
       send({ type: "edges:label", edgeId, label });
     },
     [send, pushHistory],
@@ -216,21 +308,41 @@ export function useRealtimeFlow(
   const appendTemplate = useCallback(
     (newNodes: CanvasNode[], newEdges: CanvasEdge[]) => {
       pushHistory(snapshotRef.current);
-      setNodes((prev) => [...prev, ...newNodes]);
-      setEdges((prev) => [...prev, ...newEdges]);
+      const nextNodes = [...nodesRef.current, ...newNodes];
+      const nextEdges = [...edgesRef.current, ...newEdges];
+      nodesRef.current = nextNodes;
+      edgesRef.current = nextEdges;
       snapshotRef.current = {
-        nodes: [...snapshotRef.current.nodes, ...newNodes].map((n) => ({
-          ...n,
-          data: { ...n.data },
-        })),
-        edges: [...snapshotRef.current.edges, ...newEdges].map((e) => ({
-          ...e,
-          data: { ...e.data },
-        })),
+        nodes: nextNodes.map((n) => ({ ...n, data: { ...n.data } })),
+        edges: nextEdges.map((e) => ({ ...e, data: { ...e.data } })),
       };
-      send({ type: "canvas:append", nodes: newNodes, edges: newEdges });
+      setNodes(nextNodes);
+      setEdges(nextEdges);
+      send({
+        type: "canvas:append",
+        nodes: newNodes.map(asUnselected),
+        edges: newEdges.map(asUnselected),
+      });
     },
     [send, pushHistory],
+  );
+
+  const loadInitialState = useCallback(
+    (initialNodes: CanvasNode[], initialEdges: CanvasEdge[]) => {
+      setNodes(initialNodes);
+      setEdges(initialEdges);
+      nodesRef.current = initialNodes;
+      edgesRef.current = initialEdges;
+      snapshotRef.current = {
+        nodes: initialNodes.map((n) => ({ ...n, data: { ...n.data } })),
+        edges: initialEdges.map((e) => ({ ...e, data: { ...e.data } })),
+      };
+      past.current = [];
+      future.current = [];
+      setCanUndo(false);
+      setCanRedo(false);
+    },
+    []
   );
 
   const undo = useCallback(() => {
@@ -239,10 +351,10 @@ export function useRealtimeFlow(
     past.current = past.current.slice(0, -1);
     future.current = [snapshotRef.current, ...future.current];
     snapshotRef.current = previous;
-    skipBroadcast.current = true;
-    skipHistory.current = true;
     setNodes(previous.nodes);
     setEdges(previous.edges);
+    nodesRef.current = previous.nodes;
+    edgesRef.current = previous.edges;
     setCanUndo(past.current.length > 0);
     setCanRedo(future.current.length > 0);
   }, []);
@@ -253,13 +365,27 @@ export function useRealtimeFlow(
     future.current = future.current.slice(1);
     past.current = [...past.current, snapshotRef.current];
     snapshotRef.current = next;
-    skipBroadcast.current = true;
-    skipHistory.current = true;
     setNodes(next.nodes);
     setEdges(next.edges);
+    nodesRef.current = next.nodes;
+    edgesRef.current = next.edges;
     setCanUndo(true);
     setCanRedo(future.current.length > 0);
   }, []);
 
-  return { nodes, edges, onNodesChange, onEdgesChange, onConnect, addNode, updateEdgeLabel, appendTemplate, undo, redo, canUndo, canRedo };
+  return {
+    nodes,
+    edges,
+    onNodesChange,
+    onEdgesChange,
+    onConnect,
+    addNode,
+    updateEdgeLabel,
+    appendTemplate,
+    loadInitialState,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
+  };
 }

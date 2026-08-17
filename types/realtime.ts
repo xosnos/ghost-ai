@@ -9,3 +9,15 @@ export interface UserMeta {
   avatarUrl: string | null;
   cursorColor: string;
 }
+
+export type PresencePayload = UserMeta & PresenceState;
+
+export interface CursorMovePayload {
+  userId: string;
+  cursor: { x: number; y: number } | null;
+}
+
+export interface SelectionChangePayload {
+  userId: string;
+  nodeIds: string[];
+}

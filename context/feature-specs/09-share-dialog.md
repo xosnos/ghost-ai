@@ -7,13 +7,13 @@ Add a `Share` button to the editor navbar that opens the share dialog.
 Owners can:
 
 - invite collaborators by email
-- view current collaborators
-- remove collaborators
+- view people with access (owner first, then invited collaborators)
+- remove collaborators (the owner cannot be removed)
 - copy the project link with temporary `Copied!` feedback
 
 Collaborators can:
 
-- view the collaborator list only
+- view the same people-with-access list
 - not invite, remove, or manage access
 
 ## User Data
@@ -42,6 +42,7 @@ Do not add a local user table.
 ## Check When Done
 
 - share dialog opens from the workspace
+- people with access includes the project owner (Owner badge, not removable)
 - owners can invite and remove collaborators
 - collaborators see read-only access
 - collaborator names/avatars load from Supabase Auth when available

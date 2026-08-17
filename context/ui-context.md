@@ -2,29 +2,29 @@
 
 ## Theme
 
-Dark only. No light mode. The visual language is a dark technical workspace — near-black backgrounds, layered surfaces, and vivid accent colors for interactive elements.
+Supports both Dark mode (default) and Google Stitch-style Clean Light mode.
 
-All colors are defined as CSS custom properties in `globals.css` and mapped to Tailwind tokens via `@theme inline`. Components must use these tokens — no hardcoded hex values or raw Tailwind color classes like `zinc-*`.
+All colors are defined as CSS custom properties in `globals.css` and mapped to Tailwind tokens via `@theme inline`. Components use these tokens rather than hardcoded hex values.
 
-| Role             | CSS Variable           | Hex / Value               |
-| ---------------- | ---------------------- | ------------------------- |
-| Page background  | `--bg-base`            | `#080809`                 |
-| Surface          | `--bg-surface`         | `#111114`                 |
-| Elevated surface | `--bg-elevated`        | `#18181c`                 |
-| Subtle surface   | `--bg-subtle`          | `#1e1e23`                 |
-| Default border   | `--border-default`     | `#2a2a30`                 |
-| Subtle border    | `--border-subtle`      | `#3a3a42`                 |
-| Primary text     | `--text-primary`       | `#f0f0f4`                 |
-| Secondary text   | `--text-secondary`     | `#c0c0cc`                 |
-| Muted text       | `--text-muted`         | `#808090`                 |
-| Faint text       | `--text-faint`         | `#505060`                 |
-| Brand accent     | `--accent-primary`     | `#00c8d4` (cyan)          |
-| Brand dim        | `--accent-primary-dim` | `rgba(0, 200, 212, 0.12)` |
-| AI accent        | `--accent-ai`          | `#6457f9` (indigo-purple) |
-| AI text          | `--accent-ai-text`     | `#8b82ff`                 |
-| Error            | `--state-error`        | `#ff4d4f`                 |
-| Success          | `--state-success`      | `#34d399`                 |
-| Warning          | `--state-warning`      | `#fbbf24`                 |
+| Role             | CSS Variable           | Dark Mode Value           | Light Mode Value          |
+| ---------------- | ---------------------- | ------------------------- | ------------------------- |
+| Page background  | `--bg-base`            | `#080809`                 | `#f9fafb`                 |
+| Surface          | `--bg-surface`         | `#111114`                 | `#ffffff`                 |
+| Elevated surface | `--bg-elevated`        | `#18181c`                 | `#f3f4f6`                 |
+| Subtle surface   | `--bg-subtle`          | `#1e1e23`                 | `#e5e7eb`                 |
+| Default border   | `--border-default`     | `#2a2a30`                 | `#e5e7eb`                 |
+| Subtle border    | `--border-subtle`      | `#3a3a42`                 | `#d1d5db`                 |
+| Primary text     | `--text-primary`       | `#f0f0f4`                 | `#111827`                 |
+| Secondary text   | `--text-secondary`     | `#c0c0cc`                 | `#374151`                 |
+| Muted text       | `--text-muted`         | `#808090`                 | `#6b7280`                 |
+| Faint text       | `--text-faint`         | `#505060`                 | `#9ca3af`                 |
+| Brand accent     | `--accent-primary`     | `#00c8d4` (cyan)          | `#0096a6`                 |
+| Brand dim        | `--accent-primary-dim` | `rgba(0, 200, 212, 0.12)` | `rgba(0, 150, 166, 0.12)` |
+| AI accent        | `--accent-ai`          | `#6457f9` (indigo-purple) | `#5046e5`                 |
+| AI text          | `--accent-ai-text`     | `#8b82ff`                 | `#6366f1`                 |
+| Error            | `--state-error`        | `#ff4d4f`                 | `#ef4444`                 |
+| Success          | `--state-success`      | `#34d399`                 | `#10b981`                 |
+| Warning          | `--state-warning`      | `#fbbf24`                 | `#f59e0b`                 |
 
 Tailwind utility names map to these variables. Use `bg-base`, `bg-surface`, `text-copy-primary`, `text-copy-muted`, `border-surface-border`, `text-brand`, `bg-accent-dim`, etc.
 
@@ -51,20 +51,18 @@ Radius increases with surface depth — smaller for inner elements, larger for o
 
 ### Node Color Palette
 
-8 defined color pairs. Each pair specifies a dark node fill and a vivid contrasting text color tuned for readability on the dark canvas. Defined in `types/canvas.ts` as `NODE_COLORS`.
+8 defined color pairs with theme-adaptive tokens. In Dark mode, nodes use deep fills with neon text; in Light mode, nodes adapt to soft pastel fills with high-contrast saturated text and subtle matching borders. Resolved at runtime via `resolveNodeColor(color, resolvedTheme)`.
 
-| Node fill | Text color | Character              |
-| --------- | ---------- | ---------------------- |
-| `#1F1F1F` | `#EDEDED`  | Neutral dark (default) |
-| `#10233D` | `#52A8FF`  | Blue                   |
-| `#2E1938` | `#BF7AF0`  | Purple                 |
-| `#331B00` | `#FF990A`  | Orange                 |
-| `#3C1618` | `#FF6166`  | Red                    |
-| `#3A1726` | `#F75F8F`  | Pink                   |
-| `#0F2E18` | `#62C073`  | Green                  |
-| `#062822` | `#0AC7B4`  | Teal                   |
-
-Default node color: `#1F1F1F` with `#EDEDED` text.
+| Name      | Dark Fill | Dark Text | Light Fill | Light Text | Light Border |
+| --------- | --------- | --------- | ---------- | ---------- | ------------ |
+| Neutral   | `#1F1F1F` | `#EDEDED` | `#F3F4F6`  | `#1F2937`  | `#D1D5DB`    |
+| Blue      | `#10233D` | `#52A8FF` | `#EFF6FF`  | `#1D4ED8`  | `#93C5FD`    |
+| Purple    | `#2E1938` | `#BF7AF0` | `#FAF5FF`  | `#7E22CE`  | `#D8B4FE`    |
+| Orange    | `#331B00` | `#FF990A` | `#FFF7ED`  | `#C2410C`  | `#FDBA74`    |
+| Red       | `#3C1618` | `#FF6166` | `#FEF2F2`  | `#B91C1C`  | `#FCA5A5`    |
+| Pink      | `#3A1726` | `#F75F8F` | `#FDF2F8`  | `#BE185D`  | `#F9A8D4`    |
+| Green     | `#0F2E18` | `#62C073` | `#F0FDF4`  | `#15803D`  | `#86EFAC`    |
+| Teal      | `#062822` | `#0AC7B4` | `#F0FDFA`  | `#0F766E`  | `#5EEAD4`    |
 
 ### Edge Style
 
@@ -95,10 +93,11 @@ shadcn/ui on top of Tailwind. No custom design system. Components live in `compo
 
 ## Layout Patterns
 
-- Editor workspace: full-viewport layout — floating sidebar overlay on the left, center canvas, slide-over AI sidebar on the right.
-- Sidebars: floating overlay with dark semi-transparent background and subtle border.
-- Modals and dialogs: centered overlay, `rounded-3xl`, dark background with backdrop blur.
-- Navbar: top bar with dark background and bottom border.
+- Editor workspace: full-viewport layout — floating sidebar drawer on the left, full-bleed center canvas, slide-over AI sidebar on the right.
+- Navbar: Google Stitch-style transparent floating navigation header (`bg-transparent border-none`) with frosted glass pill islands for brand/project title, center workspace actions (Save, Share, Templates, AI), and right utility controls with the consolidated user profile avatar (`UserMenu`).
+- Canvas presence: collaborator avatars stack in a floating pill at the top-right of the editor canvas when other participants are in the room. Live cursors for other participants render in flow coordinates. When another collaborator selects a node, that node shows a ring in their presence color. Resize handles and the color toolbar appear only for the local user's selection.
+- Sidebars: floating overlay with semi-transparent background and subtle border.
+- Modals and dialogs: centered overlay, `rounded-3xl`, surface background with backdrop blur.
 
 ## Icons
 
