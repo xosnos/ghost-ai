@@ -4,6 +4,7 @@ import {
   PermanentAiError,
   TransientAiError,
 } from "../_shared/design-agent.ts";
+import { processSpecTask } from "../_shared/generate-spec.ts";
 
 // Queue configuration
 const QUEUE_NAME = "ai-generation";
@@ -63,9 +64,6 @@ export function withSupabase(
       const expectedSecret =
         (secretName && secretKeysObj[secretName]) ||
         Deno.env.get("AUTOMATION_SECRET") ||
-        (secretName === "automations"
-          ? "sb_secret_automations_ghost_ai_2026"
-          : null) ||
         Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
       if (!apiKeyHeader || (expectedSecret && apiKeyHeader !== expectedSecret)) {
@@ -83,9 +81,19 @@ export function withSupabase(
       Deno.env.get("SUPABASE_URL") ||
       Deno.env.get("NEXT_PUBLIC_SUPABASE_URL") ||
       "http://127.0.0.1:54321";
-    const serviceRoleKey =
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!serviceRoleKey) {
+      return new Response(
+        JSON.stringify({ error: "Missing SUPABASE_SERVICE_ROLE_KEY environment variable" }),
+        {
+          status: 500,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+        }
+      );
+    }
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -121,9 +129,10 @@ function getSupabaseConfig() {
     Deno.env.get("SUPABASE_URL") ||
     Deno.env.get("NEXT_PUBLIC_SUPABASE_URL") ||
     "http://127.0.0.1:54321";
-  const serviceRoleKey =
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ||
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!serviceRoleKey) {
+    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable");
+  }
   return { supabaseUrl, serviceRoleKey };
 }
 
@@ -341,6 +350,13 @@ async function processQueueMessage(
         console.log(
           `[ai-worker] Processing spec generation task run ${runId} for project ${projectId} (attempt ${currentAttempt})`
         );
+        await processSpecTask(supabaseAdmin, {
+          runId,
+          projectId,
+          userId: payload?.user_id || "",
+          input: input || {},
+          signal,
+        });
       } else {
         throw new PermanentAiError(`Unsupported task run kind: ${kind}`);
       }

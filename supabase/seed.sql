@@ -25,7 +25,8 @@ alter default privileges in schema public
 alter default privileges in schema public
   grant all on functions to anon, authenticated, service_role;
 
--- Enforce explicit privilege restrictions for task_runs and pgmq queues
+-- Enforce explicit privilege restrictions for task_runs, project_specs, and pgmq queues
 revoke insert, update, delete on public.task_runs from anon, authenticated;
+revoke insert, update, delete on public.project_specs from anon, authenticated;
 revoke all on schema pgmq from anon, authenticated;
 revoke all on schema pgmq_public from anon, authenticated;

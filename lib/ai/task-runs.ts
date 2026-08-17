@@ -72,7 +72,12 @@ export async function enqueueTaskRun(params: EnqueueTaskParams): Promise<string>
 export async function invokeAiWorkerFastPath(): Promise<void> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "http://127.0.0.1:54321";
   const automationSecret =
-    process.env.AUTOMATION_SECRET || "sb_secret_automations_ghost_ai_2026";
+    process.env.AUTOMATION_SECRET ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!automationSecret) {
+    return;
+  }
 
   const workerUrl = `${supabaseUrl.replace(/\/$/, "")}/functions/v1/ai-worker`;
 

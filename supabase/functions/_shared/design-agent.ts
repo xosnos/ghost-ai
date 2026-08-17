@@ -1,6 +1,8 @@
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 
+declare const Deno: any;
+
 // Allowed shapes and default dimensions
 export const NODE_SHAPES = [
   "rectangle",
@@ -726,38 +728,21 @@ function getOpenRouterApiKey(): string | null {
   const envVal = Deno.env.get("OPENROUTER_API_KEY");
   if (envVal && envVal.trim()) return envVal.trim();
 
-  // Fallback: read from mounted local .env files
-  const possiblePaths = [
-    "./supabase/functions/.env",
-    "./supabase/functions/ai-worker/.env",
-    "./supabase/functions/_shared/.env",
-    "./supabase/.env",
-    "./.env",
-    "./.env.local",
-    "/Users/xosnos/Projects/Web/ghost-ai/supabase/functions/.env",
-    "/Users/xosnos/Projects/Web/ghost-ai/supabase/functions/ai-worker/.env",
-    "/Users/xosnos/Projects/Web/ghost-ai/supabase/functions/_shared/.env",
-    "/Users/xosnos/Projects/Web/ghost-ai/supabase/.env",
-    "/Users/xosnos/Projects/Web/ghost-ai/.env",
-    "/Users/xosnos/Projects/Web/ghost-ai/.env.local",
-  ];
-
-  for (const p of possiblePaths) {
-    try {
-      const content = Deno.readTextFileSync(p);
-      for (const line of content.split("\n")) {
-        const trimmed = line.trim();
-        if (trimmed.startsWith("OPENROUTER_API_KEY=")) {
-          const val = trimmed
-            .slice("OPENROUTER_API_KEY=".length)
-            .replace(/^["']|["']$/g, "")
-            .trim();
-          if (val) return val;
-        }
+  // Fallback: read from main supabase functions .env file in local dev
+  try {
+    const content = Deno.readTextFileSync("./supabase/functions/.env");
+    for (const line of content.split("\n")) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith("OPENROUTER_API_KEY=")) {
+        const val = trimmed
+          .slice("OPENROUTER_API_KEY=".length)
+          .replace(/^["']|["']$/g, "")
+          .trim();
+        if (val) return val;
       }
-    } catch {
-      // ignore
     }
+  } catch {
+    // ignore
   }
 
   return null;
@@ -839,8 +824,7 @@ ${
 User Prompt: "${prompt}"`;
 
   const modelsToTry = [
-    "google/gemini-2.0-flash-exp:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
+    "nvidia/nemotron-3-ultra-550b-a55b:free",
     "openrouter/free",
   ];
 

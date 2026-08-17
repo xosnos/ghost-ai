@@ -13,13 +13,103 @@ Update this file whenever the current phase, active feature, or implementation s
 - Feature 24: AI Presence State & Shared Status Feed (complete)
 - Feature 25: Sidebar Chat Feed & Collaborative Realtime Room Chat (complete)
 - Feature 26: AI Chat Functional Wiring & Design Prompt Execution (complete)
+- Feature 27: Spec Generation Flow & Durable Artifact Persistence (complete)
+- Feature 28: Spec Persistence & Download Route (complete)
+- Feature 29: Spec UI Integration (complete)
 - Collaborator selection rings (complete)
 
 ## Current Goal
 
-- Specs generation workflows (Feature 27).
+- Feature 30 / Next Milestone.
 
 ## Completed
+
+- **Codebase Security Audit & Supabase Production Environment Standardization**:
+  - Consolidated Edge Functions environment to single canonical location: `supabase/functions/.env` (deleted duplicate/stale `.env` files in subdirectories).
+  - Aligned Edge Functions with standard Supabase Deno runtime practices (`Deno.env.get()`) for both production secrets (set via `supabase secrets set`) and local development.
+  - Removed all hardcoded local demo JWT and secret fallback strings from Edge Function workers and Next.js server fast-path calls.
+  - Stripped local absolute user paths (`/Users/xosnos/...`) from Edge Function `.env` loader helpers in `supabase/functions/_shared/generate-spec.ts` and `supabase/functions/_shared/design-agent.ts`.
+  - Added `scratch/` directory and `*.env` patterns to root `.gitignore` to prevent accidental staging or commits of local test artifacts and environment files.
+  - Verified 0 secrets, tokens, or API keys are leaked across client bundles, API routes, or git history.
+
+- 29-spec-ui-integration — Spec UI Integration in AI Sidebar, Rendered Markdown Preview Modal, and Direct Browser Downloads:
+  - **Zero-Dependency Markdown Renderer (`components/ui/markdown-renderer.tsx`)**:
+    - Built a robust, fast, theme-adaptive React Markdown parser and renderer supporting headings (H1–H4), tables with borders and alternate row striping, fenced code blocks with language headers and one-click copy button, blockquotes with primary accent borders, unordered/ordered lists, dividers, inline code, bold, italics, strikethrough, and external links.
+    - Uses CSS custom properties and design tokens from `globals.css` and `ui-context.md` (`--bg-surface`, `--bg-elevated`, `--text-primary`, `--accent-primary`, `--border-default`).
+  - **Project Specs Management Hook (`hooks/use-project-specs.ts`)**:
+    - Implemented `useProjectSpecs({ projectId, isAiActive })` hook managing dynamic spec listings via `GET /api/projects/[projectId]/specs`.
+    - Automatically refetches specs on mount, project change, manual refresh, and when AI generation completes (`isAiActive` transitions from true to false).
+    - Fetches spec detail content on demand via `GET /api/projects/[projectId]/specs/[specId]` without storing long-term client cache or touching storage buckets directly.
+    - Integrates `generateSpec()` calling `POST /api/ai/spec` with current room ID and chat history, supporting conflict handling (HTTP 409) and error states.
+    - Implemented `triggerSpecDownload()` and `downloadSpec()` triggering browser attachment downloads from `/api/projects/[projectId]/specs/[specId]/download`.
+  - **Spec Preview Modal (`components/editor/spec-preview-modal.tsx`)**:
+    - Created modal dialog utilizing shadcn/ui `Dialog`, `DialogContent`, `DialogHeader`, `DialogTitle`, `DialogDescription`, and `ScrollArea`.
+    - Header: Displays spec filename, formatted generation timestamp, Markdown badge, Copy Markdown button, and Download button.
+    - Body: Bounded height scrollable container rendering full Markdown content with loading skeletons and error/retry fallbacks.
+    - Footer: Shows line count, word count, close action, and secondary download button.
+    - Keyboard & Accessibility: Escape key and backdrop dismissal supported natively via Radix Dialog primitives.
+  - **AI Sidebar Specs Tab Integration (`components/editor/ai-sidebar.tsx`)**:
+    - Replaced static demo placeholder in the Specs tab with live dynamic project spec list and spec count badge in the tab trigger pill.
+    - Added "Generate Spec" action button triggering background spec generation tasks and tracking active runs via `useAiStatus`.
+    - Rendered active generation progress banner showing step-by-step labels, descriptions, and progress bar during spec generation.
+    - Displayed clean clickable list items with `FileText` icon, filename, creation date, direct download button (with `e.stopPropagation()`), and preview chevron.
+    - Integrated `SpecPreviewModal` opening upon item click.
+  - **Verification**:
+    - Comprehensive unit and integration test suite (`scratch/test-spec-ui-integration.ts`) passing all 10 assertions.
+    - `npm run lint` and `npm run build` passing cleanly with 0 errors and 0 warnings.
+
+- 28-spec-persistence-download — Spec Persistence, Metadata Queries, and Secure Download Route:
+  - **Spec Metadata & Storage Access Layer (`lib/specs/queries.ts`, `types/specs.ts`)**:
+    - Extended `types/specs.ts` with `ProjectSpecRow`, `ProjectSpecSummary` (client-safe projection omitting internal storage path), and `ProjectSpecDetail` (with markdown `content`).
+    - Implemented `listProjectSpecs(supabase, projectId, projectName)` querying `project_specs` table with `id, task_run_id, project_id, created_at` (ordering: newest first `created_at DESC`), calculating clean user-facing filenames (`{slug}-spec-{shortRunId}.md`) without leaking storage bucket paths.
+    - Implemented `getProjectSpec(supabase, projectId, specId)` enforcing project boundary checks at the database query level.
+    - Implemented `downloadSpecMarkdown(supabase, filePath)` with `parseSpecStoragePath` resolving bucket keys and downloading raw Markdown text.
+    - Implemented `formatSpecFileName` and `slugifySpecName` generating standardized ASCII/RFC5987-safe Markdown attachment filenames.
+  - **Project Spec Metadata API Route (`app/api/projects/[projectId]/specs/route.ts`)**:
+    - Created `GET /api/projects/[projectId]/specs` route with Supabase Auth verification and `hasProjectAccess` identity verification.
+    - Returns `{ specs: ProjectSpecSummary[] }` with HTTP 200, strictly preventing storage path leakage to client callers.
+  - **Secure Spec Download Route (`app/api/projects/[projectId]/specs/[specId]/download/route.ts`)**:
+    - Created `GET /api/projects/[projectId]/specs/[specId]/download` route validating user authentication and project access.
+    - Verifies spec belongs to the given `projectId`, downloads the file from Supabase Storage bucket `specs`, and returns a direct Markdown attachment.
+    - Sets standard headers: `Content-Type: text/markdown; charset=utf-8`, `Content-Disposition: attachment; filename="..."`, and `Cache-Control: private, no-cache, no-transform`.
+    - Handles unauthenticated (401), unauthorized (403), missing project/spec (404), and missing storage object (404) states with proper JSON error responses.
+  - **Spec Detail Route for UI Preview (`app/api/projects/[projectId]/specs/[specId]/route.ts`)**:
+    - Created `GET /api/projects/[projectId]/specs/[specId]` route returning `{ spec: ProjectSpecDetail }` for the upcoming Feature 29 Markdown preview modal.
+  - **Verification**:
+    - Comprehensive unit and integration test suite (`scratch/test-spec-persistence-download.ts`) verifying helper functions, storage downloads, ordering (`created_at DESC`), security access controls, and live HTTP requests.
+    - `npm run lint` and `npm run build` passing cleanly with 0 errors and 0 warnings.
+
+- 27-spec-generation-flow — Spec Generation Flow, Durable Queue Worker, OpenRouter Inference, and Markdown Artifact Storage:
+  - **Database Migration & Storage Bucket (`supabase/migrations/20260817120000_create_project_specs_and_storage.sql`, `supabase/seed.sql`)**:
+    - Created `project_specs` table with columns: `id` (UUID PK), `task_run_id` (UUID unique foreign key to `task_runs` on delete cascade), `project_id` (UUID foreign key to `projects` on delete cascade), `file_path` (text), and `created_at` (timestamptz).
+    - Configured separate foreign key indexes on `project_id` and unique index on `task_run_id`.
+    - Enabled RLS on `project_specs` with `select_project_specs` policy allowing SELECT access to project owners and collaborators.
+    - Granted `SELECT` to `authenticated`, granted `ALL` to `service_role`, and explicitly revoked `INSERT, UPDATE, DELETE` from `anon, authenticated`.
+    - Added `project_specs` to `supabase_realtime` publication.
+    - Created private Supabase Storage bucket `specs` (10MB limit, allowed MIME types: `text/markdown`, `text/plain`, `application/octet-stream`).
+    - Added `public.specs_project_id` storage path resolution helper and RLS select policies on `storage.objects` for bucket `specs`.
+    - Updated `supabase/seed.sql` to revoke `insert, update, delete on public.project_specs` from `anon, authenticated` to guarantee consistent local reset environments.
+  - **Spec Generation API Route (`app/api/ai/spec/route.ts`, `types/specs.ts`)**:
+    - Implemented `POST /api/ai/spec` route validating `roomId` (non-empty string), `chatHistory` (optional array), `nodes` (optional array), and `edges` (optional array).
+    - Authenticated current user via `getCurrentUser(supabase)` (returning HTTP 401 if unauthenticated).
+    - Resolved project membership from `roomId` via `hasProjectAccess` (returning HTTP 403 if unauthorized; never trusting client-supplied project IDs).
+    - Transactionally enqueued `kind: "spec"` task run via `enqueueTaskRun` and translated active project run conflict to HTTP 409.
+    - Dispatched non-blocking fast-path worker invocation via `invokeAiWorkerFastPath()`.
+    - Returned `{ runId }` with HTTP 202 Accepted.
+  - **Spec Generation Worker Handler (`supabase/functions/_shared/generate-spec.ts`, `supabase/functions/ai-worker/index.ts`)**:
+    - Created `supabase/functions/_shared/generate-spec.ts` exposing `processSpecTask(supabaseAdmin, context)`.
+    - Validated trusted queue payload (`runId`, `projectId`, `userId`, `chatHistory`, `nodes`, `edges`) and verified matching `task_runs` row and `kind === "spec"`.
+    - Published ephemeral step-by-step progress to the project-scoped `ai-status` Realtime Broadcast channel (`start`, `analyzing`, `generating`, `complete`, `failed` with `kind: "spec"`).
+    - Integrated OpenRouter model routing (`openrouter/free` with model fallback list: `openrouter/free`, `nvidia/nemotron-3-ultra-550b-a55b:free`, `meta-llama/llama-3.3-70b-instruct:free`).
+    - Crafted comprehensive prompt engineering generating structured, production-ready Technical Specification documents in Markdown.
+    - Uploaded generated Markdown to Supabase Storage at deterministic path `specs/{projectId}/{runId}.md` (`upsert: true`).
+    - Idempotently upserted `project_specs` metadata record on conflict by `task_run_id`, preventing duplicate spec rows on worker retry.
+    - Classified provider, network, and storage errors into `TransientAiError` vs `PermanentAiError` for bounded queue retry management.
+    - Updated `supabase/functions/ai-worker/index.ts` to import `processSpecTask` and dispatch `spec` queue messages under application deadline.
+  - **Verification**:
+    - Comprehensive unit and integration test suite (`scratch/test-spec-generation.ts`) passing all 5 test groups (Markdown cleaning, AI status parsing, error classification, route validation, database schema & bucket validation, transactional enqueue, storage upload, metadata idempotency).
+    - All regression test suites passing 100%.
+    - `npm run lint` and `npm run build` passing with 0 errors and 0 warnings.
 
 - **Connector Handle Calculation & AI Node Normalization Fix (`types/canvas.ts`, `supabase/functions/_shared/design-agent.ts`, `components/editor/starter-templates.ts`, `hooks/use-realtime-flow.ts`, `lib/canvas-storage.ts`)**:
   - Identified root cause of AI Architect and template connectors attaching to top-left `(0,0)` / top handles: missing explicit `sourceHandle` / `targetHandle` attributes causing React Flow to default to the 1st handle (`Position.Top`), plus missing `width`/`height`/`initialWidth`/`initialHeight` properties on AI-generated node objects before DOM layout measurement.
