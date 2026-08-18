@@ -49,7 +49,9 @@ export function CanvasWrapper({ projectId, user }: CanvasWrapperProps) {
     null,
   );
   const userRef = useRef(user);
-  userRef.current = user;
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   useEffect(() => {
     let cancelled = false;

@@ -1,5 +1,6 @@
 import { GhostLogo } from "@/components/ui/ghost-logo";
 
+
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen">

@@ -6,6 +6,7 @@ import { EditorChrome } from "@/components/editor/editor-chrome";
 import { AccessDenied } from "@/components/editor/access-denied";
 import { CanvasWrapper } from "@/components/editor/canvas-wrapper";
 
+
 interface EditorWorkspacePageProps {
   params: Promise<{ roomId: string }>;
 }

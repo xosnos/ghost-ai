@@ -20,6 +20,15 @@ Update this file whenever the current phase, active feature, or implementation s
 
 The entries below record implementation state at the time each change landed. The current status and known gaps above take precedence where later work changed behavior.
 
+- **Next.js 16 Upgrade (2026-08-18)**:
+  - Upgraded Next.js from `15.4.11` to `16.3.1` with Turbopack enabled by default.
+  - Upgraded `eslint-config-next` to `16.3.1`, React to `19.2.8`, `@types/react` to `19.2.18`, and `@types/react-dom` to `19.2.4`.
+  - Migrated `middleware.ts` to `proxy.ts` exporting `export async function proxy(request: NextRequest)` in accordance with Next.js 16 routing boundary conventions.
+  - Migrated ESLint flat config to use direct `eslint-config-next/core-web-vitals` and `eslint-config-next/typescript` module imports.
+  - Resolved `react-hooks/refs` and `react-hooks/set-state-in-effect` across `hooks/use-canvas-autosave.ts`, `hooks/use-project-specs.ts`, `hooks/use-share-dialog.ts`, `components/editor/realtime-canvas.tsx`, `components/editor/canvas-wrapper.tsx`, and `lib/theme-provider.tsx`.
+  - Confirmed bundled AI agent docs in `node_modules/next/dist/docs/` and verified `AGENTS.md` managed block alignment.
+  - Verified `npm run lint` (0 errors), `npm run build` (0 errors), DB/Queue integration tests, and live runtime verification flow (auth redirect, signup, dashboard, canvas workspace, React Flow node manipulation, AI sidebar tabs).
+
 - **AI Model Routing Update (2026-08-18)**:
   - Updated primary OpenRouter model to `nvidia/nemotron-3.5-lightning:free` in both design generation (`supabase/functions/_shared/design-agent.ts`) and specification generation (`supabase/functions/_shared/generate-spec.ts`).
   - Configured `openrouter/free` as the sole fallback model.
@@ -395,13 +404,13 @@ The entries below record implementation state at the time each change landed. Th
 - Tailwind v4 CSS-first config — design tokens defined as CSS custom properties in globals.css, mapped to Tailwind via @theme inline.
 - shadcn/ui components authored directly (no CLI); live in components/ui/.
 - ProjectSidebar is a fixed overlay (does not push page content) positioned below the navbar.
-- Auth uses Supabase Auth (not Clerk). Cookie-based sessions via @supabase/ssr. Middleware at project root handles session refresh and route protection. Public routes: /login, /signup, /forgot-password, /reset-password, /auth/callback.
+- Auth uses Supabase Auth (not Clerk). Cookie-based sessions via @supabase/ssr. Routing proxy (`proxy.ts`) at project root handles session refresh and route protection. Public routes: /login, /signup, /forgot-password, /reset-password, /auth/callback.
 - Editor page at /editor is a server component that fetches user then renders client EditorChrome with userEmail prop.
 - Auth route pages (`app/(auth)/*/page.tsx`) are Server Components that render client form components. Avoid `"use client"` on `page.tsx` itself — Next.js wraps client pages in `ClientPageRoot`, which requires `workStore` for `searchParams` instrumentation and can throw in WebContainer environments (Bolt/StackBlitz).
 - Database layer uses Bolt's integrated Supabase database (PostgreSQL) instead of Prisma. Schema is applied via the Supabase migration tool, not a Prisma schema file. All tables use RLS with owner-scoped policies.
 - Artifact storage uses Supabase Storage instead of Vercel Blob. Canvas snapshots and generated specs are stored in Supabase Storage buckets, with the storage path stored as a reference column on the corresponding Supabase table.
 - **AI execution uses Supabase Queues, Edge Functions, and Cron.** `EdgeRuntime.waitUntil` provides the fast path, while the durable `ai-generation` queue and Cron provide recovery. API routes transactionally create `task_runs` rows and queue messages, then invoke the shared `ai-worker`. Queue visibility and delivery count drive bounded retries. Clients track RLS filtered run rows through Realtime Postgres Changes, and room wide progress uses Realtime Broadcast.
-- **AI generation uses OpenRouter, not Google Gemini.** Design and spec workers call OpenRouter's OpenAI-compatible HTTP API (`https://openrouter.ai/api/v1`). `OPENROUTER_API_KEY` is the provider secret. Workers prefer `openrouter/free` or explicit free fallback models. They never call Google AI, Anthropic, or OpenAI directly.
+- **AI generation uses OpenRouter, not Google Gemini.** Design and spec workers call OpenRouter's OpenAI-compatible HTTP API (`https://openrouter.ai/api/v1`). `OPENROUTER_API_KEY` is the provider secret. Workers use `nvidia/nemotron-3.5-lightning:free` as the primary AI model with `openrouter/free` as fallback. They never call Google AI, Anthropic, or OpenAI directly.
 
 ## Bug Fixes
 

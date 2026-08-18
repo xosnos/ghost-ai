@@ -2,7 +2,9 @@
 
 # This is NOT the Next.js you know
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
 
@@ -23,7 +25,7 @@ If implementation changes the architecture, scope, or standards documented in th
 
 ## Cursor Cloud specific instructions
 
-Ghost AI is a single Next.js app (`next dev --turbopack`, port 3000) backed by **Supabase** (Auth, Postgres, Realtime, Storage, Queues, Cron, and Edge Functions). OpenRouter is the only external AI provider. Features through spec 29 are implemented. Liveblocks and Trigger.dev are not used.
+Ghost AI is a single Next.js 16 app (`next dev`, port 3000) backed by **Supabase** (Auth, Postgres, Realtime, Storage, Queues, Cron, and Edge Functions). OpenRouter is the only external AI provider (`nvidia/nemotron-3.5-lightning:free` primary, `openrouter/free` fallback). Route protection and session refresh run through `proxy.ts` (Next.js 16 proxy convention). Features through spec 29 are implemented. Liveblocks and Trigger.dev are not used.
 
 The VM image already has the Docker engine and the Supabase CLI installed; the update script only runs `npm install`. Bring the stack up in this order:
 

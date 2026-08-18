@@ -3,6 +3,7 @@ import "@xyflow/react/dist/style.css";
 import "./globals.css";
 import { ThemeProvider } from "@/lib/theme-provider";
 
+
 export const metadata: Metadata = {
   title: "Ghost AI",
   description: "AI-powered diagramming & collaborative architecture canvas",

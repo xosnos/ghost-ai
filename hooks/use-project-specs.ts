@@ -41,14 +41,19 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
   const listRequestIdRef = useRef(0);
   const previewRequestIdRef = useRef(0);
 
-  useEffect(() => {
-    projectIdRef.current = projectId;
-    previewRequestIdRef.current += 1;
-    selectedSpecIdRef.current = null;
+  const [prevProjectId, setPrevProjectId] = useState(projectId);
+  if (prevProjectId !== projectId) {
+    setPrevProjectId(projectId);
     setSelectedSpecId(null);
     setSelectedSpec(null);
     setLoadingDetail(false);
     setDetailError(null);
+  }
+
+  useEffect(() => {
+    projectIdRef.current = projectId;
+    previewRequestIdRef.current += 1;
+    selectedSpecIdRef.current = null;
   }, [projectId]);
 
   const isCurrentProject = useCallback(
@@ -68,8 +73,6 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
     }
 
     const requestId = ++listRequestIdRef.current;
-    setLoading(true);
-    setError(null);
 
     try {
       const res = await fetch(`/api/projects/${projectId}/specs`);
@@ -81,6 +84,7 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
       if (listRequestIdRef.current !== requestId || !isCurrentProject(projectId)) return;
       const data = (await res.json()) as { specs: ProjectSpecSummary[] };
       setSpecs(Array.isArray(data.specs) ? data.specs : []);
+      setError(null);
     } catch (err: unknown) {
       if (listRequestIdRef.current !== requestId || !isCurrentProject(projectId)) return;
       const message = err instanceof Error ? err.message : "Failed to load project specs";
@@ -95,15 +99,35 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
 
   // Initial load or on projectId change
   useEffect(() => {
-    void fetchSpecs();
+    let ignore = false;
+    const run = async () => {
+      await Promise.resolve();
+      if (!ignore) {
+        void fetchSpecs();
+      }
+    };
+    void run();
+    return () => {
+      ignore = true;
+    };
   }, [fetchSpecs]);
 
   // Refetch when AI generation finishes (isAiActive transitions from true to false)
   useEffect(() => {
+    let ignore = false;
     if (prevIsAiActiveRef.current === true && isAiActive === false) {
-      void fetchSpecs();
+      const run = async () => {
+        await Promise.resolve();
+        if (!ignore) {
+          void fetchSpecs();
+        }
+      };
+      void run();
     }
     prevIsAiActiveRef.current = isAiActive;
+    return () => {
+      ignore = true;
+    };
   }, [isAiActive, fetchSpecs]);
 
   // 2. Open and load spec preview detail

@@ -113,8 +113,10 @@ function FlowCanvas({
   const canvasSave = useCanvasSave();
   const nodesRef = useRef(nodes);
   const edgesRef = useRef(edges);
-  nodesRef.current = nodes;
-  edgesRef.current = edges;
+  useEffect(() => {
+    nodesRef.current = nodes;
+    edgesRef.current = edges;
+  }, [nodes, edges]);
 
   const autosave = useCanvasAutosave({
     projectId,

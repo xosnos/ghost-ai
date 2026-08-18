@@ -21,17 +21,26 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    try {
-      const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-      if (saved && (saved === "dark" || saved === "light" || saved === "system")) {
-        setThemeState(saved);
-      } else {
+    let ignore = false;
+    const init = async () => {
+      await Promise.resolve();
+      if (ignore) return;
+      setMounted(true);
+      try {
+        const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
+        if (saved && (saved === "dark" || saved === "light" || saved === "system")) {
+          setThemeState(saved);
+        } else {
+          setThemeState("dark");
+        }
+      } catch {
         setThemeState("dark");
       }
-    } catch {
-      setThemeState("dark");
-    }
+    };
+    void init();
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   useEffect(() => {

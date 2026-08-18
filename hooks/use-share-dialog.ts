@@ -62,16 +62,24 @@ export function useShareDialog(
         ? `/editor/${projectId}`
         : "";
 
+  const [prevOwnerProps, setPrevOwnerProps] = useState({ initialIsOwner, projectId });
+  if (
+    prevOwnerProps.initialIsOwner !== initialIsOwner ||
+    prevOwnerProps.projectId !== projectId
+  ) {
+    setPrevOwnerProps({ initialIsOwner, projectId });
+    setIsOwner(initialIsOwner);
+  }
+
   const loadCollaborators = useCallback(async () => {
     if (!projectId) return;
-    setLoading(true);
-    setError(null);
     try {
       const res = await fetch(`/api/projects/${projectId}/collaborators`);
       if (!res.ok) throw new Error(await parseJsonError(res));
       const data = await res.json();
       setCollaborators(Array.isArray(data.collaborators) ? data.collaborators : []);
       setIsOwner(Boolean(data.isOwner));
+      setError(null);
     } catch (err) {
       setError(unwrapErrorMessage(err, "Failed to load collaborators"));
     } finally {
@@ -80,12 +88,18 @@ export function useShareDialog(
   }, [projectId]);
 
   useEffect(() => {
-    setIsOwner(initialIsOwner);
-  }, [initialIsOwner, projectId]);
-
-  useEffect(() => {
     if (!open || !projectId) return;
-    void loadCollaborators();
+    let ignore = false;
+    const run = async () => {
+      await Promise.resolve();
+      if (!ignore) {
+        void loadCollaborators();
+      }
+    };
+    void run();
+    return () => {
+      ignore = true;
+    };
   }, [open, projectId, loadCollaborators]);
 
   useEffect(() => {

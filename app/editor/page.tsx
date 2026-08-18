@@ -4,6 +4,7 @@ import { listOwnedProjects, listSharedProjects } from "@/lib/projects/queries";
 import { EditorChrome } from "@/components/editor/editor-chrome";
 import { EditorHome } from "@/components/editor/editor-home";
 
+
 export default async function EditorPage() {
   const supabase = await createClient();
   const user = await getCurrentUser(supabase);

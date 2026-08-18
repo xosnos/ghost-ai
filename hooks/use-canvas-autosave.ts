@@ -56,8 +56,11 @@ export function useCanvasAutosave({
   } | null>(null);
   const nodesRef = useRef(nodes);
   const edgesRef = useRef(edges);
-  nodesRef.current = nodes;
-  edgesRef.current = edges;
+
+  useEffect(() => {
+    nodesRef.current = nodes;
+    edgesRef.current = edges;
+  }, [nodes, edges]);
 
   // Initialize the baseline snapshot when isInitialized flips to true
   const initializedOnceRef = useRef(false);
@@ -136,7 +139,9 @@ export function useCanvasAutosave({
     [projectId]
   );
   const performSaveRef = useRef<typeof performSave | null>(null);
-  performSaveRef.current = performSave;
+  useEffect(() => {
+    performSaveRef.current = performSave;
+  }, [performSave]);
 
   const saveNow = useCallback(async (): Promise<boolean> => {
     if (!isInitialized) return false;

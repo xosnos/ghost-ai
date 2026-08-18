@@ -17,7 +17,7 @@ Feature specifications 01 through 29 are implemented. See `context/progress-trac
 
 ## Stack
 
-- Next.js 15.4, React 19, and TypeScript
+- Next.js 16.3, React 19, and TypeScript
 - Tailwind CSS 4 and shadcn style UI primitives
 - React Flow
 - Supabase Auth, Postgres, Realtime, Storage, Queues, Cron, and Edge Functions

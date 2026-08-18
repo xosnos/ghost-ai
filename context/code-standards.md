@@ -19,6 +19,8 @@
 - Default to React Server Components.
 - Add `"use client"` only when the component needs browser interactivity, hooks, or real-time state.
 - Keep route handlers focused on a single responsibility.
+- Use `proxy.ts` (Next.js 16 routing proxy convention) for request interception, session management, and route protection.
+- Adhere to React 19 rules (e.g., avoid ref access/mutation during render, avoid unconditional state updates in effects).
 - AI generation belongs in a durable Supabase Queue consumed by an Edge Function, not in request handlers.
 
 ## Styling
@@ -52,7 +54,7 @@
 - Read queue messages with a visibility timeout longer than the maximum configured processing duration. Archive only after success or terminal failure.
 - Use `EdgeRuntime.waitUntil` for processing after the worker returns its accepted response. Keep Supabase Cron as the recovery invocation path.
 - Give external AI calls an application deadline below the Edge Function wall clock limit so failure state can be persisted before shutdown.
-- Call OpenRouter's OpenAI-compatible HTTP API from the Edge Function worker for all model inference. Prefer `openrouter/free`; any fallback must be an explicit free OpenRouter model. Do not add a Google AI, Anthropic, or OpenAI client.
+- Call OpenRouter's OpenAI-compatible HTTP API from the Edge Function worker for all model inference. Use `nvidia/nemotron-3.5-lightning:free` as the primary AI model; any fallback must be an explicit free OpenRouter model (default fallback: `openrouter/free`). Do not add a Google AI, Anthropic, or OpenAI client.
 - Persist `queued`, `running`, `retrying`, `completed`, and `failed` state in `task_runs`. Do not treat ephemeral Broadcast messages as the source of truth.
 - Make every side effect idempotent per task-run ID. Stop retrying permanent failures and archive messages after the configured attempt limit.
 - Pin Edge Function package versions in `supabase/functions/deno.json` and commit the Deno lockfile.
