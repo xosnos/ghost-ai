@@ -20,6 +20,13 @@ Update this file whenever the current phase, active feature, or implementation s
 
 The entries below record implementation state at the time each change landed. The current status and known gaps above take precedence where later work changed behavior.
 
+- **Hosted `ai-worker` Secret Key Resolution Fix (2026-08-18)**:
+  - Diagnosed hosted `ai-worker` failures on project `itzerwlcphlsfzfjcpbp`: first HTTP 404 (`{"code":"NOT_FOUND"}`) because the function had never been deployed, then HTTP 500 after deployment.
+  - Root cause of the 500: `getSupabaseConfig()` read only `SUPABASE_SECRET_KEY`, which the hosted edge runtime does not inject. Hosted functions receive `SUPABASE_SECRET_KEYS` (JSON dictionary of named keys); the `SUPABASE_` prefix is reserved, so the variable cannot be added through `supabase secrets set`. The `SUPABASE_SECRET_KEYS` parsing had been dropped in commit `eac6a88`.
+  - `getSupabaseConfig()` in `supabase/functions/ai-worker/index.ts` now reads the secret key from `SUPABASE_SECRET_KEYS["default"]`, with no legacy or single-variable fallbacks. Both the local and hosted edge runtimes inject this variable, so no `.env` entry is required (and none is possible, since the `SUPABASE_` prefix is reserved).
+  - Confirmed the remote Data API exposes `pgmq_public` and that the API gateway accepts non-JWT `sb_*` keys on both the `apikey` and `Authorization` headers, so the queue REST calls needed no change.
+  - Verified with `pnpm lint` (`biome check .`, 0 diagnostics) and a standalone case matrix for the key resolution branches. Redeploy of `ai-worker` and confirmation of Vault `ai_worker_url` / `automations` on the hosted project remain outstanding.
+
 - **Brand Modernization & Vector Identity: Ghost AI → Architype (2026-08-18)**:
   - Designed high-precision **Architype** vector logo system (`components/ui/architype-logo.tsx`), featuring an isometric neural 'A' portal with dual-tone gradient ribbons (Electric Cyan & Radiant Indigo/Violet), an isometric crossbar, and a glowing quantum diamond nexus core.
   - Replaced site favicon (`public/favicon.svg`) with the Architype vector mark.

@@ -41,11 +41,15 @@ function getSupabaseConfig(): SupabaseConfig {
     throw new Error("Missing SUPABASE_URL environment variable");
   }
 
-  const supabaseSecretKey =
-    Deno.env.get("SUPABASE_SECRET_KEY");
+  // The runtime injects SUPABASE_SECRET_KEYS as a JSON dictionary of named keys.
+  const rawSecretKeys = Deno.env.get("SUPABASE_SECRET_KEYS");
+  if (!rawSecretKeys) {
+    throw new Error("Missing SUPABASE_SECRET_KEYS environment variable");
+  }
 
+  const supabaseSecretKey = (JSON.parse(rawSecretKeys) as Record<string, string>).default;
   if (!supabaseSecretKey) {
-    throw new Error("Missing SUPABASE_SECRET_KEY environment variable");
+    throw new Error('SUPABASE_SECRET_KEYS does not contain a "default" key');
   }
 
   return { supabaseUrl, supabaseSecretKey };
