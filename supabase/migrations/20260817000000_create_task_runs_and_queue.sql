@@ -32,7 +32,11 @@ CREATE TABLE IF NOT EXISTS public.task_runs (
   updated_at timestamptz NOT NULL DEFAULT now(),
   started_at timestamptz,
   completed_at timestamptz,
-  CONSTRAINT task_runs_terminal_timestamps_check CHECK (completed_at IS NULL OR started_at IS NULL OR completed_at >= started_at),
+  CONSTRAINT task_runs_terminal_timestamps_check CHECK (
+    (status IN ('completed', 'failed') AND completed_at IS NOT NULL AND completed_at >= created_at AND (started_at IS NULL OR completed_at >= started_at))
+    OR
+    (status IN ('queued', 'running', 'retrying') AND completed_at IS NULL)
+  ),
   CONSTRAINT task_runs_start_timestamp_check CHECK (started_at IS NULL OR started_at >= created_at)
 );
 

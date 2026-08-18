@@ -725,20 +725,29 @@ function parseAndNormalizePlan(rawText: string): DesignPlan {
 }
 
 function getOpenRouterApiKey(): string | null {
-  const envVal = Deno.env.get("OPENROUTER_API_KEY");
-  if (envVal && envVal.trim()) return envVal.trim();
+  if (typeof Deno !== "undefined" && Deno?.env?.get) {
+    const envVal = Deno.env.get("OPENROUTER_API_KEY");
+    if (envVal && envVal.trim()) return envVal.trim();
+  }
+
+  if (typeof process !== "undefined" && process?.env?.OPENROUTER_API_KEY) {
+    const envVal = process.env.OPENROUTER_API_KEY;
+    if (envVal && envVal.trim()) return envVal.trim();
+  }
 
   // Fallback: read from main supabase functions .env file in local dev
   try {
-    const content = Deno.readTextFileSync("./supabase/functions/.env");
-    for (const line of content.split("\n")) {
-      const trimmed = line.trim();
-      if (trimmed.startsWith("OPENROUTER_API_KEY=")) {
-        const val = trimmed
-          .slice("OPENROUTER_API_KEY=".length)
-          .replace(/^["']|["']$/g, "")
-          .trim();
-        if (val) return val;
+    if (typeof Deno !== "undefined" && typeof Deno?.readTextFileSync === "function") {
+      const content = Deno.readTextFileSync("./supabase/functions/.env");
+      for (const line of content.split("\n")) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith("OPENROUTER_API_KEY=")) {
+          const val = trimmed
+            .slice("OPENROUTER_API_KEY=".length)
+            .replace(/^["']|["']$/g, "")
+            .trim();
+          if (val) return val;
+        }
       }
     }
   } catch {
@@ -1106,14 +1115,23 @@ export async function processDesignTask(
   let channel: RealtimeChannel | null = null;
 
   try {
-    // 1. Establish project realtime broadcast channel
+    // 1. Establish project realtime broadcast channel with presence enabled
     channel = supabaseAdmin.channel(`project:${projectId}`, {
       config: {
         private: true,
+        presence: { key: AI_AGENT_USER_ID, enabled: true },
         broadcast: { self: false, ack: false },
       },
     });
     await channel.subscribe();
+    await channel.track({
+      userId: AI_AGENT_USER_ID,
+      displayName: "Ghost AI",
+      avatarUrl: null,
+      cursorColor: "#00F5FF",
+      cursor: null,
+      thinking: true,
+    });
 
     // 2. Broadcast start step
     await sendAiStatus(channel, {
@@ -1212,7 +1230,7 @@ export async function processDesignTask(
     // 7. Persist updated canvas snapshot to Supabase Storage
     await saveCanvasSnapshot(supabaseAdmin, projectId, updatedCanvas);
 
-    // 8. Broadcast terminal complete status
+    // 8. Broadcast terminal complete status and assistant chat message
     await sendAiStatus(channel, {
       runId,
       projectId,
@@ -1221,6 +1239,27 @@ export async function processDesignTask(
       message: plan.summary || "System architecture generated successfully.",
       text: plan.summary,
     });
+
+    try {
+      await channel.send({
+        type: "broadcast",
+        event: "ai-chat",
+        payload: {
+          id: `ai-${runId}`,
+          sender: {
+            id: "ghost-ai",
+            name: "Ghost AI",
+            avatarUrl: null,
+          },
+          role: "assistant",
+          content: plan.summary || "System architecture generated successfully.",
+          timestamp: new Date().toISOString(),
+          runId,
+        },
+      });
+    } catch (chatErr) {
+      console.warn("[design-agent] Failed to broadcast completion message to ai-chat:", chatErr);
+    }
 
     return plan;
   } catch (err: unknown) {
@@ -1240,6 +1279,29 @@ export async function processDesignTask(
         step: "failed",
         message: sanitizedMsg,
       });
+
+      if (isPermanent) {
+        try {
+          await channel.send({
+            type: "broadcast",
+            event: "ai-chat",
+            payload: {
+              id: `ai-err-${runId}`,
+              sender: {
+                id: "ghost-ai",
+                name: "Ghost AI",
+                avatarUrl: null,
+              },
+              role: "assistant",
+              content: `Generation failed: ${sanitizedMsg}`,
+              timestamp: new Date().toISOString(),
+              runId,
+            },
+          });
+        } catch (chatErr) {
+          console.warn("[design-agent] Failed to broadcast error message to ai-chat:", chatErr);
+        }
+      }
     }
 
     throw classified;
@@ -1248,6 +1310,11 @@ export async function processDesignTask(
     if (channel) {
       try {
         await sendAiCursor(channel, null);
+      } catch {
+        // Ignore
+      }
+      try {
+        await channel.untrack();
       } catch {
         // Ignore
       }

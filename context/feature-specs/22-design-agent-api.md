@@ -1,3 +1,7 @@
+# 22 Design Agent API
+
+**Status:** Complete
+
 Set up durable design generation delivery with Supabase Queues and a Supabase Edge Function worker.
 This unit handles enqueueing, worker invocation, recovery, and persistent run tracking. No AI logic yet.
 

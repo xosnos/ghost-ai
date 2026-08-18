@@ -1,3 +1,7 @@
+# 18 Starter Templates
+
+**Status:** Complete
+
 Add a small starter template library so users can start a canvas from a pre-built diagram instead of building from scratch.
 
 ## Implementation
@@ -36,9 +40,8 @@ Add a small starter template library so users can start a canvas from a pre-buil
 
 4. Wire starter templates into the editor.
    - add a navbar button to open the starter templates modal
-   - when a template is selected, clear all existing nodes and edges first in the canvas
-   - add the selected template nodes and edges after the canvas is cleared
-   - make sure the starter template replaces the current canvas instead of being added on top of existing work
+   - append the selected template nodes and edges to the current canvas
+   - generate unique IDs and remap edge endpoints so imported content cannot collide with existing work
    - fit the view after the template is loaded
    - keep this inside the existing collaborative canvas state
 
@@ -54,6 +57,6 @@ Add a small starter template library so users can start a canvas from a pre-buil
 
 - Template data is defined using shared canvas types.
 - Import modal renders template cards with previews.
-- Import action replaces the current canvas through the existing node and edge state flow.
+- Import action appends uniquely identified content through the existing node and edge state flow.
 - Editor navbar includes the import entry point.
 - `npm run build` passes.

@@ -4,6 +4,8 @@
 **Scope:** Postgres migrations, RLS, grants, Storage, Realtime, Queues/Cron, Next.js clients, Edge Functions, and the `ai-worker`  
 **References:** `.agents/skills/supabase/SKILL.md`, `.agents/skills/supabase-postgres-best-practices/`, [Securing Edge Functions](https://supabase.com/docs/guides/functions/auth.md), [Exposing a table to the Data API](https://supabase.com/docs/guides/api/securing-your-api.md)
 
+**Document status:** Point in time review. For current implementation status and remaining acceptance gaps, see `context/progress-tracker.md`.
+
 ## Verdict
 
 The local Ghost AI stack is mostly set up correctly. Public app tables have RLS. Policies use `TO authenticated` with ownership or membership predicates, not deprecated `auth.role()`. UPDATE policies include `WITH CHECK`. Browser clients only receive the anon key. Middleware uses `@supabase/ssr` and `getUser()`. `verify_jwt = false` on `ai-worker` matches the documented pattern for named secret (service-to-service) calls.

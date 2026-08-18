@@ -1,3 +1,7 @@
+# 06 Project APIs
+
+**Status:** Complete
+
 The Supabase database schema is ready. Build the backend project API routes only.
 
 ## Routes

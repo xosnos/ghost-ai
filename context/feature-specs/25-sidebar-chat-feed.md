@@ -1,3 +1,7 @@
+# 25 Sidebar Chat Feed
+
+**Status:** Complete
+
 Add real-time room chat to the AI sidebar using a separate Supabase Realtime Broadcast channel for `ai-chat`.
 
 This is only for chat messages. Keep it separate from the `ai-status` broadcast channel, which handles AI progress and presence updates.

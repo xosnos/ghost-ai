@@ -39,6 +39,10 @@
   "exclude": [
     "node_modules",
     "supabase",
-    "scratch"
+    "supabase/**/*",
+    "scratch",
+    "scratch/**/*",
+    "tests",
+    "tests/**/*"
   ]
 }

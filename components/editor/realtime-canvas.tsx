@@ -208,7 +208,7 @@ function FlowCanvas({
     };
   }, [realtimeChat.sendMessage, aiChatContext]);
 
-  const { others, remoteHighlights, updateCursor, updateSelection } =
+  const { others, remoteHighlights, updateCursor, updateSelection, updateThinking } =
     useRealtimePresence(
       channel,
       user,
@@ -216,6 +216,10 @@ function FlowCanvas({
       incomingCursorRef,
       incomingSelectionRef,
     );
+
+  useEffect(() => {
+    updateThinking(aiTaskStatus.isAiActive);
+  }, [aiTaskStatus.isAiActive, updateThinking]);
 
   const canvasPresence = useCanvasPresence();
 

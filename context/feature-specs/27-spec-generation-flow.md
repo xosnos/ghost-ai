@@ -1,3 +1,9 @@
+# 27 Spec Generation Flow
+
+**Status:** Partial
+
+**Open acceptance gap:** Generation and persistence are implemented, but no retained integration suite verifies queue retry and artifact idempotency against the local stack.
+
 Add spec generation to the durable Supabase Queue and shared Edge Function worker, including persistent run status and artifact persistence.
 
 ### Implementation
@@ -38,8 +44,8 @@ It should:
 - validate the trusted queue payload containing `runId`, `projectId`, `roomId`, `userId`, `chatHistory`, `nodes`, and `edges`
 - verify the task run matches the expected project, user, and kind
 - let the queue worker own visibility timeout, lifecycle, attempt count, and message acknowledgement
-- use OpenRouter through the Deno-compatible AI SDK integration
-- send `openrouter/free` as the model ID so OpenRouter routes to an available free model
+- use OpenRouter's OpenAI-compatible HTTP API
+- prefer `openrouter/free`; explicit fallback models must use free OpenRouter variants
 - generate a Markdown technical spec from the canvas and chat context
 - upload the Markdown to Supabase Storage and create the matching `project_specs` row before marking the run completed
 - publish progress to the project-scoped `ai-status` Broadcast channel
@@ -59,7 +65,7 @@ It should:
 ### Notes
 
 - Store `OPENROUTER_API_KEY` as a Supabase Edge Function secret.
-- Call OpenRouter at `https://openrouter.ai/api/v1` with model ID `openrouter/free`. Do not pin a paid model, a Google AI SDK client, or `GOOGLE_AI_API_KEY`.
+- Call OpenRouter at `https://openrouter.ai/api/v1`. Prefer `openrouter/free`; explicit fallbacks must be free OpenRouter models. Do not use a paid model, a Google AI SDK client, or `GOOGLE_AI_API_KEY`.
 - The task run is the source of lifecycle state; Realtime Broadcast is only for ephemeral room-wide progress.
 - Keep work within Supabase Edge Function execution limits rather than modeling an unbounded workflow.
 

@@ -46,7 +46,21 @@ export function useRealtimeChat({
     const validated = parseAiChatMessage(msg);
     if (!validated) return;
     if (seenIdsRef.current.has(validated.id)) return;
+    if (
+      validated.role === "assistant" &&
+      validated.runId &&
+      (seenIdsRef.current.has(`ai-${validated.runId}`) ||
+        seenIdsRef.current.has(`ai-err-${validated.runId}`) ||
+        seenIdsRef.current.has(`err-${validated.runId}`))
+    ) {
+      return;
+    }
     seenIdsRef.current.add(validated.id);
+    if (validated.role === "assistant" && validated.runId) {
+      seenIdsRef.current.add(`ai-${validated.runId}`);
+      seenIdsRef.current.add(`ai-err-${validated.runId}`);
+      seenIdsRef.current.add(`err-${validated.runId}`);
+    }
     setMessages((prev) => [...prev, validated]);
   }, []);
 
@@ -62,7 +76,21 @@ export function useRealtimeChat({
       const parsed = parseAiChatMessage(payload);
       if (!parsed) return;
       if (seenIdsRef.current.has(parsed.id)) return;
+      if (
+        parsed.role === "assistant" &&
+        parsed.runId &&
+        (seenIdsRef.current.has(`ai-${parsed.runId}`) ||
+          seenIdsRef.current.has(`ai-err-${parsed.runId}`) ||
+          seenIdsRef.current.has(`err-${parsed.runId}`))
+      ) {
+        return;
+      }
       seenIdsRef.current.add(parsed.id);
+      if (parsed.role === "assistant" && parsed.runId) {
+        seenIdsRef.current.add(`ai-${parsed.runId}`);
+        seenIdsRef.current.add(`ai-err-${parsed.runId}`);
+        seenIdsRef.current.add(`err-${parsed.runId}`);
+      }
       setMessages((prev) => [...prev, parsed]);
     };
 

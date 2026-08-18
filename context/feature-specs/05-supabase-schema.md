@@ -1,5 +1,7 @@
 # Supabase Schema And Data Layer
 
+**Status:** Complete
+
 ## Goal
 
 Add the project data models as Supabase tables with Row Level Security, using Bolt's integrated Supabase database. No Prisma — the schema is applied via the Supabase migration tool and accessed through the existing Supabase client.

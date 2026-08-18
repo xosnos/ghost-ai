@@ -1,3 +1,7 @@
+# 20 AI Sidebar Shell
+
+**Status:** Complete
+
 Complete the existing AI sidebar placeholder and turn it into a proper floating chat sidebar component. The sidebar already exists, so keep the current floating placement and smooth slide-in behavior from the right side. This unit is focused on building out the sidebar UI inside it.
 
 ## Implementation

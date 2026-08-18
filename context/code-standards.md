@@ -48,11 +48,11 @@
 - Use a durable basic queue for AI work. Do not use an unlogged queue.
 - Create the task run and queue message in one database transaction so neither can exist without the other.
 - Place the worker at `supabase/functions/ai-worker/index.ts` and shared handlers in `supabase/functions/_shared/`.
-- Authenticate worker calls with a named secret key and `@supabase/server`. Do not make the worker public.
+- Authenticate worker calls with the named `automations` secret and fail closed in the handler when the expected secret is missing or mismatched. Do not make the worker public.
 - Read queue messages with a visibility timeout longer than the maximum configured processing duration. Archive only after success or terminal failure.
 - Use `EdgeRuntime.waitUntil` for processing after the worker returns its accepted response. Keep Supabase Cron as the recovery invocation path.
 - Give external AI calls an application deadline below the Edge Function wall clock limit so failure state can be persisted before shutdown.
-- Call OpenRouter from the Edge Function worker for all model inference. Use model ID `openrouter/free`. Do not add a Google AI, Anthropic, or OpenAI client.
+- Call OpenRouter's OpenAI-compatible HTTP API from the Edge Function worker for all model inference. Prefer `openrouter/free`; any fallback must be an explicit free OpenRouter model. Do not add a Google AI, Anthropic, or OpenAI client.
 - Persist `queued`, `running`, `retrying`, `completed`, and `failed` state in `task_runs`. Do not treat ephemeral Broadcast messages as the source of truth.
 - Make every side effect idempotent per task-run ID. Stop retrying permanent failures and archive messages after the configured attempt limit.
 - Pin Edge Function package versions in `supabase/functions/deno.json` and commit the Deno lockfile.

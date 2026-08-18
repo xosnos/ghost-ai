@@ -1,3 +1,7 @@
+# 24 AI Presence State
+
+**Status:** Complete
+
 Add shared AI activity indicators so everyone in the room can see when generation is in progress. This unit is only for UI, presence, and realtime status signals. Do not add the actual AI generation flow yet.
 
 ## Implementation

@@ -1,3 +1,7 @@
+# 15 Node Color Toolbar
+
+**Status:** Complete
+
 Add a small floating color toolbar so selected nodes can change both their background and text color directly on the canvas.
 
 ## Implementation

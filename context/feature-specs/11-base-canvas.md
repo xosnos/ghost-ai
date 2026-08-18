@@ -1,3 +1,7 @@
+# 11 Base Canvas
+
+**Status:** Complete
+
 Replace the canvas placeholder with a Supabase Realtime-backed React Flow canvas.
 
 ## Implementation

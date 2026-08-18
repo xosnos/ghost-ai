@@ -1,3 +1,7 @@
+# 21 Canvas Autosave
+
+**Status:** Complete
+
 Add autosave and loading for the collaborative canvas so project state is persisted before adding AI generation Canvas JSON should be stored in Supabase Storage, and the saved storage path should be stored on the Supabase project record.
 
 ## What to Install

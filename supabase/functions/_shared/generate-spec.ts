@@ -26,20 +26,29 @@ export const SPECS_BUCKET = "specs";
 const OPENROUTER_MODEL_ID = "openrouter/free";
 
 function getOpenRouterApiKey(): string | null {
-  const envVal = Deno.env.get("OPENROUTER_API_KEY");
-  if (envVal && envVal.trim()) return envVal.trim();
+  if (typeof Deno !== "undefined" && Deno?.env?.get) {
+    const envVal = Deno.env.get("OPENROUTER_API_KEY");
+    if (envVal && envVal.trim()) return envVal.trim();
+  }
+
+  if (typeof process !== "undefined" && process?.env?.OPENROUTER_API_KEY) {
+    const envVal = process.env.OPENROUTER_API_KEY;
+    if (envVal && envVal.trim()) return envVal.trim();
+  }
 
   // Fallback: read from main supabase functions .env file in local dev
   try {
-    const content = Deno.readTextFileSync("./supabase/functions/.env");
-    for (const line of content.split("\n")) {
-      const trimmed = line.trim();
-      if (trimmed.startsWith("OPENROUTER_API_KEY=")) {
-        const val = trimmed
-          .slice("OPENROUTER_API_KEY=".length)
-          .replace(/^["']|["']$/g, "")
-          .trim();
-        if (val) return val;
+    if (typeof Deno !== "undefined" && typeof Deno?.readTextFileSync === "function") {
+      const content = Deno.readTextFileSync("./supabase/functions/.env");
+      for (const line of content.split("\n")) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith("OPENROUTER_API_KEY=")) {
+          const val = trimmed
+            .slice("OPENROUTER_API_KEY=".length)
+            .replace(/^["']|["']$/g, "")
+            .trim();
+          if (val) return val;
+        }
       }
     }
   } catch {
