@@ -15,7 +15,7 @@ Implement the full AI design agent so a user prompt results in real-time updates
 
    Then implement:
    - use OpenRouter's OpenAI-compatible HTTP API to interpret the user prompt
-   - prefer `openrouter/free`; explicit fallback models must use free OpenRouter variants
+   - prefer `OPENROUTER_MODEL_ID` (defaulting to `nvidia/nemotron-3.5-lightning:free`) with `openrouter/free` fallback; explicit fallback models must use free OpenRouter variants
    - update the canvas through the existing collaborative event contract
    - support actions like:
      - add node
@@ -38,7 +38,7 @@ Implement the full AI design agent so a user prompt results in real-time updates
 ## Configuration
 
 - Store `OPENROUTER_API_KEY` as a Supabase Edge Function secret; `.env.local` is only for local Next.js development.
-- Call OpenRouter at `https://openrouter.ai/api/v1`. Prefer `openrouter/free`; explicit fallbacks must be free OpenRouter models. Do not use a paid model, a Google AI SDK client, or `GOOGLE_AI_API_KEY`.
+- Call OpenRouter at `https://openrouter.ai/api/v1`. Prefer `OPENROUTER_MODEL_ID` (`nvidia/nemotron-3.5-lightning:free`) with `openrouter/free` fallback; explicit fallbacks must be free OpenRouter models. Do not use a paid model, a Google AI SDK client, or `GOOGLE_AI_API_KEY`.
 - Keep named secret keys and provider secrets out of browser code and API responses.
 
 ## Scope Limits

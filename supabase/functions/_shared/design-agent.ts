@@ -575,6 +575,7 @@ function parseAndNormalizePlan(rawText: string): DesignPlan {
 
   const validatedActions: z.infer<typeof actionSchema>[] = [];
   const stringConvertedNodeTempIds: string[] = [];
+  const seenTempIds = new Set<string>();
 
   let idx = 0;
   for (const raw of rawActions) {
@@ -637,7 +638,12 @@ function parseAndNormalizePlan(rawText: string): DesignPlan {
         color = "purple";
       }
 
-      const tempId = `comp_${idx}`;
+      let tempId = `comp_${idx}`;
+      let counter = 2;
+      while (seenTempIds.has(tempId)) {
+        tempId = `comp_${idx}_${counter++}`;
+      }
+      seenTempIds.add(tempId);
       stringConvertedNodeTempIds.push(tempId);
       const col = (idx - 1) % 4;
       const row = Math.floor((idx - 1) / 4);
@@ -671,12 +677,22 @@ function parseAndNormalizePlan(rawText: string): DesignPlan {
           ? act.position
           : {}) as Record<string, unknown>;
 
-        validatedActions.push({
-          type: "add_node",
-          tempId: String(act.tempId || act.label)
+        const baseTempId =
+          String(act.tempId || act.label)
             .toLowerCase()
             .replace(/[^a-z0-9_]/g, "_")
-            .replace(/^_+|_+$/g, "") || `node_${idx}`,
+            .replace(/^_+|_+$/g, "") || `node_${idx}`;
+
+        let tempId = baseTempId;
+        let counter = 2;
+        while (seenTempIds.has(tempId)) {
+          tempId = `${baseTempId}_${counter++}`;
+        }
+        seenTempIds.add(tempId);
+
+        validatedActions.push({
+          type: "add_node",
+          tempId,
           label: String(act.label),
           shape,
           color,
@@ -845,18 +861,35 @@ Return ONLY the raw JSON object. No markdown preamble, no explanations.`;
 Existing Nodes Count: ${currentCanvas.nodes.length}
 Existing Edges Count: ${currentCanvas.edges.length}
 ${
-  currentCanvas.nodes.length > 0
-    ? `Existing Nodes:\n${JSON.stringify(
-        currentCanvas.nodes.map((n) => ({
-          id: n.id,
-          label: n.data?.label,
-          shape: n.data?.shape,
-          position: n.position,
-        })),
-        null,
-        2
-      )}`
-    : "Canvas is currently empty."
+  currentCanvas.nodes.length === 0 && currentCanvas.edges.length === 0
+    ? "Canvas is currently empty."
+    : `${
+        currentCanvas.nodes.length > 0
+          ? `Existing Nodes:\n${JSON.stringify(
+              currentCanvas.nodes.map((n) => ({
+                id: n.id,
+                label: n.data?.label,
+                shape: n.data?.shape,
+                position: n.position,
+              })),
+              null,
+              2
+            )}\n\n`
+          : ""
+      }${
+        currentCanvas.edges.length > 0
+          ? `Existing Edges:\n${JSON.stringify(
+              currentCanvas.edges.map((edge) => ({
+                id: edge.id,
+                source: edge.source,
+                target: edge.target,
+                label: edge.data?.label,
+              })),
+              null,
+              2
+            )}`
+          : ""
+      }`.trim()
 }
 
 User Prompt: "${prompt}"`;
@@ -895,7 +928,9 @@ User Prompt: "${prompt}"`;
       if (!res.ok) {
         const errText = await res.text();
         console.warn(`[design-agent] Model ${modelId} returned HTTP ${res.status}:`, errText);
-        lastError = new Error(`OpenRouter ${modelId} returned ${res.status}: ${errText}`);
+        const err = new Error(`OpenRouter ${modelId} returned ${res.status}: ${errText}`);
+        Object.assign(err, { status: res.status });
+        lastError = err;
         continue;
       }
 

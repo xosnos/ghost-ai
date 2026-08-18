@@ -24,6 +24,13 @@ The entries below record implementation state at the time each change landed. Th
   - Updated primary OpenRouter model to `nvidia/nemotron-3.5-lightning:free` in both design generation (`supabase/functions/_shared/design-agent.ts`) and specification generation (`supabase/functions/_shared/generate-spec.ts`).
   - Configured `openrouter/free` as the sole fallback model.
 
+- **PR review follow-up refinements (2026-08-18)**:
+  - Invalidate in-flight preview requests and reset preview modal state upon `projectId` change in `hooks/use-project-specs.ts`.
+  - Guarantee unique temporary node IDs during normalization in `supabase/functions/_shared/design-agent.ts` with collision suffixing.
+  - Serialize existing edge topology in design agent `contextMessage` prompt so LLM maintains existing connection graph on revisions.
+  - Attach OpenRouter HTTP response status to error objects across `design-agent.ts` and `generate-spec.ts` for reliable transient vs. permanent error classification.
+  - Align feature spec 23 model preference documentation with `OPENROUTER_MODEL_ID` and fallback ordering.
+
 - **PR review follow-up (2026-08-18)**:
   - Accept design tasks before broadcasting the prompt so failed enqueue paths cannot leave orphaned or duplicate chat messages. After acceptance, keep the originating prompt even if Realtime send fails or the 15s confirm times out.
   - Register `useAiTaskStatus.trackRun` with `AiStatusContext` so spec generation from the sidebar is tracked.

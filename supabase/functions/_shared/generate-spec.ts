@@ -192,7 +192,9 @@ ${
       if (!res.ok) {
         const errText = await res.text();
         console.warn(`[generate-spec] Model ${modelId} returned HTTP ${res.status}:`, errText);
-        lastError = new Error(`OpenRouter ${modelId} returned ${res.status}: ${errText}`);
+        const err = new Error(`OpenRouter ${modelId} returned ${res.status}: ${errText}`);
+        Object.assign(err, { status: res.status });
+        lastError = err;
         continue;
       }
 

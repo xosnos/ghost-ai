@@ -43,6 +43,12 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
 
   useEffect(() => {
     projectIdRef.current = projectId;
+    previewRequestIdRef.current += 1;
+    selectedSpecIdRef.current = null;
+    setSelectedSpecId(null);
+    setSelectedSpec(null);
+    setLoadingDetail(false);
+    setDetailError(null);
   }, [projectId]);
 
   const isCurrentProject = useCallback(
