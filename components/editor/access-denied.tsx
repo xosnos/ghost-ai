@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { Lock } from "lucide-react";
-import { GhostLogo } from "@/components/ui/ghost-logo";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { GhostLogo } from "@/components/ui/ghost-logo";
 
 export function AccessDenied() {
   return (
@@ -19,10 +19,7 @@ export function AccessDenied() {
         <Lock className="h-6 w-6" style={{ color: "var(--text-muted)" }} />
       </div>
       <div className="flex flex-col gap-2">
-        <h1
-          className="text-xl font-semibold"
-          style={{ color: "var(--text-primary)" }}
-        >
+        <h1 className="text-xl font-semibold" style={{ color: "var(--text-primary)" }}>
           Access denied
         </h1>
         <p className="max-w-sm text-sm" style={{ color: "var(--text-muted)" }}>

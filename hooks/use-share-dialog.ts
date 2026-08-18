@@ -43,7 +43,7 @@ export interface UseShareDialogResult {
 
 export function useShareDialog(
   projectId: string | undefined,
-  initialIsOwner = false
+  initialIsOwner = false,
 ): UseShareDialogResult {
   const [open, setOpen] = useState(false);
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
@@ -63,10 +63,7 @@ export function useShareDialog(
         : "";
 
   const [prevOwnerProps, setPrevOwnerProps] = useState({ initialIsOwner, projectId });
-  if (
-    prevOwnerProps.initialIsOwner !== initialIsOwner ||
-    prevOwnerProps.projectId !== projectId
-  ) {
+  if (prevOwnerProps.initialIsOwner !== initialIsOwner || prevOwnerProps.projectId !== projectId) {
     setPrevOwnerProps({ initialIsOwner, projectId });
     setIsOwner(initialIsOwner);
   }
@@ -152,7 +149,7 @@ export function useShareDialog(
     async (email: string) => {
       if (!projectId) return;
       const target = collaborators.find(
-        (person) => person.email.toLowerCase() === email.toLowerCase()
+        (person) => person.email.toLowerCase() === email.toLowerCase(),
       );
       if (target?.role === "owner") return;
       setRemovingEmail(email);
@@ -165,7 +162,7 @@ export function useShareDialog(
         });
         if (!res.ok) throw new Error(await parseJsonError(res));
         setCollaborators((prev) =>
-          prev.filter((c) => c.email.toLowerCase() !== email.toLowerCase())
+          prev.filter((c) => c.email.toLowerCase() !== email.toLowerCase()),
         );
       } catch (err) {
         setError(unwrapErrorMessage(err, "Failed to remove collaborator"));
@@ -173,7 +170,7 @@ export function useShareDialog(
         setRemovingEmail(null);
       }
     },
-    [projectId, collaborators]
+    [projectId, collaborators],
   );
 
   const copyLink = useCallback(async () => {

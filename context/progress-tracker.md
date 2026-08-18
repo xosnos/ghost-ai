@@ -20,6 +20,59 @@ Update this file whenever the current phase, active feature, or implementation s
 
 The entries below record implementation state at the time each change landed. The current status and known gaps above take precedence where later work changed behavior.
 
+- **Manual Biome Linter Cleanup (2026-08-18)**:
+  - Ran `pnpm lint` (`biome check .`) and manually resolved all 9 diagnostics across 6 files:
+    - `components/editor/editor-home.tsx`: Replaced string concatenation with template literal in `projectName` and used optional chaining `url?.trim()`.
+    - `components/ui/markdown-renderer.tsx`: Removed redundant `case "text":` and `case "paragraph":` falling through to `default`.
+    - `components/editor/ai-sidebar.tsx`: Added `messages.length > 0` condition in `useEffect` to properly bind the `messages` hook dependency.
+    - `components/editor/project-sidebar.tsx`: Replaced global `isNaN()` with type-safe `Number.isNaN()`.
+    - `components/editor/spec-preview-modal.tsx`: Removed unused default `React` import.
+    - `hooks/use-ai-task-status.ts`: Simplified `!runId || !runId.trim()` to optional chain `!runId?.trim()`.
+    - `lib/specs/queries.ts`: Simplified `!name || !name.trim()` to optional chain `!name?.trim()`.
+  - Verified `pnpm lint` (106 files checked, 0 errors, 0 warnings) and `pnpm build` (clean Next.js 16 build).
+
+- **Documentation Synchronization for pnpm & Biome (2026-08-18)**:
+  - Updated project documentation across `AGENTS.md`, `README.md`, `context/architecture-context.md`, and `context/code-standards.md` to establish **pnpm** as the required package manager and **Biome** (`@biomejs/biome`) as the unified linter, formatter, and import organizer.
+  - Documented standard repository commands: `pnpm install`, `pnpm dev`, `pnpm lint` (`biome check .`), `pnpm lint:fix` (`biome check --write .`), `pnpm format`, `pnpm format:check`, and `pnpm build`.
+  - Added dedicated `Tooling, Package Management, and Code Quality` standard in `context/code-standards.md` prohibiting ESLint and Prettier re-introduction.
+
+- **Biome Migration & Linter / Formatter Modernization (2026-08-18)**:
+  - Migrated codebase from ESLint to **Biome** (`@biomejs/biome 2.5.8`) for linting, formatting, and import organization.
+  - Removed `eslint`, `eslint-config-next`, and all associated transitive dependencies (~273 packages uninstalled, including `unrs-resolver` and its platform bindings).
+  - Deleted `eslint.config.mjs` and removed obsolete `pnpm-workspace.yaml` (`allowBuilds: { unrs-resolver: true }`).
+  - Added `biome.json` configured with Next.js & Tailwind CSS v4 directives, React JSX rules, 2-space indentation, and project ignore paths.
+  - Updated `package.json` scripts: `"lint"` (`biome check .`), `"lint:fix"` (`biome check --write .`), `"format"` (`biome format --write .`), and `"format:check"` (`biome format .`).
+  - Verified `pnpm run lint` (0 errors) and `pnpm run build` (0 errors in Next.js 16).
+
+- **Environment Secret Simplification (2026-08-18)**:
+  - Simplified secret configuration across Next.js and Edge Functions by deprecating and removing `SUPABASE_SECRET_KEYS` (JSON map).
+  - Standardized directly on `SUPABASE_SECRET_KEY` (Supabase DB admin client access) and `AUTOMATION_SECRET` (worker invocation & cron authentication).
+  - Cleaned `.env.local`, `.env.example`, and simplified `supabase/functions/ai-worker/index.ts` secret authentication.
+
+- **Browser Supabase Client Singleton & Channel Lifecycle Fix (2026-08-18)**:
+  - Eliminated browser warning: `Multiple GoTrueClient instances detected in the same browser context... (lib/supabase/client.ts)`.
+  - Removed `{ isSingleton: false }` from `createRealtimeBrowserClient` in `lib/supabase/client.ts` and unified all browser Realtime / presence / auth usage across `lib/realtime.ts` to share the `@supabase/ssr` singleton client instance.
+  - Resolved "Connecting to canvas…" loading hang: `connectRealtimeChannel` now removes any existing stale channel for the topic before creating a clean channel, and `CanvasWrapper` checks `ch.state === "joined"` as well as handling `ch.subscribe` callbacks.
+  - Verified `npm run lint` (0 errors), `npm run build` (0 errors), `spec22-db-queue.test.ts` (25/25 passed), `spec27-spec-generation.test.ts` (13/13 passed), and verified live canvas rendering across multiple rooms.
+
+- **AI Edge Function Configuration & Secret Key Modernization (2026-08-18)**:
+  - Resolved `ai-worker` Edge Function startup and invocation failure by aligning with official Supabase Edge Function standards (`SUPABASE_URL` and `SUPABASE_SECRET_KEY` / `SUPABASE_SECRET_KEYS`).
+  - Consolidated duplicate Supabase configuration logic into a single `getSupabaseConfig()` helper in `supabase/functions/ai-worker/index.ts`.
+  - Cleaned `supabase/functions/.env` to store proper function secrets (`AUTOMATION_SECRET`, `OPENROUTER_API_KEY`) without disallowed `SUPABASE_` variable prefixes.
+  - Verified end-to-end task execution: task run transitioned from `queued` to `running` to `completed` with OpenRouter generation.
+
+- **Supabase Setup Review, DB Advisor Optimizations & Clean Modern API Keys (2026-08-18)**:
+  - Reviewed and verified complete Supabase setup against official `supabase` and `supabase-postgres-best-practices` skills.
+  - Added migration `20260818120000_optimize_rls_initplan_and_function_search_paths.sql` resolving all warnings from `supabase db advisors --local`:
+    - Wrapped `auth.uid()` and `auth.jwt()` lookups in subselects `(SELECT auth.uid())` and `(SELECT auth.jwt())` on `projects` and `project_collaborators` RLS policies to enforce single evaluation per statement (initPlan).
+    - Set explicit `search_path = public` on `canvas_project_id`, `specs_project_id`, and `project_id_from_realtime_topic` to fix mutable search_path security warnings.
+    - Verified `supabase db advisors --local` reports `No issues found` (0 warnings, 0 errors).
+  - Modernized API key handling across `lib/supabase/client.ts`, `lib/supabase/server.ts`, `lib/supabase/admin.ts`, `proxy.ts`, `supabase/functions/ai-worker/index.ts`, and integration test suites:
+    - Standardized exclusively on modern Supabase Publishable (`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` / `sb_publishable_...`) and Secret (`SUPABASE_SECRET_KEY` / `sb_secret_...`) keys.
+    - Removed legacy JWT key dependencies (`NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) from `.env.example`, `.env`, `.env.local`, and client/server code.
+    - Synchronized Vault secret `automations` with `AUTOMATION_SECRET` (`local-dev-automation-secret`).
+  - Verified full test suite (`npx tsx tests/integration/spec22-db-queue.test.ts` — 25/25 tests passed), `npm run lint` (0 errors), and `npm run build` (0 errors).
+
 - **Next.js 16 Upgrade (2026-08-18)**:
   - Upgraded Next.js from `15.4.11` to `16.3.1` with Turbopack enabled by default.
   - Upgraded `eslint-config-next` to `16.3.1`, React to `19.2.8`, `@types/react` to `19.2.18`, and `@types/react-dom` to `19.2.4`.
@@ -86,7 +139,7 @@ The entries below record implementation state at the time each change landed. Th
   - Consolidated Edge Functions environment to single canonical location: `supabase/functions/.env` (deleted duplicate/stale `.env` files in subdirectories).
   - Aligned Edge Functions with standard Supabase Deno runtime practices (`Deno.env.get()`) for both production secrets (set via `supabase secrets set`) and local development.
   - Removed all hardcoded local demo JWT and secret fallback strings from Edge Function workers and Next.js server fast-path calls.
-  - Stripped local absolute user paths (`/Users/xosnos/...`) from Edge Function `.env` loader helpers in `supabase/functions/_shared/generate-spec.ts` and `supabase/functions/_shared/design-agent.ts`.
+  - Stripped local absolute filesystem paths from Edge Function `.env` loader helpers in `supabase/functions/_shared/generate-spec.ts` and `supabase/functions/_shared/design-agent.ts`.
   - Added `/scratch/`, `scratch/`, `.env*`, and `*.env` patterns to root `.gitignore` to prevent accidental staging or commits of local test artifacts and environment files.
   - Verified 0 secrets, tokens, or API keys are leaked across client bundles, API routes, or git history.
 

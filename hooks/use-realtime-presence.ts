@@ -1,22 +1,11 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type MutableRefObject,
-} from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/client";
-import { buildUserMeta } from "@/lib/realtime";
-import type {
-  CursorMovePayload,
-  PresencePayload,
-  SelectionChangePayload,
-} from "@/types/realtime";
+import { type MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RemoteSelectionMap } from "@/components/editor/remote-selection-context";
+import { buildUserMeta } from "@/lib/realtime";
+import { createClient } from "@/lib/supabase/client";
+import type { CursorMovePayload, PresencePayload, SelectionChangePayload } from "@/types/realtime";
 
 interface PresenceUser {
   id: string;
@@ -50,14 +39,10 @@ export function useRealtimePresence(
   user: PresenceUser,
   presenceEntries: PresencePayload[],
   incomingCursorRef?: MutableRefObject<((payload: CursorMovePayload) => void) | null>,
-  incomingSelectionRef?: MutableRefObject<
-    ((payload: SelectionChangePayload) => void) | null
-  >,
+  incomingSelectionRef?: MutableRefObject<((payload: SelectionChangePayload) => void) | null>,
 ): UseRealtimePresenceReturn {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [cursors, setCursors] = useState<
-    Record<string, { x: number; y: number } | null>
-  >({});
+  const [cursors, setCursors] = useState<Record<string, { x: number; y: number } | null>>({});
   const [selections, setSelections] = useState<Record<string, string[]>>({});
   const metaRef = useRef(buildUserMeta(user));
   const rafRef = useRef<number | null>(null);
@@ -109,12 +94,12 @@ export function useRealtimePresence(
 
   const others = useMemo(() => {
     const selfId = currentUserId ?? user.id;
-    return dedupeByUserId(
-      presenceEntries.filter((entry) => entry.userId !== selfId),
-    ).map((person) => ({
-      ...person,
-      cursor: person.userId in cursors ? cursors[person.userId] : person.cursor,
-    }));
+    return dedupeByUserId(presenceEntries.filter((entry) => entry.userId !== selfId)).map(
+      (person) => ({
+        ...person,
+        cursor: person.userId in cursors ? cursors[person.userId] : person.cursor,
+      }),
+    );
   }, [currentUserId, presenceEntries, user.id, cursors]);
 
   const remoteHighlights = useMemo(() => {

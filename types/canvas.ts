@@ -1,4 +1,4 @@
-import type { Node, Edge } from "@xyflow/react";
+import type { Edge, Node } from "@xyflow/react";
 
 export interface NodeColor {
   fill: string;
@@ -80,7 +80,7 @@ export const DEFAULT_NODE_COLOR = NODE_COLORS[0];
 
 export function resolveNodeColor(
   color: NodeColor | undefined,
-  theme: "dark" | "light" = "dark"
+  theme: "dark" | "light" = "dark",
 ): { fill: string; text: string; border: string } {
   const fallback = NODE_COLORS[0];
   const target = color ?? fallback;
@@ -92,7 +92,7 @@ export function resolveNodeColor(
         c.fill.toLowerCase() === target.fill?.toLowerCase() ||
         c.text.toLowerCase() === target.text?.toLowerCase() ||
         c.lightFill?.toLowerCase() === target.fill?.toLowerCase() ||
-        c.lightText?.toLowerCase() === target.text?.toLowerCase()
+        c.lightText?.toLowerCase() === target.text?.toLowerCase(),
     ) ?? target;
 
   if (theme === "light") {
@@ -175,7 +175,7 @@ export function getNodeDimensions(node: NodeGeometry): { width: number; height: 
 
 export function calculateEdgeHandles(
   sourceNode: NodeGeometry,
-  targetNode: NodeGeometry
+  targetNode: NodeGeometry,
 ): { sourceHandle: HandlePosition; targetHandle: HandlePosition } {
   const sourceDims = getNodeDimensions(sourceNode);
   const targetDims = getNodeDimensions(targetNode);
@@ -216,15 +216,13 @@ export function normalizeCanvasNode(node: CanvasNode): CanvasNode {
   };
 }
 
-export function toNodeMap(
-  nodes: Map<string, CanvasNode> | CanvasNode[]
-): Map<string, CanvasNode> {
+export function toNodeMap(nodes: Map<string, CanvasNode> | CanvasNode[]): Map<string, CanvasNode> {
   return Array.isArray(nodes) ? new Map(nodes.map((node) => [node.id, node])) : nodes;
 }
 
 export function normalizeCanvasEdges(
   edges: CanvasEdge[],
-  nodes: Map<string, CanvasNode> | CanvasNode[]
+  nodes: Map<string, CanvasNode> | CanvasNode[],
 ): CanvasEdge[] {
   const nodeMap = toNodeMap(nodes);
   return edges.map((edge) => normalizeCanvasEdge(edge, nodeMap));
@@ -232,7 +230,7 @@ export function normalizeCanvasEdges(
 
 export function normalizeCanvasEdge(
   edge: CanvasEdge,
-  nodeMap?: Map<string, CanvasNode> | CanvasNode[]
+  nodeMap?: Map<string, CanvasNode> | CanvasNode[],
 ): CanvasEdge {
   if (edge.sourceHandle && edge.targetHandle) {
     return edge;
@@ -257,6 +255,3 @@ export function normalizeCanvasEdge(
     targetHandle: edge.targetHandle || "left",
   };
 }
-
-
-

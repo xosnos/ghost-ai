@@ -1,10 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ProjectQueryError } from "@/lib/projects/queries";
 import {
-  type CanvasNode,
   type CanvasEdge,
-  normalizeCanvasNode,
+  type CanvasNode,
   normalizeCanvasEdges,
+  normalizeCanvasNode,
 } from "@/types/canvas";
 
 export const CANVAS_BUCKET = "canvas";
@@ -42,7 +42,7 @@ export function parseStoragePath(storagePath: string): {
 export async function uploadCanvasSnapshot(
   supabase: SupabaseClient,
   projectId: string,
-  canvasData: CanvasData
+  canvasData: CanvasData,
 ): Promise<string> {
   const filePath = getCanvasStorageKey(projectId);
   const jsonContent = JSON.stringify(canvasData);
@@ -58,7 +58,7 @@ export async function uploadCanvasSnapshot(
     throw new ProjectQueryError(
       "Failed to upload canvas snapshot",
       "upload_canvas_snapshot",
-      uploadError.message
+      uploadError.message,
     );
   }
 
@@ -76,7 +76,7 @@ export async function uploadCanvasSnapshot(
     throw new ProjectQueryError(
       "Failed to update project canvas path",
       "update_project_canvas_path",
-      dbError.message
+      dbError.message,
     );
   }
 
@@ -85,19 +85,17 @@ export async function uploadCanvasSnapshot(
 
 export async function downloadCanvasSnapshot(
   supabase: SupabaseClient,
-  storagePath: string
+  storagePath: string,
 ): Promise<CanvasData> {
   const { bucket, path } = parseStoragePath(storagePath);
 
-  const { data, error } = await supabase.storage
-    .from(bucket)
-    .download(path);
+  const { data, error } = await supabase.storage.from(bucket).download(path);
 
   if (error) {
     throw new ProjectQueryError(
       "Failed to download canvas snapshot",
       "download_canvas_snapshot",
-      error.message
+      error.message,
     );
   }
 
@@ -113,12 +111,11 @@ export async function downloadCanvasSnapshot(
       edges,
     };
   } catch (parseError) {
-    const message =
-      parseError instanceof Error ? parseError.message : "Invalid JSON";
+    const message = parseError instanceof Error ? parseError.message : "Invalid JSON";
     throw new ProjectQueryError(
       "Failed to parse canvas snapshot JSON",
       "parse_canvas_snapshot",
-      message
+      message,
     );
   }
 }

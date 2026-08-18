@@ -57,12 +57,12 @@ export function withProjectOwner(
       email?: string | null;
       user_metadata?: unknown;
     };
-  }
+  },
 ): Collaborator[] {
   const tagged = collaborators.map((person) =>
     person.id === params.ownerId || person.role === "owner"
       ? { ...person, role: "owner" as const }
-      : { ...person, role: "collaborator" as const }
+      : { ...person, role: "collaborator" as const },
   );
 
   if (tagged.some((person) => person.role === "owner")) {
@@ -98,7 +98,7 @@ export function withProjectOwner(
 
 export async function listCollaborators(
   supabase: SupabaseClient,
-  projectId: string
+  projectId: string,
 ): Promise<Collaborator[]> {
   const { data, error } = await supabase.rpc("get_project_collaborators", {
     project_uuid: projectId,
@@ -108,7 +108,7 @@ export async function listCollaborators(
     throw new ProjectQueryError(
       "Failed to list collaborators",
       "list_collaborators",
-      error.message
+      error.message,
     );
   }
 
@@ -126,7 +126,7 @@ export async function listCollaborators(
 
 export async function inviteCollaborator(
   supabase: SupabaseClient,
-  params: { projectId: string; email: string; ownerEmail?: string }
+  params: { projectId: string; email: string; ownerEmail?: string },
 ): Promise<Collaborator> {
   const email = normalizeEmail(params.email);
   if (!isValidEmail(email)) {
@@ -149,17 +149,17 @@ export async function inviteCollaborator(
     throw new ProjectQueryError(
       "Failed to invite collaborator",
       "invite_collaborator",
-      error.message
+      error.message,
     );
   }
 
-  const rows = (data as unknown) as CollaboratorInsertRow[];
+  const rows = data as unknown as CollaboratorInsertRow[];
   const row = Array.isArray(rows) ? rows[0] : undefined;
   if (!row) {
     throw new ProjectQueryError(
       "Failed to invite collaborator",
       "invite_collaborator",
-      "No row returned from add_project_collaborator"
+      "No row returned from add_project_collaborator",
     );
   }
   return {
@@ -179,7 +179,7 @@ export async function removeCollaborator(
     projectId: string;
     email: string;
     ownerEmail?: string;
-  }
+  },
 ): Promise<void> {
   const email = normalizeEmail(params.email);
   if (!isValidEmail(email)) {
@@ -199,7 +199,7 @@ export async function removeCollaborator(
     throw new ProjectQueryError(
       "Failed to remove collaborator",
       "remove_collaborator",
-      error.message
+      error.message,
     );
   }
 

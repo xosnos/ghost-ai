@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
-import { createClient, getCurrentUser } from "@/lib/supabase/server";
-import { getProject, errorResponse, StorageObjectNotFoundError } from "@/lib/projects/queries";
 import { hasProjectAccess } from "@/lib/project-access";
-import {
-  getProjectSpec,
-  downloadSpecMarkdown,
-  formatSpecFileName,
-} from "@/lib/specs/queries";
+import { errorResponse, getProject, StorageObjectNotFoundError } from "@/lib/projects/queries";
+import { downloadSpecMarkdown, formatSpecFileName, getProjectSpec } from "@/lib/specs/queries";
+import { createClient, getCurrentUser } from "@/lib/supabase/server";
 
 interface RouteContext {
   params: Promise<{
@@ -25,10 +21,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
 
     const { projectId, specId } = await ctx.params;
     if (!projectId || !specId) {
-      return NextResponse.json(
-        { error: "Missing projectId or specId" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing projectId or specId" }, { status: 400 });
     }
 
     const identity = { userId: user.id, email: user.email ?? "" };
@@ -52,10 +45,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
       markdownContent = await downloadSpecMarkdown(supabase, spec.filePath);
     } catch (storageErr) {
       if (storageErr instanceof StorageObjectNotFoundError) {
-        return NextResponse.json(
-          { error: "Spec file not found in storage" },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: "Spec file not found in storage" }, { status: 404 });
       }
       throw storageErr;
     }

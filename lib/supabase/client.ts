@@ -1,14 +1,14 @@
 import { createBrowserClient } from "@supabase/ssr";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
 
 export function createClient() {
-  return createBrowserClient(supabaseUrl, supabaseAnonKey);
+  return createBrowserClient(supabaseUrl, publishableKey);
 }
 
 export function createRealtimeBrowserClient() {
-  return createBrowserClient(supabaseUrl, supabaseAnonKey, {
-    isSingleton: false,
-  });
+  return createClient();
 }
+
+

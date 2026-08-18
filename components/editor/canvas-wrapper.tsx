@@ -1,24 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
+import { useEffect, useRef, useState } from "react";
+import { RealtimeCanvas } from "@/components/editor/realtime-canvas";
 import {
-  connectRealtimeChannel,
-  buildUserMeta,
-  attachPresenceListeners,
+  attachAiChatListener,
+  attachAiStatusListener,
   attachCanvasSyncListener,
   attachCursorMoveListener,
+  attachPresenceListeners,
   attachSelectionChangeListener,
-  attachAiStatusListener,
-  attachAiChatListener,
+  buildUserMeta,
+  connectRealtimeChannel,
 } from "@/lib/realtime";
-import { RealtimeCanvas } from "@/components/editor/realtime-canvas";
-import type {
-  CursorMovePayload,
-  PresencePayload,
-  SelectionChangePayload,
-} from "@/types/realtime";
-import type { AiStatusMessage, AiChatMessage } from "@/types/tasks";
+import type { CursorMovePayload, PresencePayload, SelectionChangePayload } from "@/types/realtime";
+import type { AiChatMessage, AiStatusMessage } from "@/types/tasks";
 
 interface CanvasWrapperProps {
   projectId: string;
@@ -36,18 +32,10 @@ export function CanvasWrapper({ projectId, user }: CanvasWrapperProps) {
   const [status, setStatus] = useState<Status>("connecting");
   const [presenceEntries, setPresenceEntries] = useState<PresencePayload[]>([]);
   const incomingBroadcastRef = useRef<((event: unknown) => void) | null>(null);
-  const incomingCursorRef = useRef<((payload: CursorMovePayload) => void) | null>(
-    null,
-  );
-  const incomingSelectionRef = useRef<
-    ((payload: SelectionChangePayload) => void) | null
-  >(null);
-  const incomingAiStatusRef = useRef<((payload: AiStatusMessage) => void) | null>(
-    null,
-  );
-  const incomingAiChatRef = useRef<((payload: AiChatMessage) => void) | null>(
-    null,
-  );
+  const incomingCursorRef = useRef<((payload: CursorMovePayload) => void) | null>(null);
+  const incomingSelectionRef = useRef<((payload: SelectionChangePayload) => void) | null>(null);
+  const incomingAiStatusRef = useRef<((payload: AiStatusMessage) => void) | null>(null);
+  const incomingAiChatRef = useRef<((payload: AiChatMessage) => void) | null>(null);
   const userRef = useRef(user);
   useEffect(() => {
     userRef.current = user;
@@ -85,19 +73,28 @@ export function CanvasWrapper({ projectId, user }: CanvasWrapperProps) {
       });
       setChannel(ch);
 
-      ch.subscribe(async (state) => {
-        if (cancelled) return;
-        if (state === "SUBSCRIBED") {
-          await ch?.track({
-            ...buildUserMeta(userRef.current),
-            cursor: null,
-            thinking: false,
-          });
-          if (!cancelled) setStatus("connected");
-        } else if (state === "CHANNEL_ERROR" || state === "TIMED_OUT") {
-          setStatus("error");
-        }
-      });
+      if (ch.state === "joined") {
+        await ch.track({
+          ...buildUserMeta(userRef.current),
+          cursor: null,
+          thinking: false,
+        });
+        if (!cancelled) setStatus("connected");
+      } else {
+        ch.subscribe(async (state) => {
+          if (cancelled) return;
+          if (state === "SUBSCRIBED") {
+            await ch?.track({
+              ...buildUserMeta(userRef.current),
+              cursor: null,
+              thinking: false,
+            });
+            if (!cancelled) setStatus("connected");
+          } else if (state === "CHANNEL_ERROR" || state === "TIMED_OUT") {
+            setStatus("error");
+          }
+        });
+      }
     }
 
     void start();

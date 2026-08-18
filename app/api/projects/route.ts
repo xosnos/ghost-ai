@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
+import { createProject, errorResponse, listOwnedProjects } from "@/lib/projects/queries";
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
-import {
-  createProject,
-  listOwnedProjects,
-  errorResponse,
-} from "@/lib/projects/queries";
 
 export async function GET() {
   const supabase = await createClient();

@@ -1,11 +1,11 @@
 import {
-  NODE_COLORS,
-  SHAPE_DEFAULT_SIZES,
-  normalizeCanvasEdge,
-  type CanvasNode,
   type CanvasEdge,
-  type NodeShape,
+  type CanvasNode,
+  NODE_COLORS,
   type NodeColor,
+  type NodeShape,
+  normalizeCanvasEdge,
+  SHAPE_DEFAULT_SIZES,
 } from "@/types/canvas";
 
 export interface CanvasTemplate {
@@ -185,5 +185,3 @@ export const CANVAS_TEMPLATES: CanvasTemplate[] = [
     ],
   ),
 ];
-
-

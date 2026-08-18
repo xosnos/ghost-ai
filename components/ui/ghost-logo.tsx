@@ -65,14 +65,28 @@ export function GhostIcon({
     >
       <defs>
         {/* Left Wing / Apex Gradient: Electric Cyan to Azure */}
-        <linearGradient id={cyanGradId} x1="5" y1="3" x2="18" y2="26" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id={cyanGradId}
+          x1="5"
+          y1="3"
+          x2="18"
+          y2="26"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop offset="0%" stopColor="#00F5FF" />
           <stop offset="50%" stopColor="#00C8D4" />
           <stop offset="100%" stopColor="#0284C7" />
         </linearGradient>
 
         {/* Right Wing / Shroud Gradient: Radiant Purple to Indigo */}
-        <linearGradient id={indigoGradId} x1="27" y1="3" x2="14" y2="28" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id={indigoGradId}
+          x1="27"
+          y1="3"
+          x2="14"
+          y2="28"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop offset="0%" stopColor="#C084FC" />
           <stop offset="40%" stopColor="#818CF8" />
           <stop offset="80%" stopColor="#6366F1" />
@@ -80,7 +94,14 @@ export function GhostIcon({
         </linearGradient>
 
         {/* Quantum Diamond Core Gradient */}
-        <linearGradient id={coreGradId} x1="13" y1="9" x2="19" y2="17" gradientUnits="userSpaceOnUse">
+        <linearGradient
+          id={coreGradId}
+          x1="13"
+          y1="9"
+          x2="19"
+          y2="17"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop offset="0%" stopColor="#FFFFFF" />
           <stop offset="45%" stopColor="#67E8F9" />
           <stop offset="100%" stopColor="#06B6D4" />
@@ -129,10 +150,7 @@ export function GhostIcon({
         />
 
         {/* Quantum Diamond Nexus / Neural Eye Core */}
-        <path
-          d="M 16 9.5 L 19.5 14 L 16 18.5 L 12.5 14 Z"
-          fill={`url(#${coreGradId})`}
-        />
+        <path d="M 16 9.5 L 19.5 14 L 16 18.5 L 12.5 14 Z" fill={`url(#${coreGradId})`} />
 
         {/* Central Quantum Flare Sparkle */}
         <circle cx="16" cy="14" r="1.2" fill="#FFFFFF" />
@@ -163,13 +181,7 @@ export function GhostLogo({
 
   // Icon only
   if (variant === "icon") {
-    return (
-      <GhostIcon
-        size={pixelSize}
-        className={cn(iconClassName, className)}
-        glow={glow}
-      />
-    );
+    return <GhostIcon size={pixelSize} className={cn(iconClassName, className)} glow={glow} />;
   }
 
   // Mark within glowing glassmorphic container
@@ -178,7 +190,7 @@ export function GhostLogo({
       <div
         className={cn(
           "group relative flex shrink-0 items-center justify-center rounded-xl bg-gradient-to-b from-[var(--bg-elevated)] to-[var(--bg-surface)] border border-[var(--border-default)] shadow-[0_2px_10px_rgba(0,0,0,0.2)] transition-all duration-200 hover:border-[var(--accent-primary)]/50 hover:shadow-[0_0_20px_rgba(0,200,212,0.2)] hover:scale-105",
-          className
+          className,
         )}
         style={{
           width: pixelSize + 10,

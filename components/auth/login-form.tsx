@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
-import { AuthField } from "@/components/auth/auth-field";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { AuthError } from "@/components/auth/auth-error";
+import { AuthField } from "@/components/auth/auth-field";
+import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -38,10 +38,7 @@ export function LoginForm() {
 
   return (
     <div>
-      <h1
-        className="text-xl font-semibold mb-1"
-        style={{ color: "var(--text-primary)" }}
-      >
+      <h1 className="text-xl font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
         Sign in
       </h1>
       <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>
@@ -87,16 +84,9 @@ export function LoginForm() {
         </Button>
       </form>
 
-      <p
-        className="mt-6 text-center text-sm"
-        style={{ color: "var(--text-muted)" }}
-      >
+      <p className="mt-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>
         Don&apos;t have an account?{" "}
-        <Link
-          href="/signup"
-          className="hover:underline"
-          style={{ color: "var(--accent-primary)" }}
-        >
+        <Link href="/signup" className="hover:underline" style={{ color: "var(--accent-primary)" }}>
           Sign up
         </Link>
       </p>

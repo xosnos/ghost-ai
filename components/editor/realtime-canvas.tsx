@@ -1,49 +1,51 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState, type MutableRefObject } from "react";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import {
-  ReactFlow,
   Background,
   BackgroundVariant,
+  ConnectionLineType,
+  ConnectionMode,
+  type EdgeTypes,
+  MarkerType,
   MiniMap,
+  type NodeTypes,
+  type OnSelectionChangeFunc,
+  ReactFlow,
   ReactFlowProvider,
   useReactFlow,
-  ConnectionMode,
-  ConnectionLineType,
-  MarkerType,
-  type NodeTypes,
-  type EdgeTypes,
-  type OnSelectionChangeFunc,
 } from "@xyflow/react";
-import type { RealtimeChannel } from "@supabase/supabase-js";
+import { type MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAiChat } from "@/components/editor/ai-chat-context";
+import { useAiStatus } from "@/components/editor/ai-status-context";
+import { CanvasControlBar } from "@/components/editor/canvas-control-bar";
+import { CanvasEdgeComponent } from "@/components/editor/canvas-edge";
+import { CanvasNodeComponent } from "@/components/editor/canvas-node";
+import { useCanvasPresence } from "@/components/editor/canvas-presence-context";
+import { useCanvasSave } from "@/components/editor/canvas-save-context";
+import { EdgeLabelContext } from "@/components/editor/edge-label-context";
+import { LiveCursors } from "@/components/editor/live-cursors";
+import { RemoteSelectionProvider } from "@/components/editor/remote-selection-context";
+import { ShapePanel } from "@/components/editor/shape-panel";
+import type { CanvasTemplate } from "@/components/editor/starter-templates";
+import { useTemplateImportRef } from "@/components/editor/template-import-context";
+import { useAiTaskStatus } from "@/hooks/use-ai-task-status";
+import { useCanvasAutosave } from "@/hooks/use-canvas-autosave";
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
+import { useRealtimeChat } from "@/hooks/use-realtime-chat";
 import { useRealtimeFlow } from "@/hooks/use-realtime-flow";
 import { useRealtimePresence } from "@/hooks/use-realtime-presence";
-import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
-import { useCanvasAutosave } from "@/hooks/use-canvas-autosave";
-import { useCanvasSave } from "@/components/editor/canvas-save-context";
-import { useCanvasPresence } from "@/components/editor/canvas-presence-context";
-import { useAiStatus } from "@/components/editor/ai-status-context";
-import { useAiChat } from "@/components/editor/ai-chat-context";
-import { useAiTaskStatus } from "@/hooks/use-ai-task-status";
-import { useRealtimeChat } from "@/hooks/use-realtime-chat";
-import { ShapePanel } from "@/components/editor/shape-panel";
-import { CanvasControlBar } from "@/components/editor/canvas-control-bar";
-import { CanvasNodeComponent } from "@/components/editor/canvas-node";
-import { CanvasEdgeComponent } from "@/components/editor/canvas-edge";
-import { LiveCursors } from "@/components/editor/live-cursors";
-import { EdgeLabelContext } from "@/components/editor/edge-label-context";
-import { RemoteSelectionProvider } from "@/components/editor/remote-selection-context";
-import { useTemplateImportRef } from "@/components/editor/template-import-context";
 import { useTheme } from "@/lib/theme-provider";
 import { cn } from "@/lib/utils";
-import { DEFAULT_NODE_COLOR, SHAPE_DEFAULT_SIZES, type CanvasNode, type CanvasEdge, type NodeShape } from "@/types/canvas";
-import type { CanvasTemplate } from "@/components/editor/starter-templates";
-import type {
-  PresencePayload,
-  CursorMovePayload,
-  SelectionChangePayload,
-} from "@/types/realtime";
-import type { AiStatusMessage, AiChatMessage } from "@/types/tasks";
+import {
+  type CanvasEdge,
+  type CanvasNode,
+  DEFAULT_NODE_COLOR,
+  type NodeShape,
+  SHAPE_DEFAULT_SIZES,
+} from "@/types/canvas";
+import type { CursorMovePayload, PresencePayload, SelectionChangePayload } from "@/types/realtime";
+import type { AiChatMessage, AiStatusMessage } from "@/types/tasks";
 
 interface CanvasUser {
   id: string;
@@ -58,15 +60,9 @@ interface RealtimeCanvasProps {
   presenceEntries: PresencePayload[];
   incomingBroadcastRef: MutableRefObject<((event: unknown) => void) | null>;
   incomingCursorRef: MutableRefObject<((payload: CursorMovePayload) => void) | null>;
-  incomingSelectionRef: MutableRefObject<
-    ((payload: SelectionChangePayload) => void) | null
-  >;
-  incomingAiStatusRef?: MutableRefObject<
-    ((payload: AiStatusMessage) => void) | null
-  >;
-  incomingAiChatRef?: MutableRefObject<
-    ((payload: AiChatMessage) => void) | null
-  >;
+  incomingSelectionRef: MutableRefObject<((payload: SelectionChangePayload) => void) | null>;
+  incomingAiStatusRef?: MutableRefObject<((payload: AiStatusMessage) => void) | null>;
+  incomingAiChatRef?: MutableRefObject<((payload: AiChatMessage) => void) | null>;
 }
 
 let nodeIdCounter = 0;
@@ -103,11 +99,7 @@ function FlowCanvas({
     redo,
     canUndo,
     canRedo,
-  } = useRealtimeFlow(
-    channel,
-    incomingBroadcastRef,
-    receivedBroadcastRef,
-  );
+  } = useRealtimeFlow(channel, incomingBroadcastRef, receivedBroadcastRef);
 
   const [isInitialized, setIsInitialized] = useState(false);
   const canvasSave = useCanvasSave();
@@ -141,22 +133,19 @@ function FlowCanvas({
 
   const addLocalMessageRef = useRef<((msg: AiChatMessage) => void) | null>(null);
 
-  const handleRunFailed = useCallback(
-    (runId: string, errorMessage?: string | null) => {
-      const sanitizedMsg = errorMessage
-        ? errorMessage.slice(0, 500)
-        : "AI design generation encountered an issue. Please try again.";
-      addLocalMessageRef.current?.({
-        id: `err-${runId}`,
-        sender: { id: "ghost-ai", name: "Ghost AI", avatarUrl: null },
-        role: "assistant",
-        content: `Generation failed: ${sanitizedMsg}`,
-        timestamp: new Date().toISOString(),
-        runId,
-      });
-    },
-    []
-  );
+  const handleRunFailed = useCallback((runId: string, errorMessage?: string | null) => {
+    const sanitizedMsg = errorMessage
+      ? errorMessage.slice(0, 500)
+      : "AI design generation encountered an issue. Please try again.";
+    addLocalMessageRef.current?.({
+      id: `err-${runId}`,
+      sender: { id: "ghost-ai", name: "Ghost AI", avatarUrl: null },
+      role: "assistant",
+      content: `Generation failed: ${sanitizedMsg}`,
+      timestamp: new Date().toISOString(),
+      runId,
+    });
+  }, []);
 
   const aiTaskStatus = useAiTaskStatus({
     projectId,
@@ -230,13 +219,7 @@ function FlowCanvas({
   }, [realtimeChat.addLocalMessage, aiChatContext]);
 
   const { others, remoteHighlights, updateCursor, updateSelection, updateThinking } =
-    useRealtimePresence(
-      channel,
-      user,
-      presenceEntries,
-      incomingCursorRef,
-      incomingSelectionRef,
-    );
+    useRealtimePresence(channel, user, presenceEntries, incomingCursorRef, incomingSelectionRef);
 
   useEffect(() => {
     updateThinking(aiTaskStatus.isAiActive);
@@ -364,10 +347,7 @@ function FlowCanvas({
     redo,
   });
 
-  const nodeTypes = useMemo<NodeTypes>(
-    () => ({ canvasNode: CanvasNodeComponent }),
-    [],
-  );
+  const nodeTypes = useMemo<NodeTypes>(() => ({ canvasNode: CanvasNodeComponent }), []);
   const edgeTypes = useMemo<EdgeTypes>(() => ({ canvasEdge: CanvasEdgeComponent }), []);
 
   const defaultEdgeOptions = useMemo(
@@ -472,62 +452,66 @@ function FlowCanvas({
       onDrop={onDrop}
     >
       <EdgeLabelContext.Provider value={updateEdgeLabel}>
-      <RemoteSelectionProvider value={remoteHighlights}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        onSelectionChange={onSelectionChange}
-        onMouseMove={onMouseMove}
-        onMouseLeave={onMouseLeave}
-        onPaneMouseMove={onMouseMove}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        defaultEdgeOptions={defaultEdgeOptions}
-        connectionLineType={ConnectionLineType.SmoothStep}
-        connectionLineStyle={{
-          stroke: "var(--accent-primary)",
-          strokeWidth: 2,
-        }}
-        connectionRadius={25}
-        connectionMode={ConnectionMode.Loose}
-        fitView
-        proOptions={{ hideAttribution: true }}
-        className={cn("[&_.react-flow__node]:overflow-visible", resolvedTheme)}
-        style={{ backgroundColor: "var(--bg-base)" }}
-      >
-        <Background
-          variant={BackgroundVariant.Dots}
-          gap={20}
-          size={1.25}
-          bgColor="var(--bg-base)"
-          color={resolvedTheme === "light" ? "rgba(0, 0, 0, 0.09)" : "rgba(255, 255, 255, 0.09)"}
-        />
-        <MiniMap
-          pannable
-          zoomable
-          maskColor={resolvedTheme === "light" ? "rgba(240, 240, 245, 0.7)" : "rgba(8, 8, 9, 0.7)"}
-          nodeColor={resolvedTheme === "light" ? "#d1d5db" : "#2a2a30"}
-          style={{
-            backgroundColor: "var(--bg-surface)",
-            border: "1px solid var(--border-default)",
-          }}
-        />
-        <ShapePanel />
-        <CanvasControlBar
-          onZoomIn={handleZoomIn}
-          onZoomOut={handleZoomOut}
-          onFitView={handleFitView}
-          onUndo={undo}
-          onRedo={redo}
-          canUndo={canUndo}
-          canRedo={canRedo}
-        />
-        <LiveCursors others={others} />
-      </ReactFlow>
-      </RemoteSelectionProvider>
+        <RemoteSelectionProvider value={remoteHighlights}>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onSelectionChange={onSelectionChange}
+            onMouseMove={onMouseMove}
+            onMouseLeave={onMouseLeave}
+            onPaneMouseMove={onMouseMove}
+            nodeTypes={nodeTypes}
+            edgeTypes={edgeTypes}
+            defaultEdgeOptions={defaultEdgeOptions}
+            connectionLineType={ConnectionLineType.SmoothStep}
+            connectionLineStyle={{
+              stroke: "var(--accent-primary)",
+              strokeWidth: 2,
+            }}
+            connectionRadius={25}
+            connectionMode={ConnectionMode.Loose}
+            fitView
+            proOptions={{ hideAttribution: true }}
+            className={cn("[&_.react-flow__node]:overflow-visible", resolvedTheme)}
+            style={{ backgroundColor: "var(--bg-base)" }}
+          >
+            <Background
+              variant={BackgroundVariant.Dots}
+              gap={20}
+              size={1.25}
+              bgColor="var(--bg-base)"
+              color={
+                resolvedTheme === "light" ? "rgba(0, 0, 0, 0.09)" : "rgba(255, 255, 255, 0.09)"
+              }
+            />
+            <MiniMap
+              pannable
+              zoomable
+              maskColor={
+                resolvedTheme === "light" ? "rgba(240, 240, 245, 0.7)" : "rgba(8, 8, 9, 0.7)"
+              }
+              nodeColor={resolvedTheme === "light" ? "#d1d5db" : "#2a2a30"}
+              style={{
+                backgroundColor: "var(--bg-surface)",
+                border: "1px solid var(--border-default)",
+              }}
+            />
+            <ShapePanel />
+            <CanvasControlBar
+              onZoomIn={handleZoomIn}
+              onZoomOut={handleZoomOut}
+              onFitView={handleFitView}
+              onUndo={undo}
+              onRedo={redo}
+              canUndo={canUndo}
+              canRedo={canRedo}
+            />
+            <LiveCursors others={others} />
+          </ReactFlow>
+        </RemoteSelectionProvider>
       </EdgeLabelContext.Provider>
     </div>
   );
@@ -561,4 +545,4 @@ export function RealtimeCanvas({
   );
 }
 
-export type { CanvasNode, CanvasEdge };
+export type { CanvasEdge, CanvasNode };

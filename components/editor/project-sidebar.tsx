@@ -1,31 +1,31 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import Link from "next/link";
 import {
-  X,
-  Plus,
-  Pencil,
-  Trash2,
-  Search,
-  Users,
-  Calendar,
-  LayoutGrid,
-  Sparkles,
-  Layers,
-  Cpu,
-  Network,
-  Boxes,
-  Database,
   ArrowUpRight,
+  Boxes,
+  Calendar,
+  Cpu,
+  Database,
+  Layers,
+  LayoutGrid,
+  Network,
+  Pencil,
+  Plus,
+  Search,
+  Sparkles,
+  Trash2,
+  Users,
+  X,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 import { useProjectDialogs } from "@/components/editor/project-dialog-context";
-import { GhostIcon } from "@/components/ui/ghost-logo";
-import { cn } from "@/lib/utils";
 import { CANVAS_TEMPLATES, type CanvasTemplate } from "@/components/editor/starter-templates";
+import { Button } from "@/components/ui/button";
+import { GhostIcon } from "@/components/ui/ghost-logo";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Project } from "@/lib/projects/types";
+import { cn } from "@/lib/utils";
 
 interface ProjectSidebarProps {
   isOpen: boolean;
@@ -41,7 +41,10 @@ interface ProjectSidebarProps {
 const THUMBNAIL_STYLES = [
   { bg: "bg-cyan-500/15 border-cyan-500/30 text-cyan-600 dark:text-cyan-400", icon: Network },
   { bg: "bg-purple-500/15 border-purple-500/30 text-purple-600 dark:text-purple-400", icon: Cpu },
-  { bg: "bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400", icon: Layers },
+  {
+    bg: "bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400",
+    icon: Layers,
+  },
   { bg: "bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400", icon: Boxes },
   { bg: "bg-rose-500/15 border-rose-500/30 text-rose-600 dark:text-rose-400", icon: Database },
 ];
@@ -50,7 +53,7 @@ function formatDate(dateStr?: string) {
   if (!dateStr) return "Date unavailable";
   try {
     const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return "Recently";
+    if (Number.isNaN(d.getTime())) return "Recently";
     return d.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
@@ -108,7 +111,7 @@ export function ProjectSidebar({
               "relative z-10 flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors duration-200 whitespace-nowrap",
               activeTab === "owned"
                 ? "text-[var(--text-primary)] font-semibold"
-                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
             )}
           >
             <LayoutGrid className="h-3.5 w-3.5 shrink-0" />
@@ -127,7 +130,7 @@ export function ProjectSidebar({
               "relative z-10 flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors duration-200 whitespace-nowrap",
               activeTab === "shared"
                 ? "text-[var(--text-primary)] font-semibold"
-                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
             )}
           >
             <Users className="h-3.5 w-3.5 shrink-0" />
@@ -236,7 +239,7 @@ export function ProjectSidebar({
                       <div
                         className={cn(
                           "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border",
-                          style.bg
+                          style.bg,
                         )}
                       >
                         <Icon className="h-4 w-4" />
@@ -298,9 +301,7 @@ export function ProjectSidebar({
           transform: isOpen ? "translateX(0)" : "translateX(-100%)",
         }}
       >
-        <div
-          className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-default)]"
-        >
+        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-default)]">
           <div className="flex items-center gap-2">
             <GhostIcon size={16} glow />
             <span className="text-sm font-semibold text-[var(--text-primary)]">
@@ -401,18 +402,15 @@ function ProjectListItem({
       <div
         className={cn(
           "group relative flex items-center gap-2.5 rounded-xl p-2 transition-all hover:bg-[var(--bg-elevated)] border border-transparent hover:border-[var(--border-default)]",
-          isActive && "bg-[var(--accent-primary-dim)] border-[var(--accent-primary)]/30"
+          isActive && "bg-[var(--accent-primary-dim)] border-[var(--accent-primary)]/30",
         )}
       >
-        <Link
-          href={`/editor/${project.id}`}
-          className="flex min-w-0 flex-1 items-center gap-2.5"
-        >
+        <Link href={`/editor/${project.id}`} className="flex min-w-0 flex-1 items-center gap-2.5">
           {/* Mini diagram thumbnail */}
           <div
             className={cn(
               "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border",
-              style.bg
+              style.bg,
             )}
           >
             <Icon className="h-4 w-4" />
@@ -422,7 +420,7 @@ function ProjectListItem({
             <span
               className={cn(
                 "truncate text-xs font-semibold text-[var(--text-primary)] group-hover:text-[var(--accent-primary)] transition-colors",
-                isActive && "text-[var(--accent-primary)]"
+                isActive && "text-[var(--accent-primary)]",
               )}
             >
               {project.name}
@@ -465,4 +463,3 @@ function ProjectListItem({
     </li>
   );
 }
-

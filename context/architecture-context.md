@@ -5,6 +5,8 @@
 | Layer            | Technology                    | Role                                                           |
 | ---------------- | ----------------------------- | -------------------------------------------------------------- |
 | Framework        | Next.js 16.3 + TypeScript     | Full-stack app with server/client boundaries                   |
+| Package Manager  | pnpm                          | Deterministic package dependency management                    |
+| Tooling          | Biome                         | Fast linting, formatting, and import organization              |
 | UI               | Tailwind + shadcn/ui          | Component composition and styling                              |
 | Auth             | Supabase Auth                 | User identity and route protection                             |
 | Database         | Supabase (PostgreSQL)         | Relational metadata: projects, collaborators, specs, task runs |

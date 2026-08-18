@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { createClient, getCurrentUser } from "@/lib/supabase/server";
-import { getProject, errorResponse } from "@/lib/projects/queries";
+import { hasProjectAccess } from "@/lib/project-access";
 import {
   inviteCollaborator,
   listCollaborators,
-  removeCollaborator,
   normalizeEmail,
+  removeCollaborator,
   withProjectOwner,
 } from "@/lib/projects/collaborators";
-import { hasProjectAccess } from "@/lib/project-access";
+import { errorResponse, getProject } from "@/lib/projects/queries";
+import { createClient, getCurrentUser } from "@/lib/supabase/server";
 
 interface RouteContext {
   params: Promise<{ projectId: string }>;
@@ -41,15 +41,12 @@ export async function GET(_req: Request, ctx: RouteContext) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    const collaborators = withProjectOwner(
-      await listCollaborators(supabase, projectId),
-      {
-        ownerId: project.ownerId,
-        projectId,
-        createdAt: project.createdAt,
-        currentUser: user,
-      }
-    );
+    const collaborators = withProjectOwner(await listCollaborators(supabase, projectId), {
+      ownerId: project.ownerId,
+      projectId,
+      createdAt: project.createdAt,
+      currentUser: user,
+    });
     const isOwner = project.ownerId === user.id;
 
     return NextResponse.json({ collaborators, isOwner });

@@ -1,9 +1,9 @@
 "use client";
 
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useMemo, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { slugify, projectSlug } from "@/lib/utils";
 import type { DialogKind } from "@/components/editor/project-dialog-context";
+import { projectSlug, slugify } from "@/lib/utils";
 
 function unwrapErrorMessage(err: unknown, fallback: string): string {
   let current: unknown = err;

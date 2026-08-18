@@ -1,27 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
+import { AlertCircle, Check, Copy, Download, FileText, Loader2, RefreshCw } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
-import {
-  FileText,
-  Download,
-  Copy,
-  Check,
-  Loader2,
-  AlertCircle,
-  RefreshCw,
-} from "lucide-react";
-import type { ProjectSpecDetail } from "@/types/specs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatSpecDate } from "@/lib/utils";
+import type { ProjectSpecDetail } from "@/types/specs";
 
 interface SpecPreviewModalProps {
   open: boolean;
@@ -56,9 +48,7 @@ export function SpecPreviewModal({
   };
 
   const lineCount = spec?.content ? spec.content.split("\n").length : 0;
-  const wordCount = spec?.content
-    ? spec.content.trim().split(/\s+/).filter(Boolean).length
-    : 0;
+  const wordCount = spec?.content ? spec.content.trim().split(/\s+/).filter(Boolean).length : 0;
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
@@ -151,9 +141,7 @@ export function SpecPreviewModal({
                 <span className="text-sm font-semibold text-[var(--text-primary)]">
                   Failed to load specification
                 </span>
-                <span className="text-xs text-[var(--text-muted)] leading-relaxed">
-                  {error}
-                </span>
+                <span className="text-xs text-[var(--text-muted)] leading-relaxed">{error}</span>
               </div>
               {onRetry && (
                 <Button

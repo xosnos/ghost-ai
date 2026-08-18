@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
 import { Link2, Trash2, UserPlus } from "lucide-react";
+import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Collaborator } from "@/lib/projects/collaborators";
@@ -47,7 +47,6 @@ function CollaboratorAvatar({
 
   if (avatarUrl) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={avatarUrl}
         alt=""
@@ -119,10 +118,7 @@ export function ShareProjectDialog({
 
         <div className="flex flex-col gap-5 py-4">
           <div className="flex flex-col gap-1.5">
-            <span
-              className="text-xs font-medium"
-              style={{ color: "var(--text-secondary)" }}
-            >
+            <span className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
               Project link
             </span>
             <div className="flex gap-2">
@@ -184,10 +180,7 @@ export function ShareProjectDialog({
           )}
 
           <div className="flex flex-col gap-2">
-            <span
-              className="text-xs font-medium"
-              style={{ color: "var(--text-secondary)" }}
-            >
+            <span className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
               People with access
             </span>
 

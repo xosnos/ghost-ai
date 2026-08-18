@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState, useMemo, useRef, type MutableRefObject } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/client";
-import { computeIsAiActive, parseAiStatusMessage, type AiStatusMessage } from "@/types/tasks";
+import { type MutableRefObject, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ActiveTaskRun } from "@/components/editor/ai-status-context";
+import { createClient } from "@/lib/supabase/client";
+import { type AiStatusMessage, computeIsAiActive, parseAiStatusMessage } from "@/types/tasks";
 
 interface UseAiTaskStatusProps {
   projectId: string;
@@ -36,7 +36,7 @@ export function useAiTaskStatus({
 
   // Single-fetch run details when a specific runId is registered or tracked
   const trackRun = useCallback(async (runId: string) => {
-    if (!runId || !runId.trim()) return;
+    if (!runId?.trim()) return;
     const cleanRunId = runId.trim();
     setCurrentRunId(cleanRunId);
     currentRunIdRef.current = cleanRunId;
@@ -47,7 +47,7 @@ export function useAiTaskStatus({
       const { data, error } = await supabase
         .from("task_runs")
         .select(
-          "id, project_id, user_id, kind, status, error_message, created_at, started_at, completed_at"
+          "id, project_id, user_id, kind, status, error_message, created_at, started_at, completed_at",
         )
         .eq("id", cleanRunId)
         .maybeSingle();
@@ -106,7 +106,7 @@ export function useAiTaskStatus({
         const { data, error } = await supabase
           .from("task_runs")
           .select(
-            "id, project_id, user_id, kind, status, error_message, created_at, started_at, completed_at"
+            "id, project_id, user_id, kind, status, error_message, created_at, started_at, completed_at",
           )
           .eq("project_id", projectId)
           .in("status", ["queued", "running", "retrying"])
@@ -144,10 +144,7 @@ export function useAiTaskStatus({
               kind: data.kind as "design" | "spec",
               status: data.status,
               step: data.status === "queued" ? "start" : "generating",
-              message:
-                data.status === "queued"
-                  ? "Queued for generation..."
-                  : "AI is working...",
+              message: data.status === "queued" ? "Queued for generation..." : "AI is working...",
               timestamp: data.created_at,
             };
           });
@@ -236,7 +233,7 @@ export function useAiTaskStatus({
             setCurrentRunId(null);
             currentRunIdRef.current = null;
           }
-        }
+        },
       )
       .subscribe();
 
@@ -276,13 +273,9 @@ export function useAiTaskStatus({
     if (incomingAiStatusRef) {
       incomingAiStatusRef.current = handleIncomingStatus;
     } else if (channel) {
-      channel.on(
-        "broadcast",
-        { event: "ai-status" },
-        (msg: { payload?: unknown }) => {
-          handleIncomingStatus(msg?.payload);
-        },
-      );
+      channel.on("broadcast", { event: "ai-status" }, (msg: { payload?: unknown }) => {
+        handleIncomingStatus(msg?.payload);
+      });
     }
 
     return () => {
@@ -299,7 +292,7 @@ export function useAiTaskStatus({
         activeTaskRun,
         latestStatus,
       }),
-    [overrideActive, activeTaskRun, latestStatus]
+    [overrideActive, activeTaskRun, latestStatus],
   );
 
   return {

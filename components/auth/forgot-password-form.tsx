@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
-import { AuthField } from "@/components/auth/auth-field";
+import { useState } from "react";
 import { AuthError } from "@/components/auth/auth-error";
+import { AuthField } from "@/components/auth/auth-field";
+import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -36,16 +36,13 @@ export function ForgotPasswordForm() {
   if (success) {
     return (
       <div>
-        <h1
-          className="text-xl font-semibold mb-1"
-          style={{ color: "var(--text-primary)" }}
-        >
+        <h1 className="text-xl font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
           Check your email
         </h1>
         <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>
           We sent a password reset link to{" "}
-          <strong style={{ color: "var(--text-secondary)" }}>{email}</strong>.
-          Click the link in the email to reset your password.
+          <strong style={{ color: "var(--text-secondary)" }}>{email}</strong>. Click the link in the
+          email to reset your password.
         </p>
         <Link href="/login">
           <Button variant="ghost" className="w-full">
@@ -58,10 +55,7 @@ export function ForgotPasswordForm() {
 
   return (
     <div>
-      <h1
-        className="text-xl font-semibold mb-1"
-        style={{ color: "var(--text-primary)" }}
-      >
+      <h1 className="text-xl font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
         Reset your password
       </h1>
       <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>
@@ -87,16 +81,9 @@ export function ForgotPasswordForm() {
         </Button>
       </form>
 
-      <p
-        className="mt-6 text-center text-sm"
-        style={{ color: "var(--text-muted)" }}
-      >
+      <p className="mt-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>
         Remember your password?{" "}
-        <Link
-          href="/login"
-          className="hover:underline"
-          style={{ color: "var(--accent-primary)" }}
-        >
+        <Link href="/login" className="hover:underline" style={{ color: "var(--accent-primary)" }}>
           Sign in
         </Link>
       </p>

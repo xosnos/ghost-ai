@@ -1,7 +1,7 @@
 "use client";
 
+import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/lib/theme-provider";
-import { Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface ThemeToggleProps {
@@ -19,7 +19,7 @@ export function ThemeToggle({ className, showLabel = false }: ThemeToggleProps) 
       onClick={toggleTheme}
       className={cn(
         "relative flex items-center justify-center rounded-lg p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]",
-        className
+        className,
       )}
       aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       title={isDark ? "Switch to light mode" : "Switch to dark mode"}

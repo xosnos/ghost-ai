@@ -30,6 +30,27 @@ function timingSafeEqual(left: string, right: string): boolean {
   return mismatch === 0;
 }
 
+interface SupabaseConfig {
+  supabaseUrl: string;
+  supabaseSecretKey: string;
+}
+
+function getSupabaseConfig(): SupabaseConfig {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  if (!supabaseUrl) {
+    throw new Error("Missing SUPABASE_URL environment variable");
+  }
+
+  const supabaseSecretKey =
+    Deno.env.get("SUPABASE_SECRET_KEY");
+
+  if (!supabaseSecretKey) {
+    throw new Error("Missing SUPABASE_SECRET_KEY environment variable");
+  }
+
+  return { supabaseUrl, supabaseSecretKey };
+}
+
 interface WithSupabaseOptions {
   auth?: string;
 }
@@ -40,7 +61,7 @@ interface SupabaseContext {
 }
 
 /**
- * Authentication wrapper supporting named secret keys, e.g. auth: "secret:automations"
+ * Authentication wrapper supporting secret key verification with AUTOMATION_SECRET
  */
 export function withSupabase(
   options: WithSupabaseOptions,
@@ -60,29 +81,11 @@ export function withSupabase(
 
     // Verify secret authentication if required
     if (options.auth?.startsWith("secret")) {
-      const secretName = options.auth.includes(":")
-        ? options.auth.split(":")[1]
-        : null;
-
       const apiKeyHeader =
         req.headers.get("apikey") ||
         req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
 
-      // Read configured secret keys
-      const rawSecretKeys = Deno.env.get("SUPABASE_SECRET_KEYS");
-      let secretKeysObj: Record<string, string> = {};
-      if (rawSecretKeys) {
-        try {
-          secretKeysObj = JSON.parse(rawSecretKeys);
-        } catch {
-          // Ignore json parse error
-        }
-      }
-
-      const expectedSecret =
-        (secretName && secretKeysObj[secretName]) ||
-        Deno.env.get("AUTOMATION_SECRET") ||
-        "";
+      const expectedSecret = Deno.env.get("AUTOMATION_SECRET") || "";
 
       if (
         !expectedSecret ||
@@ -99,14 +102,13 @@ export function withSupabase(
       }
     }
 
-    const supabaseUrl =
-      Deno.env.get("SUPABASE_URL") ||
-      Deno.env.get("NEXT_PUBLIC_SUPABASE_URL") ||
-      "http://127.0.0.1:54321";
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    if (!serviceRoleKey) {
+    let config: SupabaseConfig;
+    try {
+      config = getSupabaseConfig();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
       return new Response(
-        JSON.stringify({ error: "Missing SUPABASE_SERVICE_ROLE_KEY environment variable" }),
+        JSON.stringify({ error: msg }),
         {
           status: 500,
           headers: {
@@ -117,7 +119,7 @@ export function withSupabase(
       );
     }
 
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+    const supabaseAdmin = createClient(config.supabaseUrl, config.supabaseSecretKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
@@ -146,24 +148,12 @@ interface QueueMessage {
   };
 }
 
-function getSupabaseConfig() {
-  const supabaseUrl =
-    Deno.env.get("SUPABASE_URL") ||
-    Deno.env.get("NEXT_PUBLIC_SUPABASE_URL") ||
-    "http://127.0.0.1:54321";
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!serviceRoleKey) {
-    throw new Error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable");
-  }
-  return { supabaseUrl, serviceRoleKey };
-}
-
 async function readQueueMessages(
   queueName: string,
   sleepSeconds: number,
   n: number
 ): Promise<QueueMessage[]> {
-  const { supabaseUrl, serviceRoleKey } = getSupabaseConfig();
+  const { supabaseUrl, supabaseSecretKey } = getSupabaseConfig();
   const endpoints = [
     `${supabaseUrl.replace(/\/$/, "")}/rest/v1/rpc/read`,
     `${supabaseUrl.replace(/\/$/, "")}/rpc/read`,
@@ -177,8 +167,8 @@ async function readQueueMessages(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          apikey: serviceRoleKey,
-          Authorization: `Bearer ${serviceRoleKey}`,
+          apikey: supabaseSecretKey,
+          Authorization: `Bearer ${supabaseSecretKey}`,
           "Accept-Profile": "pgmq_public",
           "Content-Profile": "pgmq_public",
         },
@@ -207,7 +197,7 @@ async function readQueueMessages(
 
 async function archiveQueueMessage(msgId: number): Promise<void> {
   try {
-    const { supabaseUrl, serviceRoleKey } = getSupabaseConfig();
+    const { supabaseUrl, supabaseSecretKey } = getSupabaseConfig();
     const endpoints = [
       `${supabaseUrl.replace(/\/$/, "")}/rest/v1/rpc/archive`,
       `${supabaseUrl.replace(/\/$/, "")}/rpc/archive`,
@@ -220,8 +210,8 @@ async function archiveQueueMessage(msgId: number): Promise<void> {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            apikey: serviceRoleKey,
-            Authorization: `Bearer ${serviceRoleKey}`,
+            apikey: supabaseSecretKey,
+            Authorization: `Bearer ${supabaseSecretKey}`,
             "Accept-Profile": "pgmq_public",
             "Content-Profile": "pgmq_public",
           },

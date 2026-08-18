@@ -1,10 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ProjectQueryError, StorageObjectNotFoundError } from "@/lib/projects/queries";
-import {
-  type ProjectSpec,
-  type ProjectSpecRow,
-  type ProjectSpecSummary,
-} from "@/types/specs";
+import type { ProjectSpec, ProjectSpecRow, ProjectSpecSummary } from "@/types/specs";
 
 export const SPECS_BUCKET = "specs";
 
@@ -12,7 +8,7 @@ const SPEC_METADATA_SELECT = "id, task_run_id, project_id, created_at";
 const SPEC_FULL_SELECT = "id, task_run_id, project_id, file_path, created_at";
 
 export function slugifySpecName(name?: string | null): string {
-  if (!name || !name.trim()) return "spec";
+  if (!name?.trim()) return "spec";
   const slug = name
     .toLowerCase()
     .trim()
@@ -27,9 +23,7 @@ export function formatSpecFileName(params: {
   createdAt?: string;
 }): string {
   const baseName = slugifySpecName(params.projectName);
-  const shortRunId = params.taskRunId
-    ? params.taskRunId.replace(/-/g, "").slice(0, 8)
-    : "";
+  const shortRunId = params.taskRunId ? params.taskRunId.replace(/-/g, "").slice(0, 8) : "";
 
   if (baseName !== "spec" && shortRunId) {
     return `${baseName}-spec-${shortRunId}.md`;
@@ -72,7 +66,7 @@ export function toProjectSpec(row: ProjectSpecRow): ProjectSpec {
 
 export function toProjectSpecSummary(
   row: { id: string; task_run_id: string; project_id: string; created_at: string },
-  projectName?: string | null
+  projectName?: string | null,
 ): ProjectSpecSummary {
   return {
     id: row.id,
@@ -94,7 +88,7 @@ export function toProjectSpecSummary(
 export async function listProjectSpecs(
   supabase: SupabaseClient,
   projectId: string,
-  projectName?: string | null
+  projectName?: string | null,
 ): Promise<ProjectSpecSummary[]> {
   const { data, error } = await supabase
     .from("project_specs")
@@ -106,7 +100,7 @@ export async function listProjectSpecs(
     throw new ProjectQueryError(
       "Failed to list project specs",
       "list_project_specs",
-      error.message
+      error.message,
     );
   }
 
@@ -120,7 +114,7 @@ export async function listProjectSpecs(
 export async function getProjectSpec(
   supabase: SupabaseClient,
   projectId: string,
-  specId: string
+  specId: string,
 ): Promise<ProjectSpec | null> {
   const { data, error } = await supabase
     .from("project_specs")
@@ -130,11 +124,7 @@ export async function getProjectSpec(
     .maybeSingle();
 
   if (error) {
-    throw new ProjectQueryError(
-      "Failed to fetch project spec",
-      "get_project_spec",
-      error.message
-    );
+    throw new ProjectQueryError("Failed to fetch project spec", "get_project_spec", error.message);
   }
 
   return data ? toProjectSpec(data as ProjectSpecRow) : null;
@@ -145,13 +135,11 @@ export async function getProjectSpec(
  */
 export async function downloadSpecMarkdown(
   supabase: SupabaseClient,
-  filePath: string
+  filePath: string,
 ): Promise<string> {
   const { bucket, path } = parseSpecStoragePath(filePath);
 
-  const { data, error } = await supabase.storage
-    .from(bucket)
-    .download(path);
+  const { data, error } = await supabase.storage.from(bucket).download(path);
 
   if (error) {
     const statusCode =
@@ -168,23 +156,20 @@ export async function downloadSpecMarkdown(
       /not found|404/i.test(error.message);
 
     if (isNotFound) {
-      throw new StorageObjectNotFoundError(
-        "download_spec_markdown",
-        error.message
-      );
+      throw new StorageObjectNotFoundError("download_spec_markdown", error.message);
     }
 
     throw new ProjectQueryError(
       "Failed to download spec from storage",
       "download_spec_markdown",
-      error.message
+      error.message,
     );
   }
 
   if (!data) {
     throw new StorageObjectNotFoundError(
       "download_spec_markdown",
-      `Storage file empty for path: ${filePath}`
+      `Storage file empty for path: ${filePath}`,
     );
   }
 
@@ -195,7 +180,7 @@ export async function downloadSpecMarkdown(
     throw new ProjectQueryError(
       "Failed to read spec markdown content",
       "download_spec_markdown",
-      msg
+      msg,
     );
   }
 }

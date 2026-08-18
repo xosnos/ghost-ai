@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import type { ProjectSpecSummary, ProjectSpecDetail } from "@/types/specs";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { ProjectSpecDetail, ProjectSpecSummary } from "@/types/specs";
 
 export function triggerSpecDownload(projectId: string, specId: string, fileName?: string) {
   const downloadUrl = `/api/projects/${projectId}/specs/${specId}/download`;
@@ -59,7 +59,7 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
   const isCurrentProject = useCallback(
     (requestProjectId: string | undefined) =>
       Boolean(requestProjectId) && projectIdRef.current === requestProjectId,
-    []
+    [],
   );
 
   // 1. Fetch specs list
@@ -172,7 +172,7 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
         }
       }
     },
-    [isCurrentProject, projectId]
+    [isCurrentProject, projectId],
   );
 
   // 3. Close preview modal
@@ -191,16 +191,12 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
       if (!projectId || !spec.id) return;
       triggerSpecDownload(projectId, spec.id, spec.fileName);
     },
-    [projectId]
+    [projectId],
   );
 
   // 5. Generate spec trigger
   const generateSpec = useCallback(
-    async (contextData?: {
-      chatHistory?: unknown[];
-      nodes?: unknown[];
-      edges?: unknown[];
-    }) => {
+    async (contextData?: { chatHistory?: unknown[]; nodes?: unknown[]; edges?: unknown[] }) => {
       if (!projectId) return null;
 
       setGenerating(true);
@@ -238,7 +234,7 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
         setGenerating(false);
       }
     },
-    [projectId]
+    [projectId],
   );
 
   const clearGenerationError = useCallback(() => {

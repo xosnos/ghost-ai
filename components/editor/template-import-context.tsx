@@ -16,11 +16,7 @@ export function TemplateImportProvider({
   value: TemplateImportRef;
   children: React.ReactNode;
 }) {
-  return (
-    <TemplateImportContext.Provider value={value}>
-      {children}
-    </TemplateImportContext.Provider>
-  );
+  return <TemplateImportContext.Provider value={value}>{children}</TemplateImportContext.Provider>;
 }
 
 export function useTemplateImportRef(): TemplateImportRef | null {
@@ -37,18 +33,14 @@ export function TemplateSelectionProvider({
   children: React.ReactNode;
 }) {
   return (
-    <TemplateSelectionContext.Provider value={onOpen}>
-      {children}
-    </TemplateSelectionContext.Provider>
+    <TemplateSelectionContext.Provider value={onOpen}>{children}</TemplateSelectionContext.Provider>
   );
 }
 
 export function useTemplateSelection(): () => void {
   const onOpen = useContext(TemplateSelectionContext);
   if (!onOpen) {
-    throw new Error(
-      "useTemplateSelection must be used within a TemplateSelectionProvider",
-    );
+    throw new Error("useTemplateSelection must be used within a TemplateSelectionProvider");
   }
   return onOpen;
 }

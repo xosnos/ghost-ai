@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient, getCurrentUser } from "@/lib/supabase/server";
-import { hasProjectAccess } from "@/lib/project-access";
+import { type NextRequest, NextResponse } from "next/server";
 import {
+  ActiveTaskRunConflictError,
   enqueueTaskRun,
   invokeAiWorkerFastPath,
-  ActiveTaskRunConflictError,
 } from "@/lib/ai/task-runs";
+import { hasProjectAccess } from "@/lib/project-access";
+import { createClient, getCurrentUser } from "@/lib/supabase/server";
 
 const MAX_SPEC_NODES = 250;
 const MAX_SPEC_EDGES = 500;
@@ -16,17 +16,11 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON request body" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid JSON request body" }, { status: 400 });
   }
 
   if (!body || typeof body !== "object") {
-    return NextResponse.json(
-      { error: "Request body must be a JSON object" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Request body must be a JSON object" }, { status: 400 });
   }
 
   const { roomId, chatHistory, nodes, edges } = body as {
@@ -37,31 +31,22 @@ export async function POST(req: NextRequest) {
   };
 
   if (typeof roomId !== "string" || !roomId.trim()) {
-    return NextResponse.json(
-      { error: "A valid roomId is required" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "A valid roomId is required" }, { status: 400 });
   }
 
   if (chatHistory !== undefined && !Array.isArray(chatHistory)) {
     return NextResponse.json(
       { error: "chatHistory must be an array if provided" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (nodes !== undefined && !Array.isArray(nodes)) {
-    return NextResponse.json(
-      { error: "nodes must be an array if provided" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "nodes must be an array if provided" }, { status: 400 });
   }
 
   if (edges !== undefined && !Array.isArray(edges)) {
-    return NextResponse.json(
-      { error: "edges must be an array if provided" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "edges must be an array if provided" }, { status: 400 });
   }
 
   const normalizedChatHistory = Array.isArray(chatHistory)
@@ -73,14 +58,14 @@ export async function POST(req: NextRequest) {
   if (normalizedNodes.length > MAX_SPEC_NODES) {
     return NextResponse.json(
       { error: `nodes must contain ${MAX_SPEC_NODES} items or fewer` },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   if (normalizedEdges.length > MAX_SPEC_EDGES) {
     return NextResponse.json(
       { error: `edges must contain ${MAX_SPEC_EDGES} items or fewer` },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -91,10 +76,7 @@ export async function POST(req: NextRequest) {
   const user = await getCurrentUser(supabase);
 
   if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // 2. Resolve project access from roomId (projectId); do not trust client-supplied project IDs
@@ -104,10 +86,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (!hasAccess) {
-    return NextResponse.json(
-      { error: "Project not found or access denied" },
-      { status: 403 }
-    );
+    return NextResponse.json({ error: "Project not found or access denied" }, { status: 403 });
   }
 
   // 3. Transactionally enqueue spec task run and send payload to ai-generation queue
@@ -128,14 +107,11 @@ export async function POST(req: NextRequest) {
     if (err instanceof ActiveTaskRunConflictError) {
       return NextResponse.json(
         { error: "An AI generation task is already active for this project" },
-        { status: 409 }
+        { status: 409 },
       );
     }
     console.error("[POST /api/ai/spec] Enqueue error:", err);
-    return NextResponse.json(
-      { error: "Failed to enqueue spec generation task" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to enqueue spec generation task" }, { status: 500 });
   }
 
   // 4. Best-effort fast-path Edge Function invocation after transaction commits
@@ -144,8 +120,5 @@ export async function POST(req: NextRequest) {
   });
 
   // 5. Return run ID with HTTP 202 Accepted
-  return NextResponse.json(
-    { runId },
-    { status: 202 }
-  );
+  return NextResponse.json({ runId }, { status: 202 });
 }

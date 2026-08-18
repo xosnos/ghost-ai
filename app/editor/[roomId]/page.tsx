@@ -1,11 +1,10 @@
 import { redirect } from "next/navigation";
-import { createClient, getCurrentUser } from "@/lib/supabase/server";
-import { listOwnedProjects, listSharedProjects, getProject } from "@/lib/projects/queries";
-import { hasProjectAccess } from "@/lib/project-access";
-import { EditorChrome } from "@/components/editor/editor-chrome";
 import { AccessDenied } from "@/components/editor/access-denied";
 import { CanvasWrapper } from "@/components/editor/canvas-wrapper";
-
+import { EditorChrome } from "@/components/editor/editor-chrome";
+import { hasProjectAccess } from "@/lib/project-access";
+import { getProject, listOwnedProjects, listSharedProjects } from "@/lib/projects/queries";
+import { createClient, getCurrentUser } from "@/lib/supabase/server";
 
 interface EditorWorkspacePageProps {
   params: Promise<{ roomId: string }>;

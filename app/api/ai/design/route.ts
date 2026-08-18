@@ -1,11 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient, getCurrentUser } from "@/lib/supabase/server";
-import { hasProjectAccess } from "@/lib/project-access";
+import { type NextRequest, NextResponse } from "next/server";
 import {
+  ActiveTaskRunConflictError,
   enqueueTaskRun,
   invokeAiWorkerFastPath,
-  ActiveTaskRunConflictError,
 } from "@/lib/ai/task-runs";
+import { hasProjectAccess } from "@/lib/project-access";
+import { createClient, getCurrentUser } from "@/lib/supabase/server";
 
 const MAX_DESIGN_PROMPT_LENGTH = 8_000;
 
@@ -14,33 +14,21 @@ export async function POST(req: NextRequest) {
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON request body" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid JSON request body" }, { status: 400 });
   }
 
   if (!body || typeof body !== "object") {
-    return NextResponse.json(
-      { error: "Request body must be a JSON object" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Request body must be a JSON object" }, { status: 400 });
   }
 
   const { prompt, roomId } = body as { prompt?: unknown; roomId?: unknown };
 
   if (typeof prompt !== "string" || !prompt.trim()) {
-    return NextResponse.json(
-      { error: "A non-empty prompt is required" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "A non-empty prompt is required" }, { status: 400 });
   }
 
   if (typeof roomId !== "string" || !roomId.trim()) {
-    return NextResponse.json(
-      { error: "A valid roomId is required" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "A valid roomId is required" }, { status: 400 });
   }
 
   const trimmedPrompt = prompt.trim();
@@ -49,7 +37,7 @@ export async function POST(req: NextRequest) {
   if (trimmedPrompt.length > MAX_DESIGN_PROMPT_LENGTH) {
     return NextResponse.json(
       { error: `Prompt must be ${MAX_DESIGN_PROMPT_LENGTH} characters or fewer` },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -58,10 +46,7 @@ export async function POST(req: NextRequest) {
   const user = await getCurrentUser(supabase);
 
   if (!user) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // 2. Resolve project access from roomId (projectId)
@@ -71,10 +56,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (!hasAccess) {
-    return NextResponse.json(
-      { error: "Project not found or access denied" },
-      { status: 403 }
-    );
+    return NextResponse.json({ error: "Project not found or access denied" }, { status: 403 });
   }
 
   // 3. Transactionally enqueue task run
@@ -93,13 +75,13 @@ export async function POST(req: NextRequest) {
     if (err instanceof ActiveTaskRunConflictError) {
       return NextResponse.json(
         { error: "An AI generation task is already active for this project" },
-        { status: 409 }
+        { status: 409 },
       );
     }
     console.error("[POST /api/ai/design] Enqueue error:", err);
     return NextResponse.json(
       { error: "Failed to enqueue design generation task" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 
@@ -110,8 +92,5 @@ export async function POST(req: NextRequest) {
   });
 
   // 5. Return run ID with HTTP 202 Accepted
-  return NextResponse.json(
-    { runId },
-    { status: 202 }
-  );
+  return NextResponse.json({ runId }, { status: 202 });
 }

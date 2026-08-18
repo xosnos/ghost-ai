@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
-import { AuthField } from "@/components/auth/auth-field";
+import { useState } from "react";
 import { AuthError } from "@/components/auth/auth-error";
+import { AuthField } from "@/components/auth/auth-field";
+import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
 
 export function ResetPasswordForm() {
   const [password, setPassword] = useState("");
@@ -40,10 +40,7 @@ export function ResetPasswordForm() {
 
   return (
     <div>
-      <h1
-        className="text-xl font-semibold mb-1"
-        style={{ color: "var(--text-primary)" }}
-      >
+      <h1 className="text-xl font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
         Set a new password
       </h1>
       <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>

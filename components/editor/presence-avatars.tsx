@@ -33,7 +33,6 @@ export function CollaboratorAvatar({ person }: { person: PresencePayload }) {
       aria-label={person.displayName}
     >
       {showImage ? (
-        // eslint-disable-next-line @next/next/no-img-element -- Auth avatar URLs are arbitrary remote hosts
         <img
           src={person.avatarUrl ?? undefined}
           alt=""
@@ -56,16 +55,9 @@ export function PresenceAvatars({ others }: PresenceAvatarsProps) {
   }
 
   return (
-    <ul
-      className="flex items-center -space-x-1.5"
-      aria-label="Collaborators in this room"
-    >
+    <ul className="flex items-center -space-x-1.5" aria-label="Collaborators in this room">
       {visible.map((person, index) => (
-        <li
-          key={person.userId}
-          className="relative"
-          style={{ zIndex: visible.length - index }}
-        >
+        <li key={person.userId} className="relative" style={{ zIndex: visible.length - index }}>
           <CollaboratorAvatar person={person} />
         </li>
       ))}

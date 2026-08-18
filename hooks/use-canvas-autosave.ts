@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { CanvasNode, CanvasEdge } from "@/types/canvas";
+import type { CanvasEdge, CanvasNode } from "@/types/canvas";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -127,16 +127,12 @@ export function useCanvasAutosave({
         pendingSaveRef.current = null;
         if (pending) {
           queueMicrotask(() => {
-            void performSaveRef.current?.(
-              pending.json,
-              pending.nodes,
-              pending.edges,
-            );
+            void performSaveRef.current?.(pending.json, pending.nodes, pending.edges);
           });
         }
       }
     },
-    [projectId]
+    [projectId],
   );
   const performSaveRef = useRef<typeof performSave | null>(null);
   useEffect(() => {

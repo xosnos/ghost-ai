@@ -7,6 +7,18 @@
 - Do not mix unrelated concerns in one component or route.
 - Respect the system boundaries defined in `architecture-context.md`.
 
+## Tooling, Package Management, and Code Quality
+
+- Use **pnpm** exclusively as the package manager (`pnpm install`, `pnpm dev`, `pnpm build`). Do not use npm or yarn.
+- Use **Biome** (`@biomejs/biome`) as the unified linter and code formatter. Do not introduce ESLint, Prettier, or legacy configuration files (`.eslintrc*`, `.prettierrc*`, `eslint.config.*`).
+- Configuration is maintained in `biome.json` (2-space indentation, 100 character line width, Tailwind CSS v4 directives enabled, and import organization on save).
+- Available scripts:
+  - `pnpm lint` (`biome check .`): checks lint rules, imports, and formatting.
+  - `pnpm lint:fix` (`biome check --write .`): checks and automatically applies safe fixes.
+  - `pnpm format` (`biome format --write .`): formats all files in place.
+  - `pnpm format:check` (`biome format .`): verifies file formatting without modifying files.
+- Standard repository verification checks prior to commit/PR are `pnpm lint` and `pnpm build`.
+
 ## TypeScript
 
 - Strict mode is required throughout the project.

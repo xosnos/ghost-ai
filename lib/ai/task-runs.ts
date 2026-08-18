@@ -98,14 +98,14 @@ export async function invokeAiWorkerFastPath(): Promise<void> {
 
     if (!response.ok && response.status !== 202) {
       console.warn(
-        `[ai-worker fast-path] Worker returned status ${response.status}; Cron recovery will handle queue.`
+        `[ai-worker fast-path] Worker returned status ${response.status}; Cron recovery will handle queue.`,
       );
     }
   } catch (err: unknown) {
     // Fast path is best-effort: log warning and let Cron recovery handle queue
     const message = err instanceof Error ? err.message : String(err);
     console.warn(
-      `[ai-worker fast-path] Fast-path invocation skipped or timed out (${message}); Cron recovery will handle queue.`
+      `[ai-worker fast-path] Fast-path invocation skipped or timed out (${message}); Cron recovery will handle queue.`,
     );
   }
 }

@@ -1,12 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type MutableRefObject } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import {
-  parseAiChatMessage,
-  type AiChatMessage,
-  type AiChatMessageSender,
-} from "@/types/tasks";
+import { type MutableRefObject, useCallback, useEffect, useRef, useState } from "react";
+import { type AiChatMessage, type AiChatMessageSender, parseAiChatMessage } from "@/types/tasks";
 
 interface ChatUser {
   id: string;
@@ -77,7 +73,7 @@ export function useRealtimeChat({
     (msg: AiChatMessage) => {
       upsertMessage(msg);
     },
-    [upsertMessage]
+    [upsertMessage],
   );
 
   const addMessage = addLocalMessage;
@@ -95,13 +91,9 @@ export function useRealtimeChat({
     if (incomingAiChatRef) {
       incomingAiChatRef.current = handleIncomingMessage;
     } else if (channel) {
-      channel.on(
-        "broadcast",
-        { event: "ai-chat" },
-        (msg: { payload?: unknown }) => {
-          handleIncomingMessage(msg?.payload);
-        },
-      );
+      channel.on("broadcast", { event: "ai-chat" }, (msg: { payload?: unknown }) => {
+        handleIncomingMessage(msg?.payload);
+      });
     }
 
     return () => {
@@ -184,10 +176,7 @@ export function useRealtimeChat({
           const data = (await apiRes.json().catch(() => ({}))) as {
             error?: string;
           };
-          setSendError(
-            data.error ||
-              "An AI generation task is already active for this project."
-          );
+          setSendError(data.error || "An AI generation task is already active for this project.");
           return false;
         }
 
@@ -195,9 +184,7 @@ export function useRealtimeChat({
           const errData = (await apiRes.json().catch(() => ({}))) as {
             error?: string;
           };
-          setSendError(
-            errData.error || "Failed to start AI generation. Please try again."
-          );
+          setSendError(errData.error || "Failed to start AI generation. Please try again.");
           return false;
         }
 
@@ -209,9 +196,7 @@ export function useRealtimeChat({
           payload: validated,
         });
         if (res !== "ok") {
-          console.warn(
-            "[useRealtimeChat] Design task accepted but chat broadcast failed."
-          );
+          console.warn("[useRealtimeChat] Design task accepted but chat broadcast failed.");
         }
 
         // Always keep the originating prompt after the run is accepted, even
@@ -224,17 +209,14 @@ export function useRealtimeChat({
         }
         return true;
       } catch (err) {
-        const isTimeout =
-          err instanceof DOMException && err.name === "TimeoutError";
+        const isTimeout = err instanceof DOMException && err.name === "TimeoutError";
         console.error("[useRealtimeChat] Failed to send design message:", err);
 
         // A timed-out fetch can still have committed the run. Publish the
         // prompt locally so a later 409 retry cannot hide the user message.
         if (isTimeout) {
           upsertMessage(validated);
-          setSendError(
-            "The AI service took too long to confirm. Generation may still be running."
-          );
+          setSendError("The AI service took too long to confirm. Generation may still be running.");
           return true;
         }
 
