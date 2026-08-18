@@ -44,6 +44,31 @@ export type AiTaskStatus =
   | "completed"
   | "failed";
 
+const ACTIVE_TASK_STATUSES: readonly AiTaskStatus[] = [
+  "queued",
+  "running",
+  "retrying",
+];
+
+export function computeIsAiActive(params: {
+  overrideActive: boolean | null;
+  activeTaskRun: { status: AiTaskStatus } | null;
+  latestStatus: { status: AiTaskStatus; step: string } | null;
+}): boolean {
+  if (params.overrideActive !== null) {
+    return params.overrideActive;
+  }
+  if (params.activeTaskRun !== null) {
+    return true;
+  }
+  return Boolean(
+    params.latestStatus &&
+      ACTIVE_TASK_STATUSES.includes(params.latestStatus.status) &&
+      params.latestStatus.step !== "complete" &&
+      params.latestStatus.step !== "failed"
+  );
+}
+
 export type AiStatusStep =
   | "start"
   | "analyzing"

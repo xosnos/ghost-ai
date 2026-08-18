@@ -20,12 +20,20 @@ Update this file whenever the current phase, active feature, or implementation s
 
 The entries below record implementation state at the time each change landed. The current status and known gaps above take precedence where later work changed behavior.
 
+- **AI Model Routing Update (2026-08-18)**:
+  - Updated primary OpenRouter model to `nvidia/nemotron-3.5-lightning:free` in both design generation (`supabase/functions/_shared/design-agent.ts`) and specification generation (`supabase/functions/_shared/generate-spec.ts`).
+  - Configured `openrouter/free` as the sole fallback model.
+
 - **PR review follow-up (2026-08-18)**:
-  - Accept design tasks before broadcasting the prompt so failed enqueue paths cannot leave orphaned or duplicate chat messages.
+  - Accept design tasks before broadcasting the prompt so failed enqueue paths cannot leave orphaned or duplicate chat messages. After acceptance, keep the originating prompt even if Realtime send fails or the 15s confirm times out.
   - Register `useAiTaskStatus.trackRun` with `AiStatusContext` so spec generation from the sidebar is tracked.
   - Stop markdown preview hangs on lines that look like headings or tables, and restrict rendered link schemes.
   - Bound AI request payload sizes, surface typed storage not-found errors, and fail closed on `ai-worker` named-secret auth.
   - Stop hosted migrations from inventing Vault automation secrets or local Docker worker URLs.
+  - Ignore stale spec-list and spec-preview responses, including catch/finally paths, and keep `projectIdRef` in sync after commit.
+  - Deduplicate node and edge IDs within a single `canvas:append` or template-import batch.
+  - Share `computeIsAiActive` between the task-status hook and the functional test, and prefer `openrouter/free` first in the design-agent model list.
+  - The `scratch/` and `*.env` gitignore rules only prevent new files from being added. The existing tracked scratch verification scripts remain in the repository.
 
 - **Spec 27 Acceptance Gap Resolution — Retained Integration Test Suite (2026-08-17)**:
   - Created comprehensive retained integration test suite in `tests/integration/spec27-spec-generation.test.ts` runnable with `npx tsx tests/integration/spec27-spec-generation.test.ts`.

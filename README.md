@@ -13,7 +13,7 @@ Ghost AI is a collaborative system design workspace. Teams build architecture di
 - Persisted Markdown specs with preview and secure download
 - Light and dark themes
 
-Feature specifications 01 through 29 are implemented. See `context/progress-tracker.md` for acceptance gaps that still need follow up.
+Feature specifications 01 through 29 are implemented. See `context/progress-tracker.md` for acceptance gaps that still need follow-up.
 
 ## Stack
 

@@ -72,9 +72,9 @@ The Supabase client is already set up in `lib/supabase/client.ts` (browser) and 
 
 ## Migration
 
-Apply the schema using the Supabase `apply_migration` MCP tool. Do not write SQL files to disk — the migration is applied directly through the tool. Each migration must start with a detailed markdown summary in multi-line comments explaining all new tables, columns, indexes, and security changes.
+Checked-in files in `supabase/migrations/` are the source of truth. Apply them with `supabase start` or `supabase db reset`. Local resets also run `supabase/seed.sql`, which is load-bearing: the local CLI does not apply hosted default GRANTs, so the seed must re-grant DML and re-lock sensitive function EXECUTE.
 
-Use `IF NOT EXISTS` for idempotent table and index creation. For policies, drop first then create to ensure idempotency.
+Each migration should start with a detailed markdown summary in multi-line comments explaining all new tables, columns, indexes, and security changes. Use `IF NOT EXISTS` for idempotent table and index creation. For policies, drop first then create to ensure idempotency.
 
 ## Check When Done
 
@@ -82,5 +82,5 @@ Use `IF NOT EXISTS` for idempotent table and index creation. For policies, drop 
 - `project_collaborators` table exists with correct columns, constraints, indexes, and RLS policies
 - `owner_id` defaults to `auth.uid()` so inserts without an explicit owner succeed
 - `lib/supabase/client.ts` and `lib/supabase/server.ts` are used for all database access
-- migration is applied successfully via the Supabase migration tool
+- migrations in `supabase/migrations/` apply successfully, and `supabase/seed.sql` re-applies after a local reset
 - `npm run build` passes

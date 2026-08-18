@@ -37,16 +37,31 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
 
   const prevIsAiActiveRef = useRef(isAiActive);
   const projectIdRef = useRef(projectId);
-  projectIdRef.current = projectId;
   const selectedSpecIdRef = useRef<string | null>(null);
+  const listRequestIdRef = useRef(0);
+  const previewRequestIdRef = useRef(0);
+
+  useEffect(() => {
+    projectIdRef.current = projectId;
+  }, [projectId]);
+
+  const isCurrentProject = useCallback(
+    (requestProjectId: string | undefined) =>
+      Boolean(requestProjectId) && projectIdRef.current === requestProjectId,
+    []
+  );
 
   // 1. Fetch specs list
   const fetchSpecs = useCallback(async () => {
     if (!projectId) {
+      listRequestIdRef.current += 1;
       setSpecs([]);
+      setLoading(false);
+      setError(null);
       return;
     }
 
+    const requestId = ++listRequestIdRef.current;
     setLoading(true);
     setError(null);
 
@@ -57,17 +72,20 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
         throw new Error(errorData.error || `Failed to fetch specs (HTTP ${res.status})`);
       }
 
-      if (projectIdRef.current !== projectId) return;
+      if (listRequestIdRef.current !== requestId || !isCurrentProject(projectId)) return;
       const data = (await res.json()) as { specs: ProjectSpecSummary[] };
       setSpecs(Array.isArray(data.specs) ? data.specs : []);
     } catch (err: unknown) {
+      if (listRequestIdRef.current !== requestId || !isCurrentProject(projectId)) return;
       const message = err instanceof Error ? err.message : "Failed to load project specs";
       setError(message);
       setSpecs([]);
     } finally {
-      setLoading(false);
+      if (listRequestIdRef.current === requestId && isCurrentProject(projectId)) {
+        setLoading(false);
+      }
     }
-  }, [projectId]);
+  }, [isCurrentProject, projectId]);
 
   // Initial load or on projectId change
   useEffect(() => {
@@ -88,10 +106,16 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
       if (!projectId || !specId) return;
 
       selectedSpecIdRef.current = specId;
+      const requestId = ++previewRequestIdRef.current;
       setSelectedSpecId(specId);
       setSelectedSpec(null);
       setLoadingDetail(true);
       setDetailError(null);
+
+      const isCurrentPreview = () =>
+        previewRequestIdRef.current === requestId &&
+        selectedSpecIdRef.current === specId &&
+        isCurrentProject(projectId);
 
       try {
         const res = await fetch(`/api/projects/${projectId}/specs/${specId}`);
@@ -100,25 +124,31 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
           throw new Error(errorData.error || `Failed to fetch spec content (HTTP ${res.status})`);
         }
 
-        if (selectedSpecIdRef.current !== specId || projectIdRef.current !== projectId) {
+        if (!isCurrentPreview()) {
           return;
         }
 
         const data = (await res.json()) as { spec: ProjectSpecDetail };
         setSelectedSpec(data.spec);
       } catch (err: unknown) {
+        if (!isCurrentPreview()) {
+          return;
+        }
         const message = err instanceof Error ? err.message : "Failed to load spec content";
         setDetailError(message);
       } finally {
-        setLoadingDetail(false);
+        if (isCurrentPreview()) {
+          setLoadingDetail(false);
+        }
       }
     },
-    [projectId]
+    [isCurrentProject, projectId]
   );
 
   // 3. Close preview modal
   const closeSpecPreview = useCallback(() => {
     selectedSpecIdRef.current = null;
+    previewRequestIdRef.current += 1;
     setSelectedSpecId(null);
     setSelectedSpec(null);
     setLoadingDetail(false);

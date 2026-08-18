@@ -214,6 +214,8 @@ export function useRealtimeChat({
           );
         }
 
+        // Always keep the originating prompt after the run is accepted, even
+        // when collaborators never receive the Realtime event.
         upsertMessage(validated);
         setSendError(null);
 
@@ -222,12 +224,21 @@ export function useRealtimeChat({
         }
         return true;
       } catch (err) {
+        const isTimeout =
+          err instanceof DOMException && err.name === "TimeoutError";
         console.error("[useRealtimeChat] Failed to send design message:", err);
-        setSendError(
-          err instanceof DOMException && err.name === "TimeoutError"
-            ? "The AI service took too long to respond. Please try again."
-            : "Failed to start AI generation. Please try again."
-        );
+
+        // A timed-out fetch can still have committed the run. Publish the
+        // prompt locally so a later 409 retry cannot hide the user message.
+        if (isTimeout) {
+          upsertMessage(validated);
+          setSendError(
+            "The AI service took too long to confirm. Generation may still be running."
+          );
+          return true;
+        }
+
+        setSendError("Failed to start AI generation. Please try again.");
         return false;
       }
     },

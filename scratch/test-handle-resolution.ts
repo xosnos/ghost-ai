@@ -109,4 +109,11 @@ assert(
   `normalizeCanvasEdge preserves user explicit handles (got ${preservedEdge.sourceHandle} -> ${preservedEdge.targetHandle})`
 );
 
+// 7. Missing-node fallback
+const missingNodeEdge = normalizeCanvasEdge(rawEdge, []);
+assert(
+  missingNodeEdge.sourceHandle === "right" && missingNodeEdge.targetHandle === "left",
+  `normalizeCanvasEdge falls back to right -> left when nodes are missing (got ${missingNodeEdge.sourceHandle} -> ${missingNodeEdge.targetHandle})`
+);
+
 console.log("🎉 All handle calculation tests passed!");

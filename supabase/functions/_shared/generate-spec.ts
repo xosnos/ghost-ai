@@ -23,7 +23,7 @@ export interface SpecTaskContext {
 }
 
 export const SPECS_BUCKET = "specs";
-const OPENROUTER_MODEL_ID = "openrouter/free";
+const OPENROUTER_MODEL_ID = "nvidia/nemotron-3.5-lightning:free";
 
 function getOpenRouterApiKey(): string | null {
   if (typeof Deno !== "undefined" && Deno?.env?.get) {
@@ -160,8 +160,7 @@ ${
 
   const modelsToTry = [
     OPENROUTER_MODEL_ID,
-    "nvidia/nemotron-3-ultra-550b-a55b:free",
-    "meta-llama/llama-3.3-70b-instruct:free",
+    "openrouter/free",
   ];
 
   let lastError: unknown = null;

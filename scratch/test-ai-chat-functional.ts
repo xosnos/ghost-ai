@@ -4,6 +4,7 @@ import {
   isAiChatMessage,
   parseAiStatusMessage,
   isAiStatusMessage,
+  computeIsAiActive,
   type AiChatMessage,
   type AiStatusMessage,
   type AiTaskStatus,
@@ -81,27 +82,6 @@ console.log("✓ AI Status Message Schema and active/terminal statuses validated
 
 // 3. Test active state derivation logic
 console.log("\n[Test 3] Testing Active State Derivation Logic...");
-function computeIsAiActive(params: {
-  overrideActive: boolean | null;
-  activeTaskRun: { status: AiTaskStatus } | null;
-  latestStatus: AiStatusMessage | null;
-}): boolean {
-  if (params.overrideActive !== null) {
-    return params.overrideActive;
-  }
-  if (params.activeTaskRun !== null) {
-    return true;
-  }
-  if (
-    params.latestStatus &&
-    ["queued", "running", "retrying"].includes(params.latestStatus.status) &&
-    params.latestStatus.step !== "complete" &&
-    params.latestStatus.step !== "failed"
-  ) {
-    return true;
-  }
-  return false;
-}
 
 // Queued -> active
 assert.strictEqual(
@@ -136,10 +116,10 @@ assert.strictEqual(
   "Retrying task run should be active"
 );
 
-// Completed -> inactive
+// Completed -> inactive via latestStatus, not overrideActive
 assert.strictEqual(
   computeIsAiActive({
-    overrideActive: false,
+    overrideActive: null,
     activeTaskRun: null,
     latestStatus: {
       runId: "1",
@@ -152,13 +132,13 @@ assert.strictEqual(
     },
   }),
   false,
-  "Completed state should be inactive"
+  "Completed latestStatus should be inactive"
 );
 
-// Failed -> inactive
+// Failed -> inactive via latestStatus, not overrideActive
 assert.strictEqual(
   computeIsAiActive({
-    overrideActive: false,
+    overrideActive: null,
     activeTaskRun: null,
     latestStatus: {
       runId: "1",
@@ -171,7 +151,7 @@ assert.strictEqual(
     },
   }),
   false,
-  "Failed state should be inactive"
+  "Failed latestStatus should be inactive"
 );
 console.log("✓ Active state derivation verified across all task lifecycle states.");
 

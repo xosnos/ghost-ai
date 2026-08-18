@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, useMemo, useRef, type MutableRefObject } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
-import { parseAiStatusMessage, type AiStatusMessage } from "@/types/tasks";
+import { computeIsAiActive, parseAiStatusMessage, type AiStatusMessage } from "@/types/tasks";
 import type { ActiveTaskRun } from "@/components/editor/ai-status-context";
 
 interface UseAiTaskStatusProps {
@@ -292,24 +292,15 @@ export function useAiTaskStatus({
     };
   }, [projectId, channel, incomingAiStatusRef]);
 
-  // Derive final isAiActive
-  const isAiActive = useMemo(() => {
-    if (overrideActive !== null) {
-      return overrideActive;
-    }
-    if (activeTaskRun !== null) {
-      return true;
-    }
-    if (
-      latestStatus &&
-      ["queued", "running", "retrying"].includes(latestStatus.status) &&
-      latestStatus.step !== "complete" &&
-      latestStatus.step !== "failed"
-    ) {
-      return true;
-    }
-    return false;
-  }, [overrideActive, activeTaskRun, latestStatus]);
+  const isAiActive = useMemo(
+    () =>
+      computeIsAiActive({
+        overrideActive,
+        activeTaskRun,
+        latestStatus,
+      }),
+    [overrideActive, activeTaskRun, latestStatus]
+  );
 
   return {
     isAiActive,

@@ -206,7 +206,7 @@ export function calculateEdgeHandles(
 export const CANVAS_BUCKET = "canvas";
 const AI_AGENT_USER_ID = "ghost-ai-agent";
 const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
-const OPENROUTER_MODEL_ID = "openrouter/free";
+const OPENROUTER_MODEL_ID = "nvidia/nemotron-3.5-lightning:free";
 
 // Error classes
 export class TransientAiError extends Error {
@@ -862,7 +862,7 @@ ${
 User Prompt: "${prompt}"`;
 
   const modelsToTry = [
-    "nvidia/nemotron-3-ultra-550b-a55b:free",
+    OPENROUTER_MODEL_ID,
     "openrouter/free",
   ];
 

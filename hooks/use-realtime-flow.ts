@@ -31,6 +31,19 @@ export type BroadcastEvent =
   | { type: "edges:label"; edgeId: string; label: string }
   | { type: "canvas:append"; nodes: CanvasNode[]; edges: CanvasEdge[] };
 
+function takeUniqueById<T extends { id: string }>(
+  items: T[],
+  existingIds: Set<string>,
+): T[] {
+  const unique: T[] = [];
+  for (const item of items) {
+    if (existingIds.has(item.id)) continue;
+    existingIds.add(item.id);
+    unique.push(item);
+  }
+  return unique;
+}
+
 function isBroadcastEvent(value: unknown): value is BroadcastEvent {
   if (!value || typeof value !== "object" || !("type" in value)) return false;
   const event = value as Record<string, unknown>;
@@ -187,15 +200,14 @@ export function useRealtimeFlow(
         setNodes(next);
       } else if (raw.type === "canvas:append") {
         const existingNodeIds = new Set(nodesRef.current.map((n) => n.id));
-        const uniqueNodes = raw.nodes
-          .filter((n) => !existingNodeIds.has(n.id))
+        const uniqueNodes = takeUniqueById(raw.nodes, existingNodeIds)
           .map(asUnselected)
           .map(normalizeCanvasNode);
         const nextNodes = [...nodesRef.current, ...uniqueNodes];
 
         const existingEdgeIds = new Set(edgesRef.current.map((e) => e.id));
         const uniqueEdges = normalizeCanvasEdges(
-          raw.edges.filter((e) => !existingEdgeIds.has(e.id)).map(asUnselected),
+          takeUniqueById(raw.edges, existingEdgeIds).map(asUnselected),
           nextNodes
         );
         const nextEdges = [...edgesRef.current, ...uniqueEdges];
@@ -337,15 +349,15 @@ export function useRealtimeFlow(
     (newNodes: CanvasNode[], newEdges: CanvasEdge[]) => {
       pushHistory(snapshotRef.current);
       const existingNodeIds = new Set(nodesRef.current.map((n) => n.id));
-      const uniqueNodes = newNodes
-        .filter((n) => !existingNodeIds.has(n.id))
-        .map(normalizeCanvasNode);
+      const uniqueNodes = takeUniqueById(newNodes, existingNodeIds).map(
+        normalizeCanvasNode,
+      );
       const nextNodes = [...nodesRef.current, ...uniqueNodes];
 
       const existingEdgeIds = new Set(edgesRef.current.map((e) => e.id));
-      const uniqueEdges = newEdges
-        .filter((e) => !existingEdgeIds.has(e.id))
-        .map((e) => normalizeCanvasEdge(e, nextNodes));
+      const uniqueEdges = takeUniqueById(newEdges, existingEdgeIds).map((e) =>
+        normalizeCanvasEdge(e, nextNodes),
+      );
       const nextEdges = [...edgesRef.current, ...uniqueEdges];
 
       nodesRef.current = nextNodes;

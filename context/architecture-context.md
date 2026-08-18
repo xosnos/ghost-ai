@@ -59,7 +59,7 @@
 
 - All model inference goes through OpenRouter's OpenAI-compatible HTTP API (`https://openrouter.ai/api/v1`) from the Edge Function worker.
 - Store `OPENROUTER_API_KEY` as a Supabase Edge Function secret. Keep it out of browser code and API responses. `.env.local` is only for local Next.js development.
-- Spec generation starts with `openrouter/free`. Design generation and provider retries may use explicit `:free` models as fallbacks. Never use a paid model or call another provider directly.
+- Design and spec generation use `nvidia/nemotron-3.5-lightning:free` as the primary AI model, with `openrouter/free` as the fallback. Never use a paid model or call another provider directly.
 - Treat free-router rate limits and temporary unavailability as transient failures so the queue can retry. Do not call Google AI, Anthropic, or OpenAI APIs directly, and do not add a second provider client.
 
 ### Design Generation
