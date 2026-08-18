@@ -19,13 +19,7 @@ function CursorPointer({
 }) {
   return (
     <div className="pointer-events-none flex items-start">
-      <svg
-        width="16"
-        height="20"
-        viewBox="0 0 16 20"
-        fill="none"
-        aria-hidden="true"
-      >
+      <svg width="16" height="20" viewBox="0 0 16 20" fill="none" aria-hidden="true">
         <path
           d="M1.2 1.2 1.5 16.4 5.6 12.8 8.4 19.1 10.6 18.2 7.7 11.7 13.8 11.6 1.2 1.2Z"
           fill={color}
@@ -42,11 +36,7 @@ function CursorPointer({
         }}
       >
         {thinking && (
-          <Loader2
-            className="h-2.5 w-2.5 animate-spin shrink-0"
-            role="img"
-            aria-label="Thinking"
-          />
+          <Loader2 className="h-2.5 w-2.5 animate-spin shrink-0" role="img" aria-label="Thinking" />
         )}
         <span className="truncate">{name}</span>
       </span>

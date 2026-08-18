@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { toProject, type Project } from "@/lib/projects/types";
+import { NextResponse } from "next/server";
+import { type Project, toProject } from "@/lib/projects/types";
 
 const PROJECT_SELECT =
   "id, owner_id, name, description, status, canvas_storage_path, created_at, updated_at";
@@ -10,7 +10,7 @@ export class ProjectQueryError extends Error {
     message: string,
     readonly operation: string,
     readonly detail: string,
-    readonly code?: string
+    readonly code?: string,
   ) {
     super(message);
     this.name = "ProjectQueryError";
@@ -36,7 +36,7 @@ export function errorResponse(err: unknown) {
 
 export async function listOwnedProjects(
   supabase: SupabaseClient,
-  ownerId: string
+  ownerId: string,
 ): Promise<Project[]> {
   const { data, error } = await supabase
     .from("projects")
@@ -45,11 +45,7 @@ export async function listOwnedProjects(
     .order("created_at", { ascending: false });
 
   if (error) {
-    throw new ProjectQueryError(
-      "Failed to list projects",
-      "list_owned_projects",
-      error.message
-    );
+    throw new ProjectQueryError("Failed to list projects", "list_owned_projects", error.message);
   }
 
   return (data ?? []).map(toProject);
@@ -57,7 +53,7 @@ export async function listOwnedProjects(
 
 export async function createProject(
   supabase: SupabaseClient,
-  params: { ownerId: string; name: string }
+  params: { ownerId: string; name: string },
 ): Promise<Project> {
   const trimmed = params.name.trim() || "Untitled Project";
   const { data, error } = await supabase
@@ -67,11 +63,7 @@ export async function createProject(
     .single();
 
   if (error) {
-    throw new ProjectQueryError(
-      "Failed to create project",
-      "create_project",
-      error.message
-    );
+    throw new ProjectQueryError("Failed to create project", "create_project", error.message);
   }
 
   return toProject(data);
@@ -79,7 +71,7 @@ export async function createProject(
 
 export async function listSharedProjects(
   supabase: SupabaseClient,
-  userEmail: string
+  userEmail: string,
 ): Promise<Project[]> {
   if (!userEmail) return [];
 
@@ -92,7 +84,7 @@ export async function listSharedProjects(
     throw new ProjectQueryError(
       "Failed to list shared projects",
       "list_shared_collaborators",
-      collabError.message
+      collabError.message,
     );
   }
 
@@ -112,7 +104,7 @@ export async function listSharedProjects(
     throw new ProjectQueryError(
       "Failed to list shared projects",
       "list_shared_projects",
-      projectError.message
+      projectError.message,
     );
   }
 
@@ -121,7 +113,7 @@ export async function listSharedProjects(
 
 export async function getProject(
   supabase: SupabaseClient,
-  projectId: string
+  projectId: string,
 ): Promise<Project | null> {
   const { data, error } = await supabase
     .from("projects")
@@ -130,11 +122,7 @@ export async function getProject(
     .maybeSingle();
 
   if (error) {
-    throw new ProjectQueryError(
-      "Failed to fetch project",
-      "get_project",
-      error.message
-    );
+    throw new ProjectQueryError("Failed to fetch project", "get_project", error.message);
   }
 
   return data ? toProject(data) : null;
@@ -142,7 +130,7 @@ export async function getProject(
 
 export async function renameProject(
   supabase: SupabaseClient,
-  params: { projectId: string; name: string }
+  params: { projectId: string; name: string },
 ): Promise<Project> {
   const trimmed = params.name.trim();
   if (!trimmed) {
@@ -157,29 +145,18 @@ export async function renameProject(
     .single();
 
   if (error) {
-    throw new ProjectQueryError(
-      "Failed to rename project",
-      "rename_project",
-      error.message
-    );
+    throw new ProjectQueryError("Failed to rename project", "rename_project", error.message);
   }
 
   return toProject(data);
 }
 
-export async function deleteProject(
-  supabase: SupabaseClient,
-  projectId: string
-): Promise<void> {
+export async function deleteProject(supabase: SupabaseClient, projectId: string): Promise<void> {
   const { error } = await supabase.rpc("delete_project", {
     project_uuid: projectId,
   });
 
   if (error) {
-    throw new ProjectQueryError(
-      "Failed to delete project",
-      "delete_project",
-      error.message
-    );
+    throw new ProjectQueryError("Failed to delete project", "delete_project", error.message);
   }
 }

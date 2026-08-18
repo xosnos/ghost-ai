@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { createClient, getCurrentUser } from "@/lib/supabase/server";
-import { getProject, errorResponse } from "@/lib/projects/queries";
 import { hasProjectAccess } from "@/lib/project-access";
+import { errorResponse, getProject } from "@/lib/projects/queries";
 import { listProjectSpecs } from "@/lib/specs/queries";
+import { createClient, getCurrentUser } from "@/lib/supabase/server";
 
 interface RouteContext {
   params: Promise<{ projectId: string }>;

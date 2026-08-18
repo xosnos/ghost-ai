@@ -19,11 +19,7 @@ export function CanvasSaveProvider({
   value: CanvasSaveContextValue;
   children: React.ReactNode;
 }) {
-  return (
-    <CanvasSaveContext.Provider value={value}>
-      {children}
-    </CanvasSaveContext.Provider>
-  );
+  return <CanvasSaveContext.Provider value={value}>{children}</CanvasSaveContext.Provider>;
 }
 
 export function useCanvasSave(): CanvasSaveContextValue | null {

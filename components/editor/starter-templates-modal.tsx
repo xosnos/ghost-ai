@@ -1,21 +1,18 @@
 "use client";
 
+import { Download } from "lucide-react";
 import { useMemo } from "react";
+import { CANVAS_TEMPLATES, type CanvasTemplate } from "@/components/editor/starter-templates";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
-import {
-  type CanvasTemplate,
-  CANVAS_TEMPLATES,
-} from "@/components/editor/starter-templates";
-import { type NodeShape, type CanvasNode, resolveNodeColor } from "@/types/canvas";
 import { useTheme } from "@/lib/theme-provider";
+import { type CanvasNode, type NodeShape, resolveNodeColor } from "@/types/canvas";
 
 const PREVIEW_W = 280;
 const PREVIEW_H = 184;
@@ -27,13 +24,7 @@ interface StarterTemplatesModalProps {
   onClose: () => void;
 }
 
-function shapeSvg(
-  shape: NodeShape,
-  width: number,
-  height: number,
-  fill: string,
-  stroke: string,
-) {
+function shapeSvg(shape: NodeShape, width: number, height: number, fill: string, stroke: string) {
   const strokeWidth = 1;
   switch (shape) {
     case "rectangle":
@@ -146,27 +137,13 @@ export function TemplatePreview({ template }: { template: CanvasTemplate }) {
   const contentHeight = bounds.maxY - bounds.minY;
   const availableWidth = PREVIEW_W - PADDING * 2;
   const availableHeight = PREVIEW_H - PADDING * 2;
-  const scale = Math.min(
-    availableWidth / contentWidth,
-    availableHeight / contentHeight,
-    1,
-  );
-  const offsetX =
-    PADDING - bounds.minX * scale +
-    (availableWidth - contentWidth * scale) / 2;
-  const offsetY =
-    PADDING - bounds.minY * scale +
-    (availableHeight - contentHeight * scale) / 2;
-  const nodeById = new Map<string, CanvasNode>(
-    nodes.map((node) => [node.id, node]),
-  );
+  const scale = Math.min(availableWidth / contentWidth, availableHeight / contentHeight, 1);
+  const offsetX = PADDING - bounds.minX * scale + (availableWidth - contentWidth * scale) / 2;
+  const offsetY = PADDING - bounds.minY * scale + (availableHeight - contentHeight * scale) / 2;
+  const nodeById = new Map<string, CanvasNode>(nodes.map((node) => [node.id, node]));
   const markerId = `template-arrow-${template.id}`;
 
-  const pointOnNodeBoundary = (
-    node: CanvasNode,
-    towardX: number,
-    towardY: number,
-  ) => {
+  const pointOnNodeBoundary = (node: CanvasNode, towardX: number, towardY: number) => {
     const width = node.width ?? 176;
     const height = node.height ?? 64;
     const centerX = node.position.x + width / 2;
@@ -174,8 +151,8 @@ export function TemplatePreview({ template }: { template: CanvasTemplate }) {
     const deltaX = towardX - centerX;
     const deltaY = towardY - centerY;
     const scaleToBoundary = Math.min(
-      (width / 2) / Math.max(Math.abs(deltaX), 0.001),
-      (height / 2) / Math.max(Math.abs(deltaY), 0.001),
+      width / 2 / Math.max(Math.abs(deltaX), 0.001),
+      height / 2 / Math.max(Math.abs(deltaY), 0.001),
     );
 
     return {
@@ -212,16 +189,8 @@ export function TemplatePreview({ template }: { template: CanvasTemplate }) {
         const sourceCenterY = source.position.y + (source.height ?? 64) / 2;
         const targetCenterX = target.position.x + (target.width ?? 176) / 2;
         const targetCenterY = target.position.y + (target.height ?? 64) / 2;
-        const sourcePoint = pointOnNodeBoundary(
-          source,
-          targetCenterX,
-          targetCenterY,
-        );
-        const targetPoint = pointOnNodeBoundary(
-          target,
-          sourceCenterX,
-          sourceCenterY,
-        );
+        const sourcePoint = pointOnNodeBoundary(source, targetCenterX, targetCenterY);
+        const targetPoint = pointOnNodeBoundary(target, sourceCenterX, sourceCenterY);
         const label = (edge.data as { label?: string } | undefined)?.label;
         const midX = (sourcePoint.x + targetPoint.x) / 2;
         const midY = (sourcePoint.y + targetPoint.y) / 2;
@@ -303,21 +272,15 @@ export function TemplatePreview({ template }: { template: CanvasTemplate }) {
   );
 }
 
-export function StarterTemplatesModal({
-  open,
-  onImport,
-  onClose,
-}: StarterTemplatesModalProps) {
+export function StarterTemplatesModal({ open, onImport, onClose }: StarterTemplatesModalProps) {
   return (
     <Dialog open={open} onOpenChange={(value) => !value && onClose()}>
       <DialogContent className="flex h-[min(90dvh,920px)] max-w-5xl flex-col gap-0 overflow-hidden p-0">
         <DialogHeader className="shrink-0 px-7 pb-5 pt-7 sm:px-8 sm:pt-8">
-          <DialogTitle className="text-2xl tracking-tight">
-            Import Template
-          </DialogTitle>
+          <DialogTitle className="text-2xl tracking-tight">Import Template</DialogTitle>
           <DialogDescription className="max-w-3xl text-sm leading-6">
-            Choose a starter template to pre-populate your canvas. Existing
-            nodes and edges will stay in place.
+            Choose a starter template to pre-populate your canvas. Existing nodes and edges will
+            stay in place.
           </DialogDescription>
         </DialogHeader>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-7 pb-7 sm:px-8 sm:pb-8">
@@ -342,16 +305,10 @@ export function StarterTemplatesModal({
                 </div>
                 <div className="flex flex-1 flex-col gap-3 p-4">
                   <div className="space-y-2">
-                    <h3
-                      className="text-sm font-semibold"
-                      style={{ color: "var(--text-primary)" }}
-                    >
+                    <h3 className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
                       {template.name.replace(" Architecture", "")}
                     </h3>
-                    <p
-                      className="text-sm leading-6"
-                      style={{ color: "var(--text-muted)" }}
-                    >
+                    <p className="text-sm leading-6" style={{ color: "var(--text-muted)" }}>
                       {template.description}
                     </p>
                   </div>

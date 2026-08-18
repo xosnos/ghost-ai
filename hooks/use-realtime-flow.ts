@@ -1,26 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type MutableRefObject } from "react";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import {
   addEdge,
   applyEdgeChanges,
   applyNodeChanges,
-  MarkerType,
   type Connection,
   type EdgeChange,
+  MarkerType,
   type NodeChange,
   type OnConnect,
   type OnEdgesChange,
   type OnNodesChange,
 } from "@xyflow/react";
-import type { RealtimeChannel } from "@supabase/supabase-js";
+import { type MutableRefObject, useCallback, useEffect, useRef, useState } from "react";
 import { asUnselected, withoutSharedSelection } from "@/lib/canvas-sync";
 import {
-  type CanvasNode,
   type CanvasEdge,
-  normalizeCanvasNode,
+  type CanvasNode,
   normalizeCanvasEdge,
   normalizeCanvasEdges,
+  normalizeCanvasNode,
 } from "@/types/canvas";
 
 export type BroadcastEvent =
@@ -31,10 +31,7 @@ export type BroadcastEvent =
   | { type: "edges:label"; edgeId: string; label: string }
   | { type: "canvas:append"; nodes: CanvasNode[]; edges: CanvasEdge[] };
 
-function takeUniqueById<T extends { id: string }>(
-  items: T[],
-  existingIds: Set<string>,
-): T[] {
+function takeUniqueById<T extends { id: string }>(items: T[], existingIds: Set<string>): T[] {
   const unique: T[] = [];
   for (const item of items) {
     if (existingIds.has(item.id)) continue;
@@ -52,15 +49,15 @@ function isBroadcastEvent(value: unknown): value is BroadcastEvent {
     case "edges:change":
       return (
         Array.isArray(event.changes) &&
-        event.changes.every(
-          (change) => isRecord(change) && typeof change.type === "string",
-        )
+        event.changes.every((change) => isRecord(change) && typeof change.type === "string")
       );
     case "edges:connect":
-      return isRecord(event.edge) &&
+      return (
+        isRecord(event.edge) &&
         typeof event.edge.id === "string" &&
         typeof event.edge.source === "string" &&
-        typeof event.edge.target === "string";
+        typeof event.edge.target === "string"
+      );
     case "nodes:add":
       return isCanvasNodeLike(event.node);
     case "edges:label":
@@ -186,9 +183,7 @@ export function useRealtimeFlow(
         setEdges(next);
       } else if (raw.type === "edges:label") {
         const next = edgesRef.current.map((e) =>
-          e.id === raw.edgeId
-            ? { ...e, data: { ...e.data, label: raw.label } }
-            : e,
+          e.id === raw.edgeId ? { ...e, data: { ...e.data, label: raw.label } } : e,
         ) as CanvasEdge[];
         edgesRef.current = next;
         setEdges(next);
@@ -208,7 +203,7 @@ export function useRealtimeFlow(
         const existingEdgeIds = new Set(edgesRef.current.map((e) => e.id));
         const uniqueEdges = normalizeCanvasEdges(
           takeUniqueById(raw.edges, existingEdgeIds).map(asUnselected),
-          nextNodes
+          nextNodes,
         );
         const nextEdges = [...edgesRef.current, ...uniqueEdges];
 
@@ -349,9 +344,7 @@ export function useRealtimeFlow(
     (newNodes: CanvasNode[], newEdges: CanvasEdge[]) => {
       pushHistory(snapshotRef.current);
       const existingNodeIds = new Set(nodesRef.current.map((n) => n.id));
-      const uniqueNodes = takeUniqueById(newNodes, existingNodeIds).map(
-        normalizeCanvasNode,
-      );
+      const uniqueNodes = takeUniqueById(newNodes, existingNodeIds).map(normalizeCanvasNode);
       const nextNodes = [...nodesRef.current, ...uniqueNodes];
 
       const existingEdgeIds = new Set(edgesRef.current.map((e) => e.id));
@@ -377,25 +370,22 @@ export function useRealtimeFlow(
     [send, pushHistory],
   );
 
-  const loadInitialState = useCallback(
-    (initialNodes: CanvasNode[], initialEdges: CanvasEdge[]) => {
-      const normalizedNodes = initialNodes.map(normalizeCanvasNode);
-      const normalizedEdges = normalizeCanvasEdges(initialEdges, normalizedNodes);
-      setNodes(normalizedNodes);
-      setEdges(normalizedEdges);
-      nodesRef.current = normalizedNodes;
-      edgesRef.current = normalizedEdges;
-      snapshotRef.current = {
-        nodes: normalizedNodes.map((n) => ({ ...n, data: { ...n.data } })),
-        edges: normalizedEdges.map((e) => ({ ...e, data: { ...e.data } })),
-      };
-      past.current = [];
-      future.current = [];
-      setCanUndo(false);
-      setCanRedo(false);
-    },
-    []
-  );
+  const loadInitialState = useCallback((initialNodes: CanvasNode[], initialEdges: CanvasEdge[]) => {
+    const normalizedNodes = initialNodes.map(normalizeCanvasNode);
+    const normalizedEdges = normalizeCanvasEdges(initialEdges, normalizedNodes);
+    setNodes(normalizedNodes);
+    setEdges(normalizedEdges);
+    nodesRef.current = normalizedNodes;
+    edgesRef.current = normalizedEdges;
+    snapshotRef.current = {
+      nodes: normalizedNodes.map((n) => ({ ...n, data: { ...n.data } })),
+      edges: normalizedEdges.map((e) => ({ ...e, data: { ...e.data } })),
+    };
+    past.current = [];
+    future.current = [];
+    setCanUndo(false);
+    setCanRedo(false);
+  }, []);
 
   const undo = useCallback(() => {
     if (past.current.length === 0) return;

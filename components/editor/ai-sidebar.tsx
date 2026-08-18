@@ -1,30 +1,31 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
-  X,
-  Sparkles,
-  Send,
-  FileText,
-  Download,
+  AlertCircle,
   ArrowUpRight,
-  ShoppingCart,
-  MessageSquare,
+  Download,
+  Eye,
+  FileText,
   GitBranch,
   Loader2,
-  AlertCircle,
+  MessageSquare,
   RefreshCw,
-  Eye,
+  Send,
+  ShoppingCart,
+  Sparkles,
+  X,
 } from "lucide-react";
+import type React from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useAiChat } from "@/components/editor/ai-chat-context";
+import { useAiStatus } from "@/components/editor/ai-status-context";
+import { SpecPreviewModal } from "@/components/editor/spec-preview-modal";
+import { ArchitypeLogo } from "@/components/ui/architype-logo";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { GhostLogo } from "@/components/ui/ghost-logo";
-import { useAiStatus } from "@/components/editor/ai-status-context";
-import { useAiChat } from "@/components/editor/ai-chat-context";
 import { useProjectSpecs } from "@/hooks/use-project-specs";
-import { SpecPreviewModal } from "@/components/editor/spec-preview-modal";
-import { getSenderDisplayName } from "@/types/tasks";
 import { cn, formatMessageTime, formatSpecDate } from "@/lib/utils";
+import { getSenderDisplayName } from "@/types/tasks";
 
 interface AiSidebarProps {
   isOpen: boolean;
@@ -95,7 +96,9 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
   } = useProjectSpecs({ projectId, isAiActive });
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages.length > 0) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -107,7 +110,7 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
       textareaRef.current.style.height = "auto";
       textareaRef.current.style.height = `${Math.min(
         Math.max(textareaRef.current.scrollHeight, 72),
-        160
+        160,
       )}px`;
     }
   };
@@ -167,7 +170,7 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
       <aside
         className={cn(
           "fixed top-0 bottom-0 right-0 z-50 flex h-screen w-80 lg:w-96 flex-col shadow-2xl backdrop-blur-md transition-transform duration-200 ease-out border-l",
-          "bg-[var(--bg-surface)] border-[var(--border-default)]"
+          "bg-[var(--bg-surface)] border-[var(--border-default)]",
         )}
         style={{
           transform: isOpen ? "translateX(0)" : "translateX(100%)",
@@ -180,13 +183,11 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
         {/* Header - Matches Editor Chrome & Project Sidebar */}
         <div className="flex h-12 shrink-0 items-center justify-between px-4 border-b border-[var(--border-default)] bg-[var(--bg-surface)]">
           <div className="flex items-center gap-2.5">
-            <GhostLogo size="xs" variant="mark" glow />
+            <ArchitypeLogo size="xs" variant="mark" glow />
             <div className="flex flex-col">
-              <span className="text-sm font-semibold text-[var(--text-primary)]">
-                AI Workspace
-              </span>
+              <span className="text-sm font-semibold text-[var(--text-primary)]">AI Workspace</span>
               <span className="text-[10px] text-[var(--text-muted)]">
-                Collaborate with Ghost AI
+                Collaborate with Architype
               </span>
             </div>
           </div>
@@ -220,7 +221,7 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
                 "relative z-10 flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors duration-200 whitespace-nowrap cursor-pointer",
                 activeTab === "architect"
                   ? "text-[var(--text-primary)] font-semibold"
-                  : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
               )}
             >
               <Sparkles className="h-3.5 w-3.5 shrink-0 text-[var(--accent-ai-text)]" />
@@ -234,7 +235,7 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
                 "relative z-10 flex items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors duration-200 whitespace-nowrap cursor-pointer",
                 activeTab === "specs"
                   ? "text-[var(--text-primary)] font-semibold"
-                  : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
               )}
             >
               <FileText className="h-3.5 w-3.5 shrink-0 text-[var(--accent-primary)]" />
@@ -259,13 +260,14 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
                   /* Empty State */
                   <div className="flex flex-col items-center justify-center py-6 text-center">
                     <div className="mb-3">
-                      <GhostLogo size={36} variant="mark" glow className="shadow-lg" />
+                      <ArchitypeLogo size={36} variant="mark" glow className="shadow-lg" />
                     </div>
                     <h4 className="text-sm font-semibold text-[var(--text-primary)] mb-1">
                       Design with AI Architect
                     </h4>
                     <p className="text-xs text-[var(--text-muted)] max-w-[260px] mb-5 leading-relaxed">
-                      Describe a system or ask Ghost AI to generate canvas architectures, refine components, or generate specifications.
+                      Describe a system or ask Architype to generate canvas architectures, refine
+                      components, or generate specifications.
                     </p>
 
                     {/* Starter Prompt Chips */}
@@ -283,13 +285,13 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
                             onClick={() => handleSendMessage(prompt.title)}
                             className={cn(
                               "group flex w-full items-center gap-2.5 rounded-xl p-2 text-left transition-all bg-[var(--bg-subtle)]/70 hover:bg-[var(--bg-elevated)] border border-[var(--border-default)]/70 hover:border-[var(--border-default)] cursor-pointer",
-                              isAiActive && "opacity-50 cursor-not-allowed pointer-events-none"
+                              isAiActive && "opacity-50 cursor-not-allowed pointer-events-none",
                             )}
                           >
                             <div
                               className={cn(
                                 "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border",
-                                prompt.color
+                                prompt.color,
                               )}
                             >
                               <Icon className="h-3.5 w-3.5" />
@@ -310,12 +312,8 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
                       const isUser = msg.role === "user";
                       const isAssistant = msg.role === "assistant";
                       const isSystem = msg.role === "system";
-                      const senderId =
-                        typeof msg.sender === "object" ? msg.sender.id : null;
-                      const isSelf =
-                        isUser &&
-                        currentUserId !== null &&
-                        senderId === currentUserId;
+                      const senderId = typeof msg.sender === "object" ? msg.sender.id : null;
+                      const isSelf = isUser && currentUserId !== null && senderId === currentUserId;
                       const senderName = getSenderDisplayName(msg.sender);
                       const formattedTime = formatMessageTime(msg.timestamp);
 
@@ -334,9 +332,7 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
                           key={msg.id}
                           className={cn(
                             "flex flex-col gap-1 max-w-[85%]",
-                            isSelf
-                              ? "self-end items-end"
-                              : "self-start items-start"
+                            isSelf ? "self-end items-end" : "self-start items-start",
                           )}
                         >
                           {/* Sender Header for collaborators or AI */}
@@ -344,9 +340,9 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
                             <div className="flex items-center gap-1.5 px-1">
                               {isAssistant ? (
                                 <>
-                                  <GhostLogo size={12} variant="mark" />
+                                  <ArchitypeLogo size={12} variant="mark" />
                                   <span className="text-[11px] font-semibold text-[var(--accent-ai-text)]">
-                                    Ghost AI
+                                    Architype
                                   </span>
                                 </>
                               ) : (
@@ -364,8 +360,8 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
                               isSelf
                                 ? "bg-[var(--accent-primary-dim)] border-2 border-[var(--accent-primary)]/50 text-[var(--text-primary)] rounded-tr-sm"
                                 : isAssistant
-                                ? "bg-[var(--bg-elevated)] border border-[var(--border-default)] text-[var(--accent-ai-text)] rounded-tl-sm"
-                                : "bg-[var(--bg-elevated)] border border-[var(--border-default)] text-[var(--text-primary)] rounded-tl-sm"
+                                  ? "bg-[var(--bg-elevated)] border border-[var(--border-default)] text-[var(--accent-ai-text)] rounded-tl-sm"
+                                  : "bg-[var(--bg-elevated)] border border-[var(--border-default)] text-[var(--text-primary)] rounded-tl-sm",
                             )}
                           >
                             {msg.content}
@@ -395,23 +391,27 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
                       <div className="flex items-center justify-between gap-1">
                         <span className="text-[11px] font-semibold text-[var(--accent-ai-text)] truncate leading-tight">
                           {latestStatus?.step
-                            ? STEP_LABELS[latestStatus.step] ?? "AI Generating"
+                            ? (STEP_LABELS[latestStatus.step] ?? "AI Generating")
                             : activeTaskRun?.kind === "spec"
-                            ? "Generating Spec"
-                            : "AI Architect Working"}
+                              ? "Generating Spec"
+                              : "AI Architect Working"}
                         </span>
                         <span className="text-[9px] uppercase tracking-wider font-semibold text-[var(--accent-ai-text)]/80 shrink-0">
                           In Progress
                         </span>
                       </div>
                       <p className="text-[10px] text-[var(--text-secondary)] truncate leading-tight mt-0.5">
-                        {latestStatus?.text || latestStatus?.message || "AI is designing architecture updates..."}
+                        {latestStatus?.text ||
+                          latestStatus?.message ||
+                          "AI is designing architecture updates..."}
                       </p>
                       {typeof latestStatus?.progress === "number" && (
                         <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-[var(--bg-subtle)]">
                           <div
                             className="h-full bg-[var(--accent-ai)] transition-all duration-300 ease-out rounded-full"
-                            style={{ width: `${Math.min(Math.max(latestStatus.progress, 0), 100)}%` }}
+                            style={{
+                              width: `${Math.min(Math.max(latestStatus.progress, 0), 100)}%`,
+                            }}
                           />
                         </div>
                       )}
@@ -438,7 +438,7 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
                     "relative flex flex-col rounded-2xl border border-[var(--border-default)] bg-[var(--bg-elevated)] p-2.5 transition-colors shadow-sm",
                     isAiActive
                       ? "opacity-80"
-                      : "focus-within:border-[var(--accent-primary)]/50 focus-within:ring-1 focus-within:ring-[var(--accent-primary)]/30"
+                      : "focus-within:border-[var(--accent-primary)]/50 focus-within:ring-1 focus-within:ring-[var(--accent-primary)]/30",
                   )}
                 >
                   <textarea
@@ -455,7 +455,7 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
                     rows={1}
                     className={cn(
                       "w-full resize-none bg-transparent px-1 py-1 text-xs text-[var(--text-primary)] placeholder-[var(--text-faint)] focus:outline-none min-h-[72px] max-h-[160px] leading-relaxed",
-                      isAiActive && "cursor-not-allowed opacity-60"
+                      isAiActive && "cursor-not-allowed opacity-60",
                     )}
                     style={{
                       color: "var(--text-primary)",
@@ -475,7 +475,7 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
                       disabled={isAiActive || !input.trim()}
                       className={cn(
                         "h-7 w-7 rounded-lg bg-[var(--accent-primary)] text-white hover:bg-[var(--accent-primary)]/90 disabled:opacity-30 active:scale-95 transition-all shadow-sm cursor-pointer",
-                        isAiActive && "bg-[var(--accent-ai)] opacity-90 cursor-not-allowed"
+                        isAiActive && "bg-[var(--accent-ai)] opacity-90 cursor-not-allowed",
                       )}
                       aria-label={isAiActive ? "AI generation active" : "Send prompt"}
                     >
@@ -499,7 +499,7 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
                 disabled={isAiActive || generatingSpec || !projectId}
                 className={cn(
                   "w-full gap-2 rounded-xl bg-[var(--accent-primary)] text-white font-medium hover:bg-[var(--accent-primary)]/90 h-9 text-xs shadow-sm active:scale-[0.98] transition-all cursor-pointer",
-                  (isAiActive || generatingSpec) && "opacity-80 cursor-not-allowed"
+                  (isAiActive || generatingSpec) && "opacity-80 cursor-not-allowed",
                 )}
               >
                 {isAiActive || generatingSpec ? (
@@ -544,12 +544,14 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
                     <Loader2 className="h-4 w-4 animate-spin text-[var(--accent-ai-text)]" />
                     <span className="text-xs font-semibold text-[var(--accent-ai-text)]">
                       {latestStatus?.step
-                        ? STEP_LABELS[latestStatus.step] ?? "Generating Specification"
+                        ? (STEP_LABELS[latestStatus.step] ?? "Generating Specification")
                         : "Generating Specification"}
                     </span>
                   </div>
                   <p className="text-[11px] text-[var(--text-secondary)] leading-relaxed">
-                    {latestStatus?.text || latestStatus?.message || "Analyzing system architecture and generating technical documentation..."}
+                    {latestStatus?.text ||
+                      latestStatus?.message ||
+                      "Analyzing system architecture and generating technical documentation..."}
                   </p>
                   {typeof latestStatus?.progress === "number" && (
                     <div className="h-1 w-full overflow-hidden rounded-full bg-[var(--bg-subtle)]">
@@ -627,7 +629,8 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
                       No specifications yet
                     </h5>
                     <p className="text-[11px] text-[var(--text-muted)] max-w-[220px] leading-relaxed mb-3">
-                      Click &quot;Generate Spec&quot; to produce full technical documentation for your architecture.
+                      Click &quot;Generate Spec&quot; to produce full technical documentation for
+                      your architecture.
                     </p>
                   </div>
                 ) : (

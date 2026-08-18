@@ -20,6 +20,82 @@ Update this file whenever the current phase, active feature, or implementation s
 
 The entries below record implementation state at the time each change landed. The current status and known gaps above take precedence where later work changed behavior.
 
+- **Brand Modernization & Vector Identity: Ghost AI → Architype (2026-08-18)**:
+  - Designed high-precision **Architype** vector logo system (`components/ui/architype-logo.tsx`), featuring an isometric neural 'A' portal with dual-tone gradient ribbons (Electric Cyan & Radiant Indigo/Violet), an isometric crossbar, and a glowing quantum diamond nexus core.
+  - Replaced site favicon (`public/favicon.svg`) with the Architype vector mark.
+  - Rebranded all UI components and pages: navigation header (`EditorNavbar`), hero banner and prompt dashboard (`EditorHome`), sidebars (`ProjectSidebar`, `AiSidebar`), auth surfaces (`AuthLayout`, `SignupForm`), and `AccessDenied`.
+  - Updated AI Edge Function system prompts, agent metadata, and OpenRouter API headers in `supabase/functions/_shared/design-agent.ts` and `generate-spec.ts`.
+  - Re-exported `GhostIcon` and `GhostLogo` from `architype-logo.tsx` for backwards compatibility.
+  - Verified with `pnpm lint` (`biome check .`, 0 diagnostics) and `pnpm build` (`next build`, 0 errors).
+
+- **PR #14 Review Follow-ups (2026-08-18)**:
+  - Fixed `hooks/use-project-specs.ts` to properly set `loading = true` and reset errors on starting `fetchSpecs`, ensuring loading indicators render during in-flight spec requests.
+  - Fixed `hooks/use-share-dialog.ts` to properly set `loading = true` and reset errors on starting `loadCollaborators`, ensuring loading state is active while collaborator queries are in-flight.
+  - Pinned `next-devtools-mcp` to version `0.4.0` in `.agents/mcp_config.json` for deterministic, reproducible MCP tooling.
+  - Verified with `pnpm lint` (`biome check .`) and `pnpm build`.
+
+- **Manual Biome Linter Cleanup (2026-08-18)**:
+  - Ran `pnpm lint` (`biome check .`) and manually resolved all 9 diagnostics across 6 files:
+    - `components/editor/editor-home.tsx`: Replaced string concatenation with template literal in `projectName` and used optional chaining `url?.trim()`.
+    - `components/ui/markdown-renderer.tsx`: Removed redundant `case "text":` and `case "paragraph":` falling through to `default`.
+    - `components/editor/ai-sidebar.tsx`: Added `messages.length > 0` condition in `useEffect` to properly bind the `messages` hook dependency.
+    - `components/editor/project-sidebar.tsx`: Replaced global `isNaN()` with type-safe `Number.isNaN()`.
+    - `components/editor/spec-preview-modal.tsx`: Removed unused default `React` import.
+    - `hooks/use-ai-task-status.ts`: Simplified `!runId || !runId.trim()` to optional chain `!runId?.trim()`.
+    - `lib/specs/queries.ts`: Simplified `!name || !name.trim()` to optional chain `!name?.trim()`.
+  - Verified `pnpm lint` (106 files checked, 0 errors, 0 warnings) and `pnpm build` (clean Next.js 16 build).
+
+- **Documentation Synchronization for pnpm & Biome (2026-08-18)**:
+  - Updated project documentation across `AGENTS.md`, `README.md`, `context/architecture-context.md`, and `context/code-standards.md` to establish **pnpm** as the required package manager and **Biome** (`@biomejs/biome`) as the unified linter, formatter, and import organizer.
+  - Documented standard repository commands: `pnpm install`, `pnpm dev`, `pnpm lint` (`biome check .`), `pnpm lint:fix` (`biome check --write .`), `pnpm format`, `pnpm format:check`, and `pnpm build`.
+  - Added dedicated `Tooling, Package Management, and Code Quality` standard in `context/code-standards.md` prohibiting ESLint and Prettier re-introduction.
+
+- **Biome Migration & Linter / Formatter Modernization (2026-08-18)**:
+  - Migrated codebase from ESLint to **Biome** (`@biomejs/biome 2.5.8`) for linting, formatting, and import organization.
+  - Removed `eslint`, `eslint-config-next`, and all associated transitive dependencies (~273 packages uninstalled, including `unrs-resolver` and its platform bindings).
+  - Deleted `eslint.config.mjs` and removed obsolete `pnpm-workspace.yaml` (`allowBuilds: { unrs-resolver: true }`).
+  - Added `biome.json` configured with Next.js & Tailwind CSS v4 directives, React JSX rules, 2-space indentation, and project ignore paths.
+  - Updated `package.json` scripts: `"lint"` (`biome check .`), `"lint:fix"` (`biome check --write .`), `"format"` (`biome format --write .`), and `"format:check"` (`biome format .`).
+  - Verified `pnpm run lint` (0 errors) and `pnpm run build` (0 errors in Next.js 16).
+
+- **Environment Secret Simplification (2026-08-18)**:
+  - Simplified secret configuration across Next.js and Edge Functions by deprecating and removing `SUPABASE_SECRET_KEYS` (JSON map).
+  - Standardized directly on `SUPABASE_SECRET_KEY` (Supabase DB admin client access) and `AUTOMATION_SECRET` (worker invocation & cron authentication).
+  - Cleaned `.env.local`, `.env.example`, and simplified `supabase/functions/ai-worker/index.ts` secret authentication.
+
+- **Browser Supabase Client Singleton & Channel Lifecycle Fix (2026-08-18)**:
+  - Eliminated browser warning: `Multiple GoTrueClient instances detected in the same browser context... (lib/supabase/client.ts)`.
+  - Removed `{ isSingleton: false }` from `createRealtimeBrowserClient` in `lib/supabase/client.ts` and unified all browser Realtime / presence / auth usage across `lib/realtime.ts` to share the `@supabase/ssr` singleton client instance.
+  - Resolved "Connecting to canvas…" loading hang: `connectRealtimeChannel` now removes any existing stale channel for the topic before creating a clean channel, and `CanvasWrapper` checks `ch.state === "joined"` as well as handling `ch.subscribe` callbacks.
+  - Verified `npm run lint` (0 errors), `npm run build` (0 errors), `spec22-db-queue.test.ts` (25/25 passed), `spec27-spec-generation.test.ts` (13/13 passed), and verified live canvas rendering across multiple rooms.
+
+- **AI Edge Function Configuration & Secret Key Modernization (2026-08-18)**:
+  - Resolved `ai-worker` Edge Function startup and invocation failure by aligning with official Supabase Edge Function standards (`SUPABASE_URL` and `SUPABASE_SECRET_KEY` / `SUPABASE_SECRET_KEYS`).
+  - Consolidated duplicate Supabase configuration logic into a single `getSupabaseConfig()` helper in `supabase/functions/ai-worker/index.ts`.
+  - Cleaned `supabase/functions/.env` to store proper function secrets (`AUTOMATION_SECRET`, `OPENROUTER_API_KEY`) without disallowed `SUPABASE_` variable prefixes.
+  - Verified end-to-end task execution: task run transitioned from `queued` to `running` to `completed` with OpenRouter generation.
+
+- **Supabase Setup Review, DB Advisor Optimizations & Clean Modern API Keys (2026-08-18)**:
+  - Reviewed and verified complete Supabase setup against official `supabase` and `supabase-postgres-best-practices` skills.
+  - Added migration `20260818120000_optimize_rls_initplan_and_function_search_paths.sql` resolving all warnings from `supabase db advisors --local`:
+    - Wrapped `auth.uid()` and `auth.jwt()` lookups in subselects `(SELECT auth.uid())` and `(SELECT auth.jwt())` on `projects` and `project_collaborators` RLS policies to enforce single evaluation per statement (initPlan).
+    - Set explicit `search_path = public` on `canvas_project_id`, `specs_project_id`, and `project_id_from_realtime_topic` to fix mutable search_path security warnings.
+    - Verified `supabase db advisors --local` reports `No issues found` (0 warnings, 0 errors).
+  - Modernized API key handling across `lib/supabase/client.ts`, `lib/supabase/server.ts`, `lib/supabase/admin.ts`, `proxy.ts`, `supabase/functions/ai-worker/index.ts`, and integration test suites:
+    - Standardized exclusively on modern Supabase Publishable (`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` / `sb_publishable_...`) and Secret (`SUPABASE_SECRET_KEY` / `sb_secret_...`) keys.
+    - Removed legacy JWT key dependencies (`NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) from `.env.example`, `.env`, `.env.local`, and client/server code.
+    - Synchronized Vault secret `automations` with `AUTOMATION_SECRET` (`local-dev-automation-secret`).
+  - Verified full test suite (`npx tsx tests/integration/spec22-db-queue.test.ts` — 25/25 tests passed), `npm run lint` (0 errors), and `npm run build` (0 errors).
+
+- **Next.js 16 Upgrade (2026-08-18)**:
+  - Upgraded Next.js from `15.4.11` to `16.3.1` with Turbopack enabled by default.
+  - Upgraded `eslint-config-next` to `16.3.1`, React to `19.2.8`, `@types/react` to `19.2.18`, and `@types/react-dom` to `19.2.4`.
+  - Migrated `middleware.ts` to `proxy.ts` exporting `export async function proxy(request: NextRequest)` in accordance with Next.js 16 routing boundary conventions.
+  - Migrated ESLint flat config to use direct `eslint-config-next/core-web-vitals` and `eslint-config-next/typescript` module imports.
+  - Resolved `react-hooks/refs` and `react-hooks/set-state-in-effect` across `hooks/use-canvas-autosave.ts`, `hooks/use-project-specs.ts`, `hooks/use-share-dialog.ts`, `components/editor/realtime-canvas.tsx`, `components/editor/canvas-wrapper.tsx`, and `lib/theme-provider.tsx`.
+  - Confirmed bundled AI agent docs in `node_modules/next/dist/docs/` and verified `AGENTS.md` managed block alignment.
+  - Verified `npm run lint` (0 errors), `npm run build` (0 errors), DB/Queue integration tests, and live runtime verification flow (auth redirect, signup, dashboard, canvas workspace, React Flow node manipulation, AI sidebar tabs).
+
 - **AI Model Routing Update (2026-08-18)**:
   - Updated primary OpenRouter model to `nvidia/nemotron-3.5-lightning:free` in both design generation (`supabase/functions/_shared/design-agent.ts`) and specification generation (`supabase/functions/_shared/generate-spec.ts`).
   - Configured `openrouter/free` as the sole fallback model.
@@ -55,7 +131,7 @@ The entries below record implementation state at the time each change landed. Th
 
 - **Specs 23, 24, 26 Acceptance Gaps Resolution (2026-08-17)**:
   - **Spec 23 (AI Thinking Presence State in Edge Function)**:
-    - Updated `supabase/functions/_shared/design-agent.ts` to configure channel presence with `{ key: AI_AGENT_USER_ID, enabled: true }` and track initial presence with `{ userId: AI_AGENT_USER_ID, displayName: "Ghost AI", avatarUrl: null, cursorColor: "#00F5FF", cursor: null, thinking: true }`.
+    - Updated `supabase/functions/_shared/design-agent.ts` to configure channel presence with `{ key: AI_AGENT_USER_ID, enabled: true }` and track initial presence with `{ userId: AI_AGENT_USER_ID, displayName: "Architype", avatarUrl: null, cursorColor: "#00F5FF", cursor: null, thinking: true }`.
     - Ensured `channel.untrack()` and cursor clear are guaranteed in the `finally` cleanup block.
   - **Spec 24 (Collaborator & AI Thinking Indicator)**:
     - Updated `components/editor/realtime-canvas.tsx` to destructure `updateThinking` from `useRealtimePresence` and synchronize active generation state (`aiTaskStatus.isAiActive`) directly into local presence tracking.
@@ -77,7 +153,7 @@ The entries below record implementation state at the time each change landed. Th
   - Consolidated Edge Functions environment to single canonical location: `supabase/functions/.env` (deleted duplicate/stale `.env` files in subdirectories).
   - Aligned Edge Functions with standard Supabase Deno runtime practices (`Deno.env.get()`) for both production secrets (set via `supabase secrets set`) and local development.
   - Removed all hardcoded local demo JWT and secret fallback strings from Edge Function workers and Next.js server fast-path calls.
-  - Stripped local absolute user paths (`/Users/xosnos/...`) from Edge Function `.env` loader helpers in `supabase/functions/_shared/generate-spec.ts` and `supabase/functions/_shared/design-agent.ts`.
+  - Stripped local absolute filesystem paths from Edge Function `.env` loader helpers in `supabase/functions/_shared/generate-spec.ts` and `supabase/functions/_shared/design-agent.ts`.
   - Added `/scratch/`, `scratch/`, `.env*`, and `*.env` patterns to root `.gitignore` to prevent accidental staging or commits of local test artifacts and environment files.
   - Verified 0 secrets, tokens, or API keys are leaked across client bundles, API routes, or git history.
 
@@ -208,7 +284,7 @@ The entries below record implementation state at the time each change landed. Th
     - Synchronized `useRealtimeChat` messages and send handler in `RealtimeCanvas` with `AiChatContext`.
     - Wrapped workspace tree in `AiChatProvider` in `EditorChrome`.
   - **Collaborative AI Sidebar Chat UI (`components/editor/ai-sidebar.tsx`)**:
-    - Rendered chronological room chat feed showing sender header (differentiating self vs collaborator vs Ghost AI assistant), formatted timestamp, and message bubble.
+    - Rendered chronological room chat feed showing sender header (differentiating self vs collaborator vs Architype assistant), formatted timestamp, and message bubble.
     - Connected textarea and send button to `sendMessage`, clearing input upon successful delivery.
     - Added dismissible error banner when message broadcast fails.
     - Styled in accordance with `ui-context.md` Google Stitch / Dark mode theme tokens.
@@ -241,7 +317,7 @@ The entries below record implementation state at the time each change landed. Th
 
 - 23-design-agent-logic — Full AI Design Agent with OpenRouter Inference, Realtime Collaboration, Presence & Cursors, and Storage Persistence:
   - **Design Agent Handler (`supabase/functions/_shared/design-agent.ts`)**:
-    - Integrated OpenRouter through its OpenAI-compatible HTTP API with prompt engineering tailored to Ghost AI's system architecture design standards.
+    - Integrated OpenRouter through its OpenAI-compatible HTTP API with prompt engineering tailored to Architype's system architecture design standards.
     - Added resilient parser and schema validator (`parseAndNormalizePlan`) supporting both structured JSON and markdown-wrapped payload normalization into strict `{ summary, actions }` contracts.
     - Supported 7 full canvas operations: `add_node`, `move_node`, `resize_node`, `update_node`, `delete_node`, `add_edge`, and `delete_edge`.
     - Enforced design system constraints: allowed shapes (`rectangle`, `diamond`, `circle`, `pill`, `cylinder`, `hexagon`), 8-role color palette (`neutral`, `blue`, `purple`, `orange`, `red`, `pink`, `green`, `teal`), default dimension bounds, and column-grid layout coordinates.
@@ -326,16 +402,16 @@ The entries below record implementation state at the time each change landed. Th
   - Added `SUPABASE_SERVICE_ROLE_KEY` to `.env.local` pointing to local Supabase stack.
   - Dev server (`next dev --turbopack`) actively running on `http://localhost:3000` with 0 log errors.
 
-- Ghost AI Brand Logo & Universal Iconography — Designed and deployed signature vector branding throughout the entire application:
-  - Custom modern vector monomark (`components/ui/ghost-logo.tsx`) featuring an interlocking dimensional origami ribbon geometry, aerodynamic spectral wings, a central quantum diamond neural nexus (`#FFFFFF` → `#67E8F9` → `#06B6D4`), specular rim glass lighting, micro-spark satellite, and dual electric Cyan (`#00F5FF` → `#0284C7`) and Radiant Indigo (`#C084FC` → `#4338CA`) gradient sweeps.
-  - Highly flexible `GhostLogo` and `GhostIcon` components supporting multiple variants (`icon`, `mark`, `full`), standard sizing scale (`xs`, `sm`, `md`, `lg`, `xl`), dynamic glow filters, and responsive styling.
+- Architype Brand Logo & Universal Iconography — Designed and deployed signature vector branding throughout the entire application:
+  - Custom modern vector monomark (`components/ui/architype-logo.tsx`) featuring an interlocking isometric neural 'A' portal, aerodynamic pillars, a central quantum diamond neural nexus (`#FFFFFF` → `#67E8F9` → `#06B6D4`), specular rim glass lighting, micro-spark satellite, and dual electric Cyan (`#00F5FF` → `#0284C7`) and Radiant Indigo (`#C084FC` → `#4338CA`) gradient sweeps.
+  - Highly flexible `ArchitypeLogo` and `ArchitypeIcon` components supporting multiple variants (`icon`, `mark`, `full`), standard sizing scale (`xs`, `sm`, `md`, `lg`, `xl`), dynamic glow filters, and responsive styling.
   - Universal application touchpoints:
-    - **Editor Navbar (`components/editor/editor-navbar.tsx`)**: Replaced generic placeholder icons with the glowing Ghost logo mark in the brand header and the AI sidebar toggle button.
-    - **Auth Layout (`app/(auth)/layout.tsx`)**: Replaced generic Cpu icon with `<GhostLogo size="lg" variant="full" glow />` on desktop and added mobile header branding for small screens.
-    - **Editor Dashboard (`components/editor/editor-home.tsx`)**: Incorporated the Ghost logo in the top announcement banner pill and as a prominent glowing hero emblem above the main heading.
-    - **AI Workspace Sidebar (`components/editor/ai-sidebar.tsx`)**: Updated sidebar header and the AI Architect empty state with branded Ghost logo and glow accents.
-    - **Project Sidebar Drawer (`components/editor/project-sidebar.tsx`)**: Branded mobile drawer header with GhostIcon.
-    - **Access Denied (`components/editor/access-denied.tsx`)**: Branded unauthorized state with GhostLogo.
+    - **Editor Navbar (`components/editor/editor-navbar.tsx`)**: Replaced generic placeholder icons with the glowing Architype logo mark in the brand header and the AI sidebar toggle button.
+    - **Auth Layout (`app/(auth)/layout.tsx`)**: Replaced generic Cpu icon with `<ArchitypeLogo size="lg" variant="full" glow />` on desktop and added mobile header branding for small screens.
+    - **Editor Dashboard (`components/editor/editor-home.tsx`)**: Incorporated the Architype logo in the top announcement banner pill and as a prominent glowing hero emblem above the main heading.
+    - **AI Workspace Sidebar (`components/editor/ai-sidebar.tsx`)**: Updated sidebar header and the AI Architect empty state with branded Architype logo and glow accents.
+    - **Project Sidebar Drawer (`components/editor/project-sidebar.tsx`)**: Branded mobile drawer header with ArchitypeIcon.
+    - **Access Denied (`components/editor/access-denied.tsx`)**: Branded unauthorized state with ArchitypeLogo.
     - **Browser App Icon & Favicon (`app/icon.svg`, `public/icon.svg`, `public/favicon.svg`, `app/layout.tsx`)**: Dynamic Next.js app icon metadata and standalone vector SVG favicons.
 
 - 21-canvas-autosave — Canvas autosave and loading persisted across Supabase Storage and PostgreSQL metadata:
@@ -353,7 +429,7 @@ The entries below record implementation state at the time each change landed. Th
   - Google Stitch Bottom-Right Theme Switcher Popover: Dynamic trigger button (🖥️ / ☀️ / 🌙) opening an interactive popover to toggle between Light, System (with active checkmark `✓`), and Dark themes.
   - Light & Dark Adaptive Surfaces: Replaced all legacy dark rgba backgrounds across `editor-navbar.tsx` and `project-sidebar.tsx` with dynamic CSS tokens (`bg-[var(--bg-surface)]`, `border-[var(--border-default)]`), ensuring crisp white surfaces in light mode and sleek technical surfaces in dark mode.
   - Left Project & Examples panel: Dual pill tabs (`My Projects` / `Shared with me`), live search filter input (`Search projects`), Recent projects list with diagram thumbnail glyphs and timestamps, and curated Examples/Templates section (Microservices, CI/CD, Event-Driven, Serverless Edge, Real-time AI Canvas Engine) with one-click creation.
-  - Center Hero Canvas with dot-matrix grid background (`bg-dot-grid`), dismissible announcement banner pill (`Meet the new Ghost AI ✕`), bold title (`Welcome to Ghost AI..`), horizontal suggestion prompt chips, and central interactive Stitch prompt card with mode toggles (`[Microservices] [Serverless]`), prompt enhancer wand `✨`, Model selector pill (`Gemini 2.5 Flash`, `Claude 3.7 Sonnet`, `GPT-4o`), voice/mic trigger `🎙️`, and circular action button `[↑]`.
+  - Center Hero Canvas with dot-matrix grid background (`bg-dot-grid`), dismissible announcement banner pill (`Meet the new Architype Architect ✕`), bold title (`Welcome to Architype..`), horizontal suggestion prompt chips, and central interactive Stitch prompt card with mode toggles (`[Microservices] [Serverless]`), prompt enhancer wand `✨`, Model selector pill (`Gemini 2.5 Flash`, `Claude 3.7 Sonnet`, `GPT-4o`), voice/mic trigger `🎙️`, and circular action button `[↑]`.
   - Desktop embedded left panel layout for dashboard vs collapsible floating overlay drawer for mobile and active workspace.
 
 - Boilerplate cleanup (globals.css, page.tsx, public SVGs)
@@ -375,7 +451,7 @@ The entries below record implementation state at the time each change landed. Th
 - 17-canvas-ergonomics — Floating control bar and keyboard shortcuts for zoom and undo/redo. New files: `components/editor/canvas-control-bar.tsx` (`CanvasControlBar` — pill-shaped `<Panel>` at bottom-left with two groups separated by a thin divider: zoom out / fit view / zoom in, and undo / redo; undo/redo buttons dimmed via `opacity-30` when disabled), `hooks/use-keyboard-shortcuts.ts` (`useKeyboardShortcuts` — listens on `window` for `+`/`=` zoom in, `-` zoom out, `Cmd/Ctrl+Z` undo, `Cmd/Ctrl+Shift+Z` and `Cmd/Ctrl+Y` redo; skips `input`, `textarea`, `select`, and `contentEditable` targets). `hooks/use-realtime-flow.ts` extended: local history stack (`past`/`future` refs, `HISTORY_LIMIT=50`) that snapshots nodes+edges before each local mutation; `undo`/`redo`/`canUndo`/`canRedo` added to the return value; incoming broadcast events and undo/redo replay set `skipHistory` to avoid polluting the stack; `snapshotRef` kept in sync after every state update so the next snapshot is always current. `components/editor/realtime-canvas.tsx` updated: destructures `undo`/`redo`/`canUndo`/`canRedo` from the hook, gets `zoomIn`/`zoomOut`/`fitView` from `useReactFlow` with 300ms animation duration, calls `useKeyboardShortcuts`, and renders `<CanvasControlBar>` inside the `ReactFlow`. `npm run build` passes.
 - 18-starter-templates — Starter template library for importing pre-built diagrams onto the canvas. New files: `components/editor/starter-templates.ts` (`CanvasTemplate` interface with `id`/`name`/`description`/`nodes`/`edges`; `CANVAS_TEMPLATES` array with three templates — Microservices Architecture, CI/CD Pipeline, Event-Driven System — each using shared `CanvasNode`/`CanvasEdge` types and the `NODE_COLORS` palette; `node()`/`edge()` helper functions keep template definitions readable), `components/editor/starter-templates-modal.tsx` (`StarterTemplatesModal` — wide dialog with scrollable three-column grid of template cards; each card has a diagram preview area on top, name + description below, and a full-width Import button; SVG preview calculates bounds from node positions, scales to a fixed 280×184 viewport, draws edges as lines from node-boundary intersection points with arrowhead markers, and renders nodes using their shape/color data — no React Flow instance needed; Import button calls `onImport` then closes), `components/editor/template-import-context.tsx` (`TemplateImportProvider`/`useTemplateImportRef` — React context carrying a mutable ref so `EditorChrome`'s modal can invoke the canvas's `appendTemplate` without prop drilling through the server-component page boundary). `hooks/use-realtime-flow.ts` extended: `appendTemplate(nodes, edges)` function that pushes current state to history, appends new nodes/edges to existing state, updates the snapshot ref, and broadcasts a `canvas:append` event so collaborators receive the template too; `canvas:append` handler in the broadcast listener appends incoming nodes/edges. `components/editor/realtime-canvas.tsx` updated: `FlowCanvas` consumes `useTemplateImportRef` and registers `handleImportTemplate` (generates unique IDs for all template nodes/edges using a timestamp suffix, remaps edge source/target IDs, calls `appendTemplate` then `fitView` with 400ms animation) via `useEffect`. `components/editor/editor-chrome.tsx` updated: manages `templatesOpen` state, creates `templateImportRef`, wraps children in `TemplateImportProvider`, renders `StarterTemplatesModal` (calls `templateImportRef.current?.(template)` on import). `components/editor/editor-navbar.tsx` updated: `LayoutTemplate` icon button labeled "Templates" shown only in workspace mode, wired to `onOpenTemplates`. Import appends to the canvas rather than replacing, so users can keep their existing diagram. `npm run build` passes.
 - 19-presence-avatars-cursors — Collaborator avatars and live cursors on the editor canvas. Collaborator avatars render in the workspace editor navbar beside the user menu, keeping the shared navigation chrome clear of duplicate user controls. Current user ID is read from the active Supabase Auth session and used to exclude self from the collaborator list; the current user is rendered with the existing UserMenu. Collaborator avatars are display-only, use profile photos with initials fallback, stack up to five with a +N overflow chip, and share the UserMenu size (`h-7 w-7`) with a divider only when at least one collaborator is present. Cursor position is broadcast on React Flow `onMouseMove` (flow coordinates via `screenToFlowPosition`) and cleared to `null` on `onMouseLeave`; live cursors render for other participants only, colored with the presence color. `types/realtime.ts` keeps `PresenceState` (`cursor`, `thinking`) and adds `PresencePayload`. Realtime Presence is now keyed by user ID (was project ID, which collapsed every participant into one entry). `getUserCursorColor` uses the vivid `NODE_COLORS` text value so pointers stay visible on the dark canvas. New files: `hooks/use-realtime-presence.ts`, `components/editor/presence-avatars.tsx`, `components/editor/live-cursors.tsx`. `npm run build` passes.
-- 20-ai-sidebar-shell — Complete floating AI chat sidebar component (`components/editor/ai-sidebar.tsx`). Preserves sliding drawer animation from right with `fixed top-12 right-0` layout, backdrop blur, border, and shadow. Header features bot icon badge, `AI Workspace` title, `Collaborate with Ghost AI` subtitle, and right-aligned close button. Two-tab layout using shadcn `Tabs` (`AI Architect` and `Specs`) with active accent styling. `AI Architect` tab contains scrollable message area, empty state with central bot icon, description, 3 starter prompt pill chips (`Design an e-commerce backend`, `Create a chat app architecture`, `Build a CI/CD pipeline`), distinct theme-adaptive user/assistant message bubbles, auto-resizing textarea (72px min, 160px max) with Enter/Shift+Enter keyboard handling, and accent send button. `Specs` tab contains a disabled `Generate Spec` button until the generation workflow is implemented, plus a styled demo spec card with icon, metadata, markdown snippet preview, and disabled download button. `npm run build` passes cleanly.
+- 20-ai-sidebar-shell — Complete floating AI chat sidebar component (`components/editor/ai-sidebar.tsx`). Preserves sliding drawer animation from right with `fixed top-12 right-0` layout, backdrop blur, border, and shadow. Header features bot icon badge, `AI Workspace` title, `Collaborate with Architype` subtitle, and right-aligned close button. Two-tab layout using shadcn `Tabs` (`AI Architect` and `Specs`) with active accent styling. `AI Architect` tab contains scrollable message area, empty state with central bot icon, description, 3 starter prompt pill chips (`Design an e-commerce backend`, `Create a chat app architecture`, `Build a CI/CD pipeline`), distinct theme-adaptive user/assistant message bubbles, auto-resizing textarea (72px min, 160px max) with Enter/Shift+Enter keyboard handling, and accent send button. `Specs` tab contains a disabled `Generate Spec` button until the generation workflow is implemented, plus a styled demo spec card with icon, metadata, markdown snippet preview, and disabled download button. `npm run build` passes cleanly.
 - Collaborator selection rings — When another person selects a node, everyone else sees a ring in that person's presence color (same as their avatar and cursor). Local selection chrome (resize handles, color toolbar, node text border) stays local. Selection IDs travel as Broadcast `selection:change`, not as canvas `select` changes. `npm run build` passes.
 
 ## Resolved Questions
@@ -395,13 +471,13 @@ The entries below record implementation state at the time each change landed. Th
 - Tailwind v4 CSS-first config — design tokens defined as CSS custom properties in globals.css, mapped to Tailwind via @theme inline.
 - shadcn/ui components authored directly (no CLI); live in components/ui/.
 - ProjectSidebar is a fixed overlay (does not push page content) positioned below the navbar.
-- Auth uses Supabase Auth (not Clerk). Cookie-based sessions via @supabase/ssr. Middleware at project root handles session refresh and route protection. Public routes: /login, /signup, /forgot-password, /reset-password, /auth/callback.
+- Auth uses Supabase Auth (not Clerk). Cookie-based sessions via @supabase/ssr. Routing proxy (`proxy.ts`) at project root handles session refresh and route protection. Public routes: /login, /signup, /forgot-password, /reset-password, /auth/callback.
 - Editor page at /editor is a server component that fetches user then renders client EditorChrome with userEmail prop.
 - Auth route pages (`app/(auth)/*/page.tsx`) are Server Components that render client form components. Avoid `"use client"` on `page.tsx` itself — Next.js wraps client pages in `ClientPageRoot`, which requires `workStore` for `searchParams` instrumentation and can throw in WebContainer environments (Bolt/StackBlitz).
 - Database layer uses Bolt's integrated Supabase database (PostgreSQL) instead of Prisma. Schema is applied via the Supabase migration tool, not a Prisma schema file. All tables use RLS with owner-scoped policies.
 - Artifact storage uses Supabase Storage instead of Vercel Blob. Canvas snapshots and generated specs are stored in Supabase Storage buckets, with the storage path stored as a reference column on the corresponding Supabase table.
 - **AI execution uses Supabase Queues, Edge Functions, and Cron.** `EdgeRuntime.waitUntil` provides the fast path, while the durable `ai-generation` queue and Cron provide recovery. API routes transactionally create `task_runs` rows and queue messages, then invoke the shared `ai-worker`. Queue visibility and delivery count drive bounded retries. Clients track RLS filtered run rows through Realtime Postgres Changes, and room wide progress uses Realtime Broadcast.
-- **AI generation uses OpenRouter, not Google Gemini.** Design and spec workers call OpenRouter's OpenAI-compatible HTTP API (`https://openrouter.ai/api/v1`). `OPENROUTER_API_KEY` is the provider secret. Workers prefer `openrouter/free` or explicit free fallback models. They never call Google AI, Anthropic, or OpenAI directly.
+- **AI generation uses OpenRouter, not Google Gemini.** Design and spec workers call OpenRouter's OpenAI-compatible HTTP API (`https://openrouter.ai/api/v1`). `OPENROUTER_API_KEY` is the provider secret. Workers use `nvidia/nemotron-3.5-lightning:free` as the primary AI model with `openrouter/free` as fallback. They never call Google AI, Anthropic, or OpenAI directly.
 
 ## Bug Fixes
 

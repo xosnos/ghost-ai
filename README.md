@@ -1,6 +1,6 @@
-# Ghost AI
+# Architype
 
-Ghost AI is a collaborative system design workspace. Teams build architecture diagrams on a shared canvas, ask an AI agent to create or revise designs, and generate downloadable Markdown technical specifications.
+Architype is a collaborative AI system design workspace. Teams build architecture diagrams on a shared canvas, ask an AI agent to create or revise designs, and generate downloadable Markdown technical specifications.
 
 ## Features
 
@@ -17,24 +17,27 @@ Feature specifications 01 through 29 are implemented. See `context/progress-trac
 
 ## Stack
 
-- Next.js 15.4, React 19, and TypeScript
+- Next.js 16.3, React 19, and TypeScript
 - Tailwind CSS 4 and shadcn style UI primitives
 - React Flow
 - Supabase Auth, Postgres, Realtime, Storage, Queues, Cron, and Edge Functions
 - OpenRouter
+- Biome for linting, formatting, and import organization
+- pnpm for package management
 
 ## Local setup
 
 Requirements:
 
 - Node.js 22 or later
+- pnpm 9 or later
 - Docker
 - Supabase CLI
 
 Install dependencies and start Supabase:
 
 ```bash
-npm install
+pnpm install
 supabase start
 ```
 
@@ -45,7 +48,7 @@ Copy `.env.example` to `supabase/functions/.env`. Set `OPENROUTER_API_KEY`. For 
 Start the app:
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Open http://localhost:3000. Unauthenticated users are redirected to `/login`.
@@ -55,18 +58,21 @@ Open http://localhost:3000. Unauthenticated users are redirected to `/login`.
 | Variable | Used by | Purpose |
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Next.js client and server | Supabase API URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Next.js client and server | Browser safe Supabase key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Next.js server | Admin enrichment, task enqueueing, and worker invocation |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Next.js client and server | Browser safe Supabase publishable key |
+| `SUPABASE_SECRET_KEY` | Next.js server | Admin enrichment, task enqueueing, and worker invocation (server-only) |
 | `AUTOMATION_SECRET` | Next.js server and Edge Function | Authenticates worker fast path and Cron calls |
 | `OPENROUTER_API_KEY` | Edge Function | AI model access |
 
-Never expose the service role key, automation secret, or OpenRouter key to browser code.
+Never expose the secret key, automation secret, or OpenRouter key to browser code.
 
 ## Checks
 
 ```bash
-npm run lint
-npm run build
+pnpm lint           # Check linter and formatting rules with Biome
+pnpm lint:fix       # Check and apply safe fixes with Biome
+pnpm format         # Format codebase with Biome
+pnpm format:check   # Verify formatting with Biome
+pnpm build          # Next.js production build check
 ```
 
 ## Project layout

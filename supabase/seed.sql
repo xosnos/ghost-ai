@@ -81,13 +81,13 @@ begin
   select id into v_id from vault.secrets where name = 'ai_worker_url';
   if v_id is null then
     perform vault.create_secret(
-      'http://supabase_kong_ghost-ai:8000/functions/v1/ai-worker',
+      'http://supabase_kong_architype:8000/functions/v1/ai-worker',
       'ai_worker_url'
     );
   else
     perform vault.update_secret(
       v_id,
-      'http://supabase_kong_ghost-ai:8000/functions/v1/ai-worker'
+      'http://supabase_kong_architype:8000/functions/v1/ai-worker'
     );
   end if;
 end $$;

@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { Copy, Check } from "lucide-react";
+import { Check, Copy } from "lucide-react";
+import React, { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface MarkdownRendererProps {
@@ -24,8 +24,12 @@ function sanitizeHref(href: string): string | null {
   if (!trimmed) return null;
   if (trimmed.startsWith("#") || trimmed.startsWith("/")) return trimmed;
   try {
-    const parsed = new URL(trimmed, "https://ghost-ai.invalid");
-    if (parsed.protocol === "http:" || parsed.protocol === "https:" || parsed.protocol === "mailto:") {
+    const parsed = new URL(trimmed, "https://architype.invalid");
+    if (
+      parsed.protocol === "http:" ||
+      parsed.protocol === "https:" ||
+      parsed.protocol === "mailto:"
+    ) {
       return trimmed;
     }
   } catch {
@@ -140,20 +144,13 @@ function renderInlineTokens(tokens: InlineToken[], keyPrefix = ""): React.ReactN
           </a>
         );
       }
-      case "text":
       default:
         return <React.Fragment key={key}>{token.text}</React.Fragment>;
     }
   });
 }
 
-function CodeBlock({
-  language,
-  code,
-}: {
-  language: string;
-  code: string;
-}) {
+function CodeBlock({ language, code }: { language: string; code: string }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -386,7 +383,12 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
   const blocks = useMemo(() => parseMarkdownBlocks(content || ""), [content]);
 
   return (
-    <div className={cn("flex flex-col text-sm text-[var(--text-primary)] leading-relaxed space-y-3", className)}>
+    <div
+      className={cn(
+        "flex flex-col text-sm text-[var(--text-primary)] leading-relaxed space-y-3",
+        className,
+      )}
+    >
       {blocks.map((block, idx) => {
         const blockKey = `block-${idx}`;
 
@@ -436,11 +438,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
 
           case "code_block":
             return (
-              <CodeBlock
-                key={blockKey}
-                language={block.language || ""}
-                code={block.code || ""}
-              />
+              <CodeBlock key={blockKey} language={block.language || ""} code={block.code || ""} />
             );
 
           case "blockquote": {
@@ -467,7 +465,10 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
                       <thead className="border-b border-[var(--border-default)] bg-[var(--bg-subtle)]/80 text-[var(--text-primary)] font-semibold">
                         <tr>
                           {block.headers.map((hdr, hIdx) => (
-                            <th key={`th-${hIdx}`} className="py-2 px-3 border-r border-[var(--border-subtle)] last:border-r-0">
+                            <th
+                              key={`th-${hIdx}`}
+                              className="py-2 px-3 border-r border-[var(--border-subtle)] last:border-r-0"
+                            >
                               {renderInlineTokens(parseInlineTokens(hdr), `${blockKey}-th-${hIdx}`)}
                             </th>
                           ))}
@@ -480,7 +481,7 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
                           key={`tr-${rIdx}`}
                           className={cn(
                             "transition-colors hover:bg-[var(--bg-subtle)]/40",
-                            rIdx % 2 === 1 && "bg-[var(--bg-subtle)]/20"
+                            rIdx % 2 === 1 && "bg-[var(--bg-subtle)]/20",
                           )}
                         >
                           {row.map((cell, cIdx) => (
@@ -488,7 +489,10 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
                               key={`td-${rIdx}-${cIdx}`}
                               className="py-2 px-3 text-[var(--text-secondary)] border-r border-[var(--border-subtle)] last:border-r-0"
                             >
-                              {renderInlineTokens(parseInlineTokens(cell), `${blockKey}-r${rIdx}-c${cIdx}`)}
+                              {renderInlineTokens(
+                                parseInlineTokens(cell),
+                                `${blockKey}-r${rIdx}-c${cIdx}`,
+                              )}
                             </td>
                           ))}
                         </tr>
@@ -501,7 +505,10 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
 
           case "unordered_list":
             return (
-              <ul key={blockKey} className="my-2 space-y-1.5 pl-4 list-disc marker:text-[var(--accent-primary)] text-xs text-[var(--text-primary)]">
+              <ul
+                key={blockKey}
+                className="my-2 space-y-1.5 pl-4 list-disc marker:text-[var(--accent-primary)] text-xs text-[var(--text-primary)]"
+              >
                 {(block.items || []).map((item, iIdx) => (
                   <li key={`ul-${iIdx}`} className="leading-relaxed">
                     {renderInlineTokens(parseInlineTokens(item), `${blockKey}-li-${iIdx}`)}
@@ -512,7 +519,10 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
 
           case "ordered_list":
             return (
-              <ol key={blockKey} className="my-2 space-y-1.5 pl-4 list-decimal marker:text-[var(--text-muted)] text-xs text-[var(--text-primary)]">
+              <ol
+                key={blockKey}
+                className="my-2 space-y-1.5 pl-4 list-decimal marker:text-[var(--text-muted)] text-xs text-[var(--text-primary)]"
+              >
                 {(block.items || []).map((item, iIdx) => (
                   <li key={`ol-${iIdx}`} className="leading-relaxed">
                     {renderInlineTokens(parseInlineTokens(item), `${blockKey}-oli-${iIdx}`)}
@@ -522,11 +532,8 @@ export function MarkdownRenderer({ content, className }: MarkdownRendererProps) 
             );
 
           case "divider":
-            return (
-              <hr key={blockKey} className="my-4 border-t border-[var(--border-default)]" />
-            );
+            return <hr key={blockKey} className="my-4 border-t border-[var(--border-default)]" />;
 
-          case "paragraph":
           default: {
             const tokens = parseInlineTokens(block.text || "");
             return (

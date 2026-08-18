@@ -37,18 +37,9 @@ export function getSenderDisplayName(sender: AiChatMessage["sender"]): string {
   return sender.name;
 }
 
-export type AiTaskStatus =
-  | "queued"
-  | "running"
-  | "retrying"
-  | "completed"
-  | "failed";
+export type AiTaskStatus = "queued" | "running" | "retrying" | "completed" | "failed";
 
-const ACTIVE_TASK_STATUSES: readonly AiTaskStatus[] = [
-  "queued",
-  "running",
-  "retrying",
-];
+const ACTIVE_TASK_STATUSES: readonly AiTaskStatus[] = ["queued", "running", "retrying"];
 
 export function computeIsAiActive(params: {
   overrideActive: boolean | null;
@@ -65,7 +56,7 @@ export function computeIsAiActive(params: {
     params.latestStatus &&
       ACTIVE_TASK_STATUSES.includes(params.latestStatus.status) &&
       params.latestStatus.step !== "complete" &&
-      params.latestStatus.step !== "failed"
+      params.latestStatus.step !== "failed",
   );
 }
 

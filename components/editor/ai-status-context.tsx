@@ -21,9 +21,7 @@ export interface AiStatusContextValue {
   activeTaskRun: ActiveTaskRun | null;
   currentRunId?: string | null;
   trackRun?: (runId: string) => Promise<void>;
-  registerTrackRun?: (
-    handler: ((runId: string) => Promise<void>) | null
-  ) => void;
+  registerTrackRun?: (handler: ((runId: string) => Promise<void>) | null) => void;
   setIsAiActive: (active: boolean) => void;
   setLatestStatus: (status: AiStatusMessage | null) => void;
   setActiveTaskRun: (run: ActiveTaskRun | null) => void;
@@ -38,11 +36,7 @@ export function AiStatusProvider({
   value: AiStatusContextValue;
   children: React.ReactNode;
 }) {
-  return (
-    <AiStatusContext.Provider value={value}>
-      {children}
-    </AiStatusContext.Provider>
-  );
+  return <AiStatusContext.Provider value={value}>{children}</AiStatusContext.Provider>;
 }
 
 export function useAiStatus(): AiStatusContextValue | null {

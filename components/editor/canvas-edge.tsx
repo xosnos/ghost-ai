@@ -1,20 +1,16 @@
 "use client";
 
+import { EdgeLabelRenderer, type EdgeProps, getSmoothStepPath } from "@xyflow/react";
 import {
+  type ChangeEvent,
+  type KeyboardEvent,
+  type MouseEvent,
   memo,
   useCallback,
   useEffect,
   useRef,
   useState,
-  type ChangeEvent,
-  type KeyboardEvent,
-  type MouseEvent,
 } from "react";
-import {
-  EdgeLabelRenderer,
-  getSmoothStepPath,
-  type EdgeProps,
-} from "@xyflow/react";
 import { useEdgeLabelUpdater } from "@/components/editor/edge-label-context";
 
 const REST_OPACITY = 0.55;
@@ -55,9 +51,7 @@ function CanvasEdgeInner({
   const stroke = active ? "var(--text-secondary)" : "var(--text-muted)";
   const strokeWidth = active ? 2 : 1.5;
   const resolvedMarkerEnd =
-    typeof markerEnd === "string"
-      ? markerEnd
-      : `url(#canvas-edge-arrow-${id})`;
+    typeof markerEnd === "string" ? markerEnd : `url(#canvas-edge-arrow-${id})`;
 
   const commitLabel = useCallback(
     (value: string) => {
@@ -144,10 +138,7 @@ function CanvasEdgeInner({
           orient="auto"
           markerUnits="userSpaceOnUse"
         >
-          <path
-            d="M0,0 L12,6 L0,12 Z"
-            fill="var(--text-secondary)"
-          />
+          <path d="M0,0 L12,6 L0,12 Z" fill="var(--text-secondary)" />
         </marker>
       </defs>
       <EdgeLabelRenderer>

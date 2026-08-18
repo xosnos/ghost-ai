@@ -1,7 +1,7 @@
 "use client";
 
 import { Panel } from "@xyflow/react";
-import { ZoomIn, ZoomOut, Maximize, Undo2, Redo2 } from "lucide-react";
+import { Maximize, Redo2, Undo2, ZoomIn, ZoomOut } from "lucide-react";
 
 interface CanvasControlBarProps {
   onZoomIn: () => void;
@@ -62,10 +62,7 @@ export function CanvasControlBar({
         <ZoomIn className="h-4 w-4" />
       </ControlButton>
 
-      <div
-        className="mx-0.5 h-5 w-px"
-        style={{ backgroundColor: "var(--border-default)" }}
-      />
+      <div className="mx-0.5 h-5 w-px" style={{ backgroundColor: "var(--border-default)" }} />
 
       <ControlButton onClick={onUndo} disabled={!canUndo} label="Undo">
         <Undo2 className="h-4 w-4" />

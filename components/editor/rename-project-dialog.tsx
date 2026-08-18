@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,7 +10,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 interface RenameProjectDialogProps {
@@ -82,10 +82,7 @@ export function RenameProjectDialog({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <span
-              className="text-xs font-medium"
-              style={{ color: "var(--text-secondary)" }}
-            >
+            <span className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
               Slug preview
             </span>
             <div

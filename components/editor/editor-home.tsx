@@ -1,30 +1,30 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import {
-  Sparkles,
-  Plus,
   ArrowUp,
-  Mic,
-  Monitor,
-  Zap,
-  Cloud,
-  ChevronDown,
   Check,
-  X,
-  Wand2,
-  Loader2,
+  ChevronDown,
+  Cloud,
   FileText,
   Globe,
   LayoutTemplate,
-  Sun,
+  Loader2,
+  Mic,
+  Monitor,
   Moon,
+  Plus,
+  Sparkles,
+  Sun,
+  Wand2,
+  X,
+  Zap,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { useProjectDialogs } from "@/components/editor/project-dialog-context";
 import { useTemplateSelection } from "@/components/editor/template-import-context";
+import { ArchitypeIcon, ArchitypeLogo } from "@/components/ui/architype-logo";
 import { useTheme } from "@/lib/theme-provider";
-import { GhostLogo, GhostIcon } from "@/components/ui/ghost-logo";
 import { cn } from "@/lib/utils";
 
 const PROMPT_SUGGESTIONS = [
@@ -62,13 +62,15 @@ export function EditorHome() {
   const openTemplates = useTemplateSelection();
   const { theme, resolvedTheme, setTheme } = useTheme();
   const [prompt, setPrompt] = useState(
-    "Create a high-throughput payment and subscription system with Redis caching, Kafka event streaming, and partitioned PostgreSQL storage."
+    "Create a high-throughput payment and subscription system with Redis caching, Kafka event streaming, and partitioned PostgreSQL storage.",
   );
   const [selectedModel, setSelectedModel] = useState(MODELS[0]);
   const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
   const [attachMenuOpen, setAttachMenuOpen] = useState(false);
   const [themeMenuOpen, setThemeMenuOpen] = useState(false);
-  const [activeArchMode, setActiveArchMode] = useState<"microservices" | "serverless">("microservices");
+  const [activeArchMode, setActiveArchMode] = useState<"microservices" | "serverless">(
+    "microservices",
+  );
   const [bannerDismissed, setBannerDismissed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<{ name: string; size: string }[]>([]);
@@ -104,7 +106,7 @@ export function EditorHome() {
     try {
       // Derive a clean name from the prompt
       const words = prompt.trim().split(/\s+/).slice(0, 5).join(" ");
-      const projectName = words.length > 30 ? words.slice(0, 27) + "..." : words;
+      const projectName = words.length > 30 ? `${words.slice(0, 27)}...` : words;
 
       const res = await fetch("/api/projects", {
         method: "POST",
@@ -134,13 +136,13 @@ export function EditorHome() {
     setAttachMenuOpen(false);
     if (!prompt.trim()) {
       setPrompt(
-        "Design a distributed real-time messaging architecture with WebSockets, Redis pub/sub cluster, Apache Kafka for audit logging, and partitioned PostgreSQL storage."
+        "Design a distributed real-time messaging architecture with WebSockets, Redis pub/sub cluster, Apache Kafka for audit logging, and partitioned PostgreSQL storage.",
       );
       return;
     }
     setPrompt(
       (prev) =>
-        `${prev.trim()}\n\nRequirements: Include API Gateway routing, rate-limiting, JWT authentication, dedicated worker pools, and automated database backups.`
+        `${prev.trim()}\n\nRequirements: Include API Gateway routing, rate-limiting, JWT authentication, dedicated worker pools, and automated database backups.`,
     );
   }
 
@@ -165,7 +167,7 @@ export function EditorHome() {
   function handleAddUrlPrompt() {
     setAttachMenuOpen(false);
     const url = window.prompt("Enter documentation or GitHub repository URL:");
-    if (url && url.trim()) {
+    if (url?.trim()) {
       setAttachedUrl(url.trim());
     }
   }
@@ -184,8 +186,8 @@ export function EditorHome() {
       {/* Top Banner - Google Stitch Style */}
       {!bannerDismissed && (
         <div className="animate-in fade-in slide-in-from-top-2 duration-300 mb-6 flex items-center gap-2 rounded-full border border-[var(--border-default)] bg-[var(--bg-surface)]/90 px-3.5 py-1 text-xs text-[var(--text-secondary)] shadow-sm backdrop-blur-md hover:border-[var(--border-subtle)]">
-          <GhostIcon size={14} glow />
-          <span className="font-medium">Meet the new Ghost AI Architect</span>
+          <ArchitypeIcon size={14} glow />
+          <span className="font-medium">Meet the new Architype Architect</span>
           <button
             type="button"
             onClick={() => setBannerDismissed(true)}
@@ -202,10 +204,15 @@ export function EditorHome() {
         {/* Title & Emblem */}
         <div className="text-center space-y-3">
           <div className="flex justify-center">
-            <GhostLogo size={36} variant="mark" glow className="transition-transform duration-300 hover:scale-110" />
+            <ArchitypeLogo
+              size={36}
+              variant="mark"
+              glow
+              className="transition-transform duration-300 hover:scale-110"
+            />
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[var(--text-primary)]">
-            Welcome to Ghost AI..
+            Welcome to Architype..
           </h1>
         </div>
 
@@ -221,9 +228,7 @@ export function EditorHome() {
               }}
               className="group flex items-center gap-1.5 rounded-full border border-[var(--border-default)] bg-[var(--bg-surface)]/80 px-3.5 py-1.5 text-xs text-[var(--text-secondary)] backdrop-blur-sm transition-all hover:border-[var(--border-subtle)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
             >
-              <span className="truncate max-w-[240px] sm:max-w-[280px]">
-                {sugg.label}
-              </span>
+              <span className="truncate max-w-[240px] sm:max-w-[280px]">{sugg.label}</span>
             </button>
           ))}
         </div>
@@ -305,7 +310,7 @@ export function EditorHome() {
                     "flex h-8 w-8 items-center justify-center rounded-lg transition-colors",
                     attachMenuOpen
                       ? "bg-[var(--bg-elevated)] text-[var(--text-primary)] ring-1 ring-[var(--accent-primary)]/40"
-                      : "text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
+                      : "text-[var(--text-muted)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]",
                   )}
                 >
                   <Plus className="h-4 w-4" />
@@ -365,7 +370,8 @@ export function EditorHome() {
                 <div
                   className="absolute left-1 top-1 bottom-1 w-[calc(50%-4px)] rounded-md bg-[var(--bg-elevated)] shadow-sm border border-[var(--border-subtle)]/50 transition-transform duration-200 ease-out pointer-events-none"
                   style={{
-                    transform: activeArchMode === "microservices" ? "translateX(0)" : "translateX(100%)",
+                    transform:
+                      activeArchMode === "microservices" ? "translateX(0)" : "translateX(100%)",
                   }}
                 />
 
@@ -376,7 +382,7 @@ export function EditorHome() {
                     "relative z-10 flex items-center justify-center gap-2 rounded-md px-4 py-1.5 text-xs font-medium transition-colors duration-200 whitespace-nowrap",
                     activeArchMode === "microservices"
                       ? "text-[var(--text-primary)]"
-                      : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                      : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
                   )}
                 >
                   <Zap className="h-3.5 w-3.5 shrink-0 text-amber-400" />
@@ -389,7 +395,7 @@ export function EditorHome() {
                     "relative z-10 flex items-center justify-center gap-2 rounded-md px-4 py-1.5 text-xs font-medium transition-colors duration-200 whitespace-nowrap",
                     activeArchMode === "serverless"
                       ? "text-[var(--text-primary)]"
-                      : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                      : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
                   )}
                 >
                   <Cloud className="h-3.5 w-3.5 shrink-0 text-cyan-400" />
@@ -470,7 +476,7 @@ export function EditorHome() {
                   "flex h-8 w-8 items-center justify-center rounded-full transition-all",
                   prompt.trim()
                     ? "bg-[var(--accent-primary)] text-black hover:scale-105 shadow-md active:scale-95"
-                    : "bg-[var(--bg-elevated)] text-[var(--text-muted)] opacity-50 cursor-not-allowed"
+                    : "bg-[var(--bg-elevated)] text-[var(--text-muted)] opacity-50 cursor-not-allowed",
                 )}
                 aria-label="Generate Architecture"
               >
@@ -496,7 +502,8 @@ export function EditorHome() {
             aria-expanded={themeMenuOpen}
             className={cn(
               "flex h-8 w-8 items-center justify-center rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--text-secondary)] shadow-md backdrop-blur-md transition-all hover:border-[var(--border-subtle)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]",
-              themeMenuOpen && "border-[var(--accent-primary)]/50 text-[var(--text-primary)] ring-1 ring-[var(--accent-primary)]/30"
+              themeMenuOpen &&
+                "border-[var(--accent-primary)]/50 text-[var(--text-primary)] ring-1 ring-[var(--accent-primary)]/30",
             )}
           >
             {theme === "system" ? (
@@ -520,16 +527,14 @@ export function EditorHome() {
                   "flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-colors",
                   theme === "light"
                     ? "bg-[var(--bg-subtle)] text-[var(--text-primary)]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)]",
                 )}
               >
                 <div className="flex items-center gap-2.5">
                   <Sun className="h-4 w-4 text-amber-500" />
                   <span>Light</span>
                 </div>
-                {theme === "light" && (
-                  <Check className="h-4 w-4 text-[var(--accent-primary)]" />
-                )}
+                {theme === "light" && <Check className="h-4 w-4 text-[var(--accent-primary)]" />}
               </button>
 
               <button
@@ -542,16 +547,14 @@ export function EditorHome() {
                   "flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-colors",
                   theme === "system"
                     ? "bg-[var(--bg-subtle)] text-[var(--text-primary)]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)]",
                 )}
               >
                 <div className="flex items-center gap-2.5">
                   <Monitor className="h-4 w-4" />
                   <span>System</span>
                 </div>
-                {theme === "system" && (
-                  <Check className="h-4 w-4 text-[var(--accent-primary)]" />
-                )}
+                {theme === "system" && <Check className="h-4 w-4 text-[var(--accent-primary)]" />}
               </button>
 
               <button
@@ -564,16 +567,14 @@ export function EditorHome() {
                   "flex w-full items-center justify-between rounded-xl px-3 py-2 text-xs font-medium transition-colors",
                   theme === "dark"
                     ? "bg-[var(--bg-subtle)] text-[var(--text-primary)]"
-                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)]",
                 )}
               >
                 <div className="flex items-center gap-2.5">
                   <Moon className="h-4 w-4 text-indigo-400" />
                   <span>Dark</span>
                 </div>
-                {theme === "dark" && (
-                  <Check className="h-4 w-4 text-[var(--accent-primary)]" />
-                )}
+                {theme === "dark" && <Check className="h-4 w-4 text-[var(--accent-primary)]" />}
               </button>
             </div>
           )}
@@ -582,5 +583,3 @@ export function EditorHome() {
     </div>
   );
 }
-
-

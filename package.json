@@ -1,44 +1,49 @@
 {
-  "name": "ghost-ai",
+  "name": "architype",
   "version": "0.1.0",
   "private": true,
   "engines": {
     "node": ">=22"
   },
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
+    "format:check": "biome format ."
   },
   "dependencies": {
-    "@eslint/eslintrc": "^3.3.5",
-    "@netlify/plugin-nextjs": "^5.15.12",
-    "@radix-ui/react-dialog": "^1.1.18",
-    "@radix-ui/react-scroll-area": "^1.2.13",
-    "@radix-ui/react-slot": "^1.3.0",
-    "@radix-ui/react-tabs": "^1.1.16",
+    "@netlify/plugin-nextjs": "^5.15.13",
+    "@radix-ui/react-dialog": "^1.1.23",
+    "@radix-ui/react-scroll-area": "^1.2.18",
+    "@radix-ui/react-slot": "^1.3.3",
+    "@radix-ui/react-tabs": "^1.1.21",
     "@supabase/ssr": "0.12.0",
     "@supabase/supabase-js": "2.110.0",
-    "@xyflow/react": "^12.11.2",
+    "@xyflow/react": "^12.11.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "lucide-react": "^1.22.0",
-    "next": "15.4.11",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
+    "lucide-react": "^1.31.0",
+    "next": "16.3.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "server-only": "^0.0.1",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "15.4.11",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "@biomejs/biome": "2.5.8",
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^20.19.43",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4"
   }
 }

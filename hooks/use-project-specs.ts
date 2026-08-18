@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import type { ProjectSpecSummary, ProjectSpecDetail } from "@/types/specs";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { ProjectSpecDetail, ProjectSpecSummary } from "@/types/specs";
 
 export function triggerSpecDownload(projectId: string, specId: string, fileName?: string) {
   const downloadUrl = `/api/projects/${projectId}/specs/${specId}/download`;
@@ -41,20 +41,25 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
   const listRequestIdRef = useRef(0);
   const previewRequestIdRef = useRef(0);
 
-  useEffect(() => {
-    projectIdRef.current = projectId;
-    previewRequestIdRef.current += 1;
-    selectedSpecIdRef.current = null;
+  const [prevProjectId, setPrevProjectId] = useState(projectId);
+  if (prevProjectId !== projectId) {
+    setPrevProjectId(projectId);
     setSelectedSpecId(null);
     setSelectedSpec(null);
     setLoadingDetail(false);
     setDetailError(null);
+  }
+
+  useEffect(() => {
+    projectIdRef.current = projectId;
+    previewRequestIdRef.current += 1;
+    selectedSpecIdRef.current = null;
   }, [projectId]);
 
   const isCurrentProject = useCallback(
     (requestProjectId: string | undefined) =>
       Boolean(requestProjectId) && projectIdRef.current === requestProjectId,
-    []
+    [],
   );
 
   // 1. Fetch specs list
@@ -81,6 +86,7 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
       if (listRequestIdRef.current !== requestId || !isCurrentProject(projectId)) return;
       const data = (await res.json()) as { specs: ProjectSpecSummary[] };
       setSpecs(Array.isArray(data.specs) ? data.specs : []);
+      setError(null);
     } catch (err: unknown) {
       if (listRequestIdRef.current !== requestId || !isCurrentProject(projectId)) return;
       const message = err instanceof Error ? err.message : "Failed to load project specs";
@@ -95,15 +101,35 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
 
   // Initial load or on projectId change
   useEffect(() => {
-    void fetchSpecs();
+    let ignore = false;
+    const run = async () => {
+      await Promise.resolve();
+      if (!ignore) {
+        void fetchSpecs();
+      }
+    };
+    void run();
+    return () => {
+      ignore = true;
+    };
   }, [fetchSpecs]);
 
   // Refetch when AI generation finishes (isAiActive transitions from true to false)
   useEffect(() => {
+    let ignore = false;
     if (prevIsAiActiveRef.current === true && isAiActive === false) {
-      void fetchSpecs();
+      const run = async () => {
+        await Promise.resolve();
+        if (!ignore) {
+          void fetchSpecs();
+        }
+      };
+      void run();
     }
     prevIsAiActiveRef.current = isAiActive;
+    return () => {
+      ignore = true;
+    };
   }, [isAiActive, fetchSpecs]);
 
   // 2. Open and load spec preview detail
@@ -148,7 +174,7 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
         }
       }
     },
-    [isCurrentProject, projectId]
+    [isCurrentProject, projectId],
   );
 
   // 3. Close preview modal
@@ -167,16 +193,12 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
       if (!projectId || !spec.id) return;
       triggerSpecDownload(projectId, spec.id, spec.fileName);
     },
-    [projectId]
+    [projectId],
   );
 
   // 5. Generate spec trigger
   const generateSpec = useCallback(
-    async (contextData?: {
-      chatHistory?: unknown[];
-      nodes?: unknown[];
-      edges?: unknown[];
-    }) => {
+    async (contextData?: { chatHistory?: unknown[]; nodes?: unknown[]; edges?: unknown[] }) => {
       if (!projectId) return null;
 
       setGenerating(true);
@@ -214,7 +236,7 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
         setGenerating(false);
       }
     },
-    [projectId]
+    [projectId],
   );
 
   const clearGenerationError = useCallback(() => {

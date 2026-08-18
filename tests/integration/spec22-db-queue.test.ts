@@ -1,29 +1,59 @@
-import { createClient } from "@supabase/supabase-js";
 import assert from "node:assert";
+import fs from "node:fs";
+import path from "node:path";
+import { createClient } from "@supabase/supabase-js";
+
+// Load local environment variables from .env / .env.local
+function loadEnvironment() {
+  const envFiles = [".env", ".env.local"];
+  for (const relPath of envFiles) {
+    const fullPath = path.resolve(process.cwd(), relPath);
+    if (fs.existsSync(fullPath)) {
+      const content = fs.readFileSync(fullPath, "utf-8");
+      for (const line of content.split("\n")) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith("#")) continue;
+        const eqIdx = trimmed.indexOf("=");
+        if (eqIdx !== -1) {
+          const key = trimmed.slice(0, eqIdx).trim();
+          const val = trimmed
+            .slice(eqIdx + 1)
+            .replace(/^["']|["']$/g, "")
+            .trim();
+          if (!process.env[key]) {
+            process.env[key] = val;
+          }
+        }
+      }
+    }
+  }
+}
+
+loadEnvironment();
 
 // ---------------------------------------------------------------------------
 // Environment & Client Configuration
 // ---------------------------------------------------------------------------
 const SUPABASE_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  process.env.SUPABASE_URL ||
-  "http://127.0.0.1:54321";
+  process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || "http://127.0.0.1:54321";
 
-const ANON_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0";
+const PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "";
+const SECRET_KEY = process.env.SUPABASE_SECRET_KEY || "";
 
-const SERVICE_ROLE_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
+if (!PUBLISHABLE_KEY || !SECRET_KEY) {
+  console.error(
+    "Missing NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY or SUPABASE_SECRET_KEY environment variable.",
+  );
+  process.exit(1);
+}
 
-// Admin / Service Role client
-const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
+// Admin / Secret client
+const adminClient = createClient(SUPABASE_URL, SECRET_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
-// Unauthenticated / Anon client
-const anonClient = createClient(SUPABASE_URL, ANON_KEY, {
+// Unauthenticated / Publishable client
+const anonClient = createClient(SUPABASE_URL, PUBLISHABLE_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
@@ -31,7 +61,7 @@ const anonClient = createClient(SUPABASE_URL, ANON_KEY, {
 async function callPgmqRpc(
   fn: string,
   body: Record<string, unknown>,
-  clientToken: string = SERVICE_ROLE_KEY
+  clientToken: string = SECRET_KEY,
 ): Promise<{ status: number; data?: unknown; error?: string }> {
   try {
     const res = await fetch(`${SUPABASE_URL.replace(/\/$/, "")}/rest/v1/rpc/${fn}`, {
@@ -107,7 +137,7 @@ async function createTestUser(emailPrefix: string) {
 
   cleanupUserIds.push(data.user.id);
 
-  const client = createClient(SUPABASE_URL, ANON_KEY, {
+  const client = createClient(SUPABASE_URL, PUBLISHABLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
@@ -166,12 +196,10 @@ async function runSuite() {
     project = await createTestProject(owner.user.id, "Spec 22 Test Project");
 
     // Add collaborator to project
-    const { error: collabError } = await adminClient
-      .from("project_collaborators")
-      .insert({
-        project_id: project.id,
-        email: collaborator.user.email,
-      });
+    const { error: collabError } = await adminClient.from("project_collaborators").insert({
+      project_id: project.id,
+      email: collaborator.user.email,
+    });
     if (collabError) {
       throw new Error(`Failed to add collaborator: ${collabError.message}`);
     }
@@ -219,18 +247,16 @@ async function runSuite() {
     });
 
     await test("Authenticated user is DENIED direct INSERT on task_runs (42501)", async () => {
-      const { error } = await owner.client
-        .from("task_runs")
-        .insert({
-          project_id: project.id,
-          user_id: owner.user.id,
-          kind: "design",
-          status: "queued",
-        });
+      const { error } = await owner.client.from("task_runs").insert({
+        project_id: project.id,
+        user_id: owner.user.id,
+        kind: "design",
+        status: "queued",
+      });
       assert.ok(error, "Expected INSERT to fail with permission denied");
       assert.ok(
         error.code === "42501" || error.message.includes("permission denied"),
-        `Expected error code 42501 or permission denied, got ${error.code}: ${error.message}`
+        `Expected error code 42501 or permission denied, got ${error.code}: ${error.message}`,
       );
     });
 
@@ -242,35 +268,30 @@ async function runSuite() {
       assert.ok(error, "Expected UPDATE to fail with permission denied");
       assert.ok(
         error.code === "42501" || error.message.includes("permission denied"),
-        `Expected error code 42501 or permission denied, got ${error.code}: ${error.message}`
+        `Expected error code 42501 or permission denied, got ${error.code}: ${error.message}`,
       );
     });
 
     await test("Authenticated user is DENIED direct DELETE on task_runs (42501)", async () => {
-      const { error } = await owner.client
-        .from("task_runs")
-        .delete()
-        .eq("id", fixtureRun.id);
+      const { error } = await owner.client.from("task_runs").delete().eq("id", fixtureRun.id);
       assert.ok(error, "Expected DELETE to fail with permission denied");
       assert.ok(
         error.code === "42501" || error.message.includes("permission denied"),
-        `Expected error code 42501 or permission denied, got ${error.code}: ${error.message}`
+        `Expected error code 42501 or permission denied, got ${error.code}: ${error.message}`,
       );
     });
 
     await test("Anon user is DENIED INSERT, UPDATE, DELETE on task_runs (42501)", async () => {
-      const { error: insertErr } = await anonClient
-        .from("task_runs")
-        .insert({
-          project_id: project.id,
-          user_id: owner.user.id,
-          kind: "design",
-          status: "queued",
-        });
+      const { error: insertErr } = await anonClient.from("task_runs").insert({
+        project_id: project.id,
+        user_id: owner.user.id,
+        kind: "design",
+        status: "queued",
+      });
       assert.ok(insertErr, "Anon INSERT should fail");
       assert.ok(
         insertErr.code === "42501" || insertErr.message.includes("permission denied"),
-        `Expected 42501 on anon insert, got ${insertErr.code}`
+        `Expected 42501 on anon insert, got ${insertErr.code}`,
       );
 
       const { error: updateErr } = await anonClient
@@ -280,7 +301,7 @@ async function runSuite() {
       assert.ok(updateErr, "Anon UPDATE should fail");
       assert.ok(
         updateErr.code === "42501" || updateErr.message.includes("permission denied"),
-        `Expected 42501 on anon update, got ${updateErr.code}`
+        `Expected 42501 on anon update, got ${updateErr.code}`,
       );
 
       const { error: deleteErr } = await anonClient
@@ -290,7 +311,7 @@ async function runSuite() {
       assert.ok(deleteErr, "Anon DELETE should fail");
       assert.ok(
         deleteErr.code === "42501" || deleteErr.message.includes("permission denied"),
-        `Expected 42501 on anon delete, got ${deleteErr.code}`
+        `Expected 42501 on anon delete, got ${deleteErr.code}`,
       );
     });
 
@@ -305,7 +326,7 @@ async function runSuite() {
       } else {
         assert.ok(
           error.code === "42501" || error.message.includes("permission denied"),
-          `Expected 42501 or 0 rows for anon SELECT, got ${error.code}: ${error.message}`
+          `Expected 42501 or 0 rows for anon SELECT, got ${error.code}: ${error.message}`,
         );
       }
     });
@@ -321,7 +342,7 @@ async function runSuite() {
       assert.ok(authRpcErr, "Authenticated user should not be able to execute enqueue_task_run");
       assert.ok(
         authRpcErr.code === "42501" || authRpcErr.message.includes("permission denied"),
-        `Expected 42501 on rpc execute for authenticated, got ${authRpcErr.code}: ${authRpcErr.message}`
+        `Expected 42501 on rpc execute for authenticated, got ${authRpcErr.code}: ${authRpcErr.message}`,
       );
 
       // 2. Anon caller
@@ -337,7 +358,7 @@ async function runSuite() {
           anonRpcErr.message.includes("permission denied") ||
           anonRpcErr.message.includes("function") ||
           anonRpcErr.message.includes("not found"),
-        `Expected permission denial for anon RPC, got ${anonRpcErr.code}: ${anonRpcErr.message}`
+        `Expected permission denial for anon RPC, got ${anonRpcErr.code}: ${anonRpcErr.message}`,
       );
     });
 
@@ -346,22 +367,28 @@ async function runSuite() {
       const authRes = await callPgmqRpc(
         "read",
         { queue_name: "ai-generation", sleep_seconds: 10, n: 1 },
-        owner.token
+        owner.token,
       );
       assert.ok(
-        authRes.status === 401 || authRes.status === 403 || authRes.status === 404 || authRes.error?.includes("permission denied"),
-        `Expected pgmq_public.read to be forbidden for authenticated user, got status ${authRes.status}: ${authRes.error}`
+        authRes.status === 401 ||
+          authRes.status === 403 ||
+          authRes.status === 404 ||
+          authRes.error?.includes("permission denied"),
+        `Expected pgmq_public.read to be forbidden for authenticated user, got status ${authRes.status}: ${authRes.error}`,
       );
 
       // Anon caller trying pgmq_public.send
       const anonRes = await callPgmqRpc(
         "send",
         { queue_name: "ai-generation", message: { test: "unauthorized" } },
-        ANON_KEY
+        PUBLISHABLE_KEY,
       );
       assert.ok(
-        anonRes.status === 401 || anonRes.status === 403 || anonRes.status === 404 || anonRes.error?.includes("permission denied"),
-        `Expected pgmq_public.send to be forbidden for anon user, got status ${anonRes.status}: ${anonRes.error}`
+        anonRes.status === 401 ||
+          anonRes.status === 403 ||
+          anonRes.status === 404 ||
+          anonRes.error?.includes("permission denied"),
+        `Expected pgmq_public.send to be forbidden for anon user, got status ${anonRes.status}: ${anonRes.error}`,
       );
     });
 
@@ -483,85 +510,76 @@ async function runSuite() {
     });
 
     await test("Invalid kind is REJECTED by CHECK constraint", async () => {
-      const { error } = await adminClient
-        .from("task_runs")
-        .insert({
-          project_id: project.id,
-          user_id: owner.user.id,
-          kind: "invalid_kind",
-          status: "queued",
-        });
+      const { error } = await adminClient.from("task_runs").insert({
+        project_id: project.id,
+        user_id: owner.user.id,
+        kind: "invalid_kind",
+        status: "queued",
+      });
       assert.ok(error, "Expected invalid kind to be rejected");
       assert.ok(
         error.code === "23514" || error.message.includes("check constraint"),
-        `Expected check constraint 23514, got ${error.code}: ${error.message}`
+        `Expected check constraint 23514, got ${error.code}: ${error.message}`,
       );
     });
 
     await test("Invalid status is REJECTED by CHECK constraint", async () => {
-      const { error } = await adminClient
-        .from("task_runs")
-        .insert({
-          project_id: project.id,
-          user_id: owner.user.id,
-          kind: "design",
-          status: "invalid_status",
-        });
+      const { error } = await adminClient.from("task_runs").insert({
+        project_id: project.id,
+        user_id: owner.user.id,
+        kind: "design",
+        status: "invalid_status",
+      });
       assert.ok(error, "Expected invalid status to be rejected");
       assert.ok(
         error.code === "23514" || error.message.includes("check constraint"),
-        `Expected check constraint 23514, got ${error.code}: ${error.message}`
+        `Expected check constraint 23514, got ${error.code}: ${error.message}`,
       );
     });
 
     await test("Negative attempt_count is REJECTED (attempt_count >= 0)", async () => {
-      const { error } = await adminClient
-        .from("task_runs")
-        .insert({
-          project_id: project.id,
-          user_id: owner.user.id,
-          kind: "design",
-          status: "queued",
-          attempt_count: -1,
-        });
+      const { error } = await adminClient.from("task_runs").insert({
+        project_id: project.id,
+        user_id: owner.user.id,
+        kind: "design",
+        status: "queued",
+        attempt_count: -1,
+      });
       assert.ok(error, "Expected negative attempt_count to be rejected");
       assert.ok(
         error.code === "23514" || error.message.includes("check constraint"),
-        `Expected check constraint 23514, got ${error.code}: ${error.message}`
+        `Expected check constraint 23514, got ${error.code}: ${error.message}`,
       );
     });
 
     await test("Terminal status ('completed', 'failed') REQUIRES non-null completed_at", async () => {
       // 1. completed with null completed_at
-      const { error: eCompleted } = await adminClient
-        .from("task_runs")
-        .insert({
-          project_id: project.id,
-          user_id: owner.user.id,
-          kind: "design",
-          status: "completed",
-          completed_at: null,
-        });
+      const { error: eCompleted } = await adminClient.from("task_runs").insert({
+        project_id: project.id,
+        user_id: owner.user.id,
+        kind: "design",
+        status: "completed",
+        completed_at: null,
+      });
       assert.ok(eCompleted, "completed status without completed_at must be rejected");
       assert.ok(
-        eCompleted.code === "23514" || eCompleted.message.includes("task_runs_terminal_timestamps_check"),
-        `Expected task_runs_terminal_timestamps_check violation, got ${eCompleted.code}: ${eCompleted.message}`
+        eCompleted.code === "23514" ||
+          eCompleted.message.includes("task_runs_terminal_timestamps_check"),
+        `Expected task_runs_terminal_timestamps_check violation, got ${eCompleted.code}: ${eCompleted.message}`,
       );
 
       // 2. failed with null completed_at
-      const { error: eFailed } = await adminClient
-        .from("task_runs")
-        .insert({
-          project_id: project.id,
-          user_id: owner.user.id,
-          kind: "spec",
-          status: "failed",
-          completed_at: null,
-        });
+      const { error: eFailed } = await adminClient.from("task_runs").insert({
+        project_id: project.id,
+        user_id: owner.user.id,
+        kind: "spec",
+        status: "failed",
+        completed_at: null,
+      });
       assert.ok(eFailed, "failed status without completed_at must be rejected");
       assert.ok(
         eFailed.code === "23514" || eFailed.message.includes("task_runs_terminal_timestamps_check"),
-        `Expected task_runs_terminal_timestamps_check violation, got ${eFailed.code}: ${eFailed.message}`
+        `Expected task_runs_terminal_timestamps_check violation, got ${eFailed.code}: ${eFailed.message}`,
       );
     });
 
@@ -569,52 +587,48 @@ async function runSuite() {
       const now = new Date().toISOString();
 
       // 1. queued with completed_at set
-      const { error: eQueued } = await adminClient
-        .from("task_runs")
-        .insert({
-          project_id: project.id,
-          user_id: owner.user.id,
-          kind: "design",
-          status: "queued",
-          completed_at: now,
-        });
+      const { error: eQueued } = await adminClient.from("task_runs").insert({
+        project_id: project.id,
+        user_id: owner.user.id,
+        kind: "design",
+        status: "queued",
+        completed_at: now,
+      });
       assert.ok(eQueued, "queued status with completed_at must be rejected");
       assert.ok(
         eQueued.code === "23514" || eQueued.message.includes("task_runs_terminal_timestamps_check"),
-        `Expected task_runs_terminal_timestamps_check violation, got ${eQueued.code}: ${eQueued.message}`
+        `Expected task_runs_terminal_timestamps_check violation, got ${eQueued.code}: ${eQueued.message}`,
       );
 
       // 2. running with completed_at set
-      const { error: eRunning } = await adminClient
-        .from("task_runs")
-        .insert({
-          project_id: project.id,
-          user_id: owner.user.id,
-          kind: "design",
-          status: "running",
-          started_at: now,
-          completed_at: now,
-        });
+      const { error: eRunning } = await adminClient.from("task_runs").insert({
+        project_id: project.id,
+        user_id: owner.user.id,
+        kind: "design",
+        status: "running",
+        started_at: now,
+        completed_at: now,
+      });
       assert.ok(eRunning, "running status with completed_at must be rejected");
       assert.ok(
-        eRunning.code === "23514" || eRunning.message.includes("task_runs_terminal_timestamps_check"),
-        `Expected task_runs_terminal_timestamps_check violation, got ${eRunning.code}: ${eRunning.message}`
+        eRunning.code === "23514" ||
+          eRunning.message.includes("task_runs_terminal_timestamps_check"),
+        `Expected task_runs_terminal_timestamps_check violation, got ${eRunning.code}: ${eRunning.message}`,
       );
 
       // 3. retrying with completed_at set
-      const { error: eRetrying } = await adminClient
-        .from("task_runs")
-        .insert({
-          project_id: project.id,
-          user_id: owner.user.id,
-          kind: "design",
-          status: "retrying",
-          completed_at: now,
-        });
+      const { error: eRetrying } = await adminClient.from("task_runs").insert({
+        project_id: project.id,
+        user_id: owner.user.id,
+        kind: "design",
+        status: "retrying",
+        completed_at: now,
+      });
       assert.ok(eRetrying, "retrying status with completed_at must be rejected");
       assert.ok(
-        eRetrying.code === "23514" || eRetrying.message.includes("task_runs_terminal_timestamps_check"),
-        `Expected task_runs_terminal_timestamps_check violation, got ${eRetrying.code}: ${eRetrying.message}`
+        eRetrying.code === "23514" ||
+          eRetrying.message.includes("task_runs_terminal_timestamps_check"),
+        `Expected task_runs_terminal_timestamps_check violation, got ${eRetrying.code}: ${eRetrying.message}`,
       );
     });
 
@@ -623,21 +637,19 @@ async function runSuite() {
       const started = new Date("2026-08-17T12:05:00Z").toISOString();
       const invalidCompleted = new Date("2026-08-17T12:02:00Z").toISOString(); // Earlier than started!
 
-      const { error } = await adminClient
-        .from("task_runs")
-        .insert({
-          project_id: project.id,
-          user_id: owner.user.id,
-          kind: "design",
-          status: "completed",
-          created_at: created,
-          started_at: started,
-          completed_at: invalidCompleted,
-        });
+      const { error } = await adminClient.from("task_runs").insert({
+        project_id: project.id,
+        user_id: owner.user.id,
+        kind: "design",
+        status: "completed",
+        created_at: created,
+        started_at: started,
+        completed_at: invalidCompleted,
+      });
       assert.ok(error, "completed_at < started_at must be rejected");
       assert.ok(
         error.code === "23514" || error.message.includes("task_runs_terminal_timestamps_check"),
-        `Expected task_runs_terminal_timestamps_check, got ${error.code}: ${error.message}`
+        `Expected task_runs_terminal_timestamps_check, got ${error.code}: ${error.message}`,
       );
     });
 
@@ -663,37 +675,33 @@ async function runSuite() {
       cleanupTaskRunIds.push(run1.id);
 
       // 2. Attempt 2nd active run for same project (status 'running')
-      const { error: err2Running } = await adminClient
-        .from("task_runs")
-        .insert({
-          project_id: project.id,
-          user_id: owner.user.id,
-          kind: "spec",
-          status: "running",
-          created_at: new Date(Date.now() - 1000).toISOString(),
-          started_at: new Date().toISOString(),
-        });
+      const { error: err2Running } = await adminClient.from("task_runs").insert({
+        project_id: project.id,
+        user_id: owner.user.id,
+        kind: "spec",
+        status: "running",
+        created_at: new Date(Date.now() - 1000).toISOString(),
+        started_at: new Date().toISOString(),
+      });
       assert.ok(err2Running, "2nd active run ('running') should fail unique constraint");
       assert.strictEqual(
         err2Running.code,
         "23505",
-        `Expected Postgres code 23505, got ${err2Running.code}: ${err2Running.message}`
+        `Expected Postgres code 23505, got ${err2Running.code}: ${err2Running.message}`,
       );
       assert.ok(
         err2Running.message.includes("task_runs_active_project_idx") ||
           err2Running.message.includes("duplicate key"),
-        `Expected task_runs_active_project_idx conflict, got ${err2Running.message}`
+        `Expected task_runs_active_project_idx conflict, got ${err2Running.message}`,
       );
 
       // 3. Attempt 2nd active run for same project (status 'retrying')
-      const { error: err2Retrying } = await adminClient
-        .from("task_runs")
-        .insert({
-          project_id: project.id,
-          user_id: owner.user.id,
-          kind: "design",
-          status: "retrying",
-        });
+      const { error: err2Retrying } = await adminClient.from("task_runs").insert({
+        project_id: project.id,
+        user_id: owner.user.id,
+        kind: "design",
+        status: "retrying",
+      });
       assert.ok(err2Retrying, "2nd active run ('retrying') should fail unique constraint");
       assert.strictEqual(err2Retrying.code, "23505");
 
@@ -831,12 +839,12 @@ async function runSuite() {
       assert.strictEqual(
         error.code,
         "23505",
-        `Expected code 23505 unique_violation, got ${error.code}: ${error.message}`
+        `Expected code 23505 unique_violation, got ${error.code}: ${error.message}`,
       );
       assert.ok(
         error.message.includes("task_runs_active_project_idx") ||
           error.message.includes("duplicate key"),
-        `Expected active project constraint message, got ${error.message}`
+        `Expected active project constraint message, got ${error.message}`,
       );
     });
 
@@ -924,7 +932,11 @@ async function runSuite() {
         p_kind: "spec",
         p_input: { prompt: "Next spec generation" },
       });
-      assert.strictEqual(newRunErr, null, `Expected project to allow new run after completion: ${newRunErr?.message}`);
+      assert.strictEqual(
+        newRunErr,
+        null,
+        `Expected project to allow new run after completion: ${newRunErr?.message}`,
+      );
       assert.ok(newRunId);
       cleanupTaskRunIds.push(newRunId);
 
@@ -988,7 +1000,6 @@ async function runSuite() {
       assert.strictEqual(failedRow?.error_message, "Permanent validation failure");
       assert.ok(failedRow?.completed_at != null);
     });
-
   } finally {
     // -------------------------------------------------------------------------
     // Cleanup
@@ -1010,7 +1021,7 @@ async function runSuite() {
   // Summary
   console.log("\n--------------------------------------------------");
   console.log(
-    `Test Results: ${ctx.passed} Passed, ${ctx.failed} Failed (Total: ${ctx.passed + ctx.failed})`
+    `Test Results: ${ctx.passed} Passed, ${ctx.failed} Failed (Total: ${ctx.passed + ctx.failed})`,
   );
   console.log("--------------------------------------------------\n");
 

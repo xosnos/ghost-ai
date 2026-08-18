@@ -3,13 +3,13 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 
-export interface GhostLogoProps {
+export interface ArchitypeLogoProps {
   /** Size preset or custom pixel number */
   size?: "xs" | "sm" | "md" | "lg" | "xl" | number;
   /** Display variant:
    *  - 'icon': standalone SVG vector mark
    *  - 'mark': vector mark within an elevated glassmorphic container
-   *  - 'full': mark + "Ghost AI" typography + optional BETA badge
+   *  - 'full': mark + "Architype" typography + optional BETA badge
    */
   variant?: "icon" | "mark" | "full";
   /** Custom class for outer wrapper */
@@ -31,11 +31,11 @@ const SIZE_MAP = {
 };
 
 /**
- * Modern High-Tech Ghost AI Geometric Monomark
- * Features interlocking dimensional ribbons, quantum diamond nexus,
- * and aerodynamic spectral contours.
+ * High-Precision Isometric Neural 'A' Monomark
+ * Features interlocking architectural pillars, dimensional crossbar portal,
+ * and a glowing quantum diamond nexus core.
  */
-export function GhostIcon({
+export function ArchitypeIcon({
   size = 24,
   className,
   glow = false,
@@ -47,11 +47,12 @@ export function GhostIcon({
 } & React.SVGProps<SVGSVGElement>) {
   const pixelSize = typeof size === "number" ? size : parseInt(size, 10) || 24;
   const idPrefix = React.useId().replace(/:/g, "_");
-  const cyanGradId = `ghost-cyan-${idPrefix}`;
-  const indigoGradId = `ghost-indigo-${idPrefix}`;
-  const coreGradId = `ghost-core-${idPrefix}`;
-  const rimGradId = `ghost-rim-${idPrefix}`;
-  const glowFilterId = `ghost-glow-${idPrefix}`;
+  const leftPillarGradId = `architype-left-${idPrefix}`;
+  const rightPillarGradId = `architype-right-${idPrefix}`;
+  const crossbarGradId = `architype-cross-${idPrefix}`;
+  const coreGradId = `architype-core-${idPrefix}`;
+  const rimGradId = `architype-rim-${idPrefix}`;
+  const glowFilterId = `architype-glow-${idPrefix}`;
 
   return (
     <svg
@@ -64,36 +65,71 @@ export function GhostIcon({
       {...props}
     >
       <defs>
-        {/* Left Wing / Apex Gradient: Electric Cyan to Azure */}
-        <linearGradient id={cyanGradId} x1="5" y1="3" x2="18" y2="26" gradientUnits="userSpaceOnUse">
+        {/* Left Architectural Pillar: Electric Cyan to Azure */}
+        <linearGradient
+          id={leftPillarGradId}
+          x1="5"
+          y1="3"
+          x2="17"
+          y2="28"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop offset="0%" stopColor="#00F5FF" />
           <stop offset="50%" stopColor="#00C8D4" />
           <stop offset="100%" stopColor="#0284C7" />
         </linearGradient>
 
-        {/* Right Wing / Shroud Gradient: Radiant Purple to Indigo */}
-        <linearGradient id={indigoGradId} x1="27" y1="3" x2="14" y2="28" gradientUnits="userSpaceOnUse">
+        {/* Right Architectural Pillar: Radiant Violet to Indigo */}
+        <linearGradient
+          id={rightPillarGradId}
+          x1="27"
+          y1="3"
+          x2="15"
+          y2="28"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop offset="0%" stopColor="#C084FC" />
-          <stop offset="40%" stopColor="#818CF8" />
-          <stop offset="80%" stopColor="#6366F1" />
+          <stop offset="45%" stopColor="#818CF8" />
+          <stop offset="85%" stopColor="#6366F1" />
           <stop offset="100%" stopColor="#4338CA" />
         </linearGradient>
 
-        {/* Quantum Diamond Core Gradient */}
-        <linearGradient id={coreGradId} x1="13" y1="9" x2="19" y2="17" gradientUnits="userSpaceOnUse">
+        {/* Isometric Crossbar / Nexus Bridge */}
+        <linearGradient
+          id={crossbarGradId}
+          x1="9"
+          y1="16"
+          x2="23"
+          y2="23"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop offset="0%" stopColor="#38BDF8" />
+          <stop offset="50%" stopColor="#818CF8" />
+          <stop offset="100%" stopColor="#C084FC" />
+        </linearGradient>
+
+        {/* Quantum Core Highlight */}
+        <linearGradient
+          id={coreGradId}
+          x1="13"
+          y1="11"
+          x2="19"
+          y2="19"
+          gradientUnits="userSpaceOnUse"
+        >
           <stop offset="0%" stopColor="#FFFFFF" />
-          <stop offset="45%" stopColor="#67E8F9" />
+          <stop offset="50%" stopColor="#67E8F9" />
           <stop offset="100%" stopColor="#06B6D4" />
         </linearGradient>
 
         {/* Specular Rim Highlight Gradient */}
         <linearGradient id={rimGradId} x1="8" y1="4" x2="24" y2="16" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.9" />
-          <stop offset="50%" stopColor="#38BDF8" stopOpacity="0.6" />
+          <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
+          <stop offset="50%" stopColor="#38BDF8" stopOpacity="0.7" />
           <stop offset="100%" stopColor="#A855F7" stopOpacity="0" />
         </linearGradient>
 
-        {/* Ambient Luminescence Filter */}
+        {/* Ambient Luminescence Glow */}
         <filter id={glowFilterId} x="-25%" y="-25%" width="150%" height="150%">
           <feDropShadow dx="0" dy="0" stdDeviation="2" floodColor="#00F5FF" floodOpacity="0.5" />
           <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#6366F1" floodOpacity="0.3" />
@@ -101,45 +137,45 @@ export function GhostIcon({
       </defs>
 
       <g filter={glow ? `url(#${glowFilterId})` : undefined}>
-        {/* Right Spectral Wing & Base Fold */}
+        {/* Right Pillar & Base Foundation */}
         <path
-          d="M 16 3 C 22 3 26.5 7.5 27 15.5 C 27.3 20 26.5 24 25.5 27 C 25 28.2 23.5 28.4 22.5 27.4 L 19.8 24.5 C 18.5 23.2 16.5 23.2 15.2 24.5 L 14.5 25.2 C 16.8 21.5 20.2 19 24 18 C 24.5 13 21 8.5 16 5.5 Z"
-          fill={`url(#${indigoGradId})`}
+          d="M 16 3.5 L 26.5 24.5 C 27.2 25.8 26.3 27.5 24.8 27.5 L 20.2 27.5 C 19.4 27.5 18.6 27 18.2 26.2 L 16 21.8 L 20.2 21.8 L 16 13.5 L 14.5 16.5 L 12.8 13 L 16 3.5 Z"
+          fill={`url(#${rightPillarGradId})`}
         />
 
-        {/* Left Spectral Wing & Aerodynamic Hood */}
+        {/* Left Pillar & Apex Cap */}
         <path
-          d="M 16 3 C 9.8 3 5.2 7.8 5 15.5 C 4.8 20 5.6 24 6.6 27 C 7.1 28.2 8.6 28.4 9.6 27.4 L 12.5 24.5 C 13.8 23.2 15.8 23.2 17.1 24.5 L 18.5 26 C 16.5 27.8 14 28.2 12.2 27.2 L 9.8 25 C 8.5 23.8 8 20.5 8 16 C 8 10 11.5 5 16 3 Z"
-          fill={`url(#${cyanGradId})`}
+          d="M 16 3.5 L 5.5 24.5 C 4.8 25.8 5.7 27.5 7.2 27.5 L 11.8 27.5 C 12.6 27.5 13.4 27 13.8 26.2 L 16 21.8 L 11.8 21.8 L 16 13.5 L 16 3.5 Z"
+          fill={`url(#${leftPillarGradId})`}
         />
 
-        {/* Inner Facet / Dimensional Glass Ribbon */}
+        {/* Isometric Crossbar Bridge / Portal */}
         <path
-          d="M 16 4.5 C 11.5 6.5 8.5 11 8.5 16.5 C 8.5 20.5 9.2 23.5 10.5 25 C 11.8 21.5 14.5 19 18 18 C 21.5 17 24 13.5 24.5 9 C 22.5 6 19.5 4.5 16 4.5 Z"
-          fill="white"
-          fillOpacity="0.08"
+          d="M 10.5 19.5 L 21.5 19.5 C 22.2 19.5 22.8 20.1 22.5 20.8 L 21.5 22.8 C 21.2 23.3 20.7 23.6 20.2 23.6 L 11.8 23.6 C 11.3 23.6 10.8 23.3 10.5 22.8 L 9.5 20.8 C 9.2 20.1 9.8 19.5 10.5 19.5 Z"
+          fill={`url(#${crossbarGradId})`}
         />
 
-        {/* Specular Apex Edge Line */}
+        {/* Inner Glass Prism Facet */}
+        <path d="M 16 6 L 13.2 12 L 18.8 12 Z" fill="white" fillOpacity="0.12" />
+
+        {/* Specular Apex Edge Rim */}
         <path
-          d="M 9.5 14 C 10.2 8.5 12.8 4.8 16 4.2 C 19 4.8 21.5 8 22.8 13"
+          d="M 8 22 L 16 5.5 L 24 22"
           stroke={`url(#${rimGradId})`}
           strokeWidth="1.2"
           strokeLinecap="round"
+          strokeLinejoin="round"
         />
 
-        {/* Quantum Diamond Nexus / Neural Eye Core */}
-        <path
-          d="M 16 9.5 L 19.5 14 L 16 18.5 L 12.5 14 Z"
-          fill={`url(#${coreGradId})`}
-        />
+        {/* Central Quantum Nexus Diamond */}
+        <path d="M 16 13 L 18.5 17 L 16 21 L 13.5 17 Z" fill={`url(#${coreGradId})`} />
 
-        {/* Central Quantum Flare Sparkle */}
-        <circle cx="16" cy="14" r="1.2" fill="#FFFFFF" />
+        {/* Central Quantum Flare */}
+        <circle cx="16" cy="17" r="1.1" fill="#FFFFFF" />
 
-        {/* Micro Satellite Spark at Top-Right */}
+        {/* Micro Apex Spark */}
         <path
-          d="M 26.5 2.5 L 27.3 4.2 L 29 5 L 27.3 5.8 L 26.5 7.5 L 25.7 5.8 L 24 5 L 25.7 4.2 Z"
+          d="M 26.5 3 L 27.2 4.5 L 28.8 5.2 L 27.2 5.9 L 26.5 7.5 L 25.8 5.9 L 24.2 5.2 L 25.8 4.5 Z"
           fill="#38BDF8"
           opacity="0.9"
         />
@@ -149,27 +185,21 @@ export function GhostIcon({
 }
 
 /**
- * Ghost AI Logo Component
+ * Architype Logo Component
  */
-export function GhostLogo({
+export function ArchitypeLogo({
   size = "md",
   variant = "mark",
   className,
   iconClassName,
   showBadge = true,
   glow = false,
-}: GhostLogoProps) {
+}: ArchitypeLogoProps) {
   const pixelSize = typeof size === "number" ? size : SIZE_MAP[size] || 28;
 
   // Icon only
   if (variant === "icon") {
-    return (
-      <GhostIcon
-        size={pixelSize}
-        className={cn(iconClassName, className)}
-        glow={glow}
-      />
-    );
+    return <ArchitypeIcon size={pixelSize} className={cn(iconClassName, className)} glow={glow} />;
   }
 
   // Mark within glowing glassmorphic container
@@ -178,7 +208,7 @@ export function GhostLogo({
       <div
         className={cn(
           "group relative flex shrink-0 items-center justify-center rounded-xl bg-gradient-to-b from-[var(--bg-elevated)] to-[var(--bg-surface)] border border-[var(--border-default)] shadow-[0_2px_10px_rgba(0,0,0,0.2)] transition-all duration-200 hover:border-[var(--accent-primary)]/50 hover:shadow-[0_0_20px_rgba(0,200,212,0.2)] hover:scale-105",
-          className
+          className,
         )}
         style={{
           width: pixelSize + 10,
@@ -187,7 +217,11 @@ export function GhostLogo({
       >
         {/* Subtle Ambient Radial Highlight inside badge */}
         <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-[var(--accent-ai)]/10 via-transparent to-[var(--accent-primary)]/15 opacity-60 group-hover:opacity-100 transition-opacity" />
-        <GhostIcon size={pixelSize} className={cn("relative z-10", iconClassName)} glow={glow} />
+        <ArchitypeIcon
+          size={pixelSize}
+          className={cn("relative z-10", iconClassName)}
+          glow={glow}
+        />
       </div>
     );
   }
@@ -203,7 +237,11 @@ export function GhostLogo({
         }}
       >
         <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-[var(--accent-ai)]/10 via-transparent to-[var(--accent-primary)]/15 opacity-60" />
-        <GhostIcon size={pixelSize} className={cn("relative z-10", iconClassName)} glow={glow} />
+        <ArchitypeIcon
+          size={pixelSize}
+          className={cn("relative z-10", iconClassName)}
+          glow={glow}
+        />
       </div>
 
       <div className="flex items-center gap-2">
@@ -213,7 +251,7 @@ export function GhostLogo({
             fontSize: Math.max(15, Math.round(pixelSize * 0.62)),
           }}
         >
-          Ghost AI
+          Architype
         </span>
 
         {showBadge && (
@@ -225,3 +263,8 @@ export function GhostLogo({
     </div>
   );
 }
+
+// Backwards-compatible aliases
+export const GhostIcon = ArchitypeIcon;
+export const GhostLogo = ArchitypeLogo;
+export type GhostLogoProps = ArchitypeLogoProps;

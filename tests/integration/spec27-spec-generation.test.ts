@@ -3,9 +3,9 @@ import fs from "node:fs";
 import path from "node:path";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-// Load local environment variables from .env / .env.local
+// Load local environment variables from .env / .env.local / supabase/functions/.env
 function loadEnvironment() {
-  const envFiles = [".env", ".env.local"];
+  const envFiles = [".env", ".env.local", "supabase/functions/.env"];
   for (const relPath of envFiles) {
     const fullPath = path.resolve(process.cwd(), relPath);
     if (fs.existsSync(fullPath)) {
@@ -31,45 +31,49 @@ function loadEnvironment() {
 
 loadEnvironment();
 
-// Imports after environment variables are loaded
+// Mock server-only module for tsx test execution
+try {
+  const serverOnlyPath = require.resolve("server-only");
+  require.cache[serverOnlyPath] = {
+    id: serverOnlyPath,
+    filename: serverOnlyPath,
+    loaded: true,
+    exports: {},
+  } as NodeModule;
+} catch {
+  // Ignored if server-only is not installed
+}
+
+// Declare task-runs module bindings
+let enqueueTaskRun: typeof import("../../lib/ai/task-runs").enqueueTaskRun;
+let ActiveTaskRunConflictError: typeof import("../../lib/ai/task-runs").ActiveTaskRunConflictError;
+
 import {
-  enqueueTaskRun,
-  ActiveTaskRunConflictError,
-} from "../../lib/ai/task-runs";
-import {
-  processSpecTask,
-  cleanMarkdownSpec,
-  SPECS_BUCKET,
-} from "../../supabase/functions/_shared/generate-spec";
-import {
-  PermanentAiError,
-  TransientAiError,
-} from "../../supabase/functions/_shared/design-agent";
-import {
-  listProjectSpecs,
-  getProjectSpec,
   downloadSpecMarkdown,
-  parseSpecStoragePath,
   formatSpecFileName,
+  getProjectSpec,
+  listProjectSpecs,
+  parseSpecStoragePath,
   slugifySpecName,
 } from "../../lib/specs/queries";
+import { PermanentAiError, TransientAiError } from "../../supabase/functions/_shared/design-agent";
+import {
+  cleanMarkdownSpec,
+  processSpecTask,
+  SPECS_BUCKET,
+} from "../../supabase/functions/_shared/generate-spec";
 
-const SUPABASE_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "http://127.0.0.1:54321";
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || "http://127.0.0.1:54321";
+const SECRET_KEY = process.env.SUPABASE_SECRET_KEY || "";
 
-if (!SERVICE_ROLE_KEY) {
-  console.error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable.");
+if (!SECRET_KEY) {
+  console.error("Missing SUPABASE_SECRET_KEY environment variable.");
   process.exit(1);
 }
 
-const supabaseAdmin: SupabaseClient = createClient(
-  SUPABASE_URL,
-  SERVICE_ROLE_KEY,
-  {
-    auth: { persistSession: false, autoRefreshToken: false },
-  }
-);
+const supabaseAdmin: SupabaseClient = createClient(SUPABASE_URL, SECRET_KEY, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
 
 // Test tracking helpers
 let testUserId = "";
@@ -79,8 +83,7 @@ async function setupTestContext() {
   console.log("Setting up test context against local Supabase stack...");
 
   // 1. Ensure test user exists in auth.users
-  const { data: users, error: listError } =
-    await supabaseAdmin.auth.admin.listUsers();
+  const { data: users, error: listError } = await supabaseAdmin.auth.admin.listUsers();
   if (listError) {
     throw new Error(`Failed to list auth users: ${listError.message}`);
   }
@@ -88,16 +91,13 @@ async function setupTestContext() {
   if (users.users.length > 0) {
     testUserId = users.users[0].id;
   } else {
-    const { data: newUser, error: createError } =
-      await supabaseAdmin.auth.admin.createUser({
-        email: `spec27-test-${Date.now()}@ghost-ai.dev`,
-        password: "test-password-123456",
-        email_confirm: true,
-      });
+    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+      email: `spec27-test-${Date.now()}@architype.xosnos.com`,
+      password: "test-password-123456",
+      email_confirm: true,
+    });
     if (createError || !newUser.user) {
-      throw new Error(
-        `Failed to create test user: ${createError?.message || "unknown"}`
-      );
+      throw new Error(`Failed to create test user: ${createError?.message || "unknown"}`);
     }
     testUserId = newUser.user.id;
   }
@@ -108,18 +108,11 @@ async function setupTestContext() {
   const { data: buckets } = await supabaseAdmin.storage.listBuckets();
   const hasSpecsBucket = (buckets ?? []).some((b) => b.id === SPECS_BUCKET);
   if (!hasSpecsBucket) {
-    const { error: bucketError } = await supabaseAdmin.storage.createBucket(
-      SPECS_BUCKET,
-      {
-        public: false,
-        fileSizeLimit: 10485760,
-        allowedMimeTypes: [
-          "text/markdown",
-          "text/plain",
-          "application/octet-stream",
-        ],
-      }
-    );
+    const { error: bucketError } = await supabaseAdmin.storage.createBucket(SPECS_BUCKET, {
+      public: false,
+      fileSizeLimit: 10485760,
+      allowedMimeTypes: ["text/markdown", "text/plain", "application/octet-stream"],
+    });
     if (bucketError) {
       console.warn("Storage createBucket warning:", bucketError.message);
     }
@@ -150,9 +143,7 @@ async function teardownTestContext() {
   for (const projectId of createdProjectIds) {
     try {
       // 1. Remove storage artifacts
-      const { data: files } = await supabaseAdmin.storage
-        .from(SPECS_BUCKET)
-        .list(projectId);
+      const { data: files } = await supabaseAdmin.storage.from(SPECS_BUCKET).list(projectId);
       if (files && files.length > 0) {
         const filePaths = files.map((f) => `${projectId}/${f.name}`);
         await supabaseAdmin.storage.from(SPECS_BUCKET).remove(filePaths);
@@ -196,6 +187,10 @@ async function runSpec27IntegrationSuite() {
 
   await setupTestContext();
 
+  const taskRunsModule = await import("../../lib/ai/task-runs");
+  enqueueTaskRun = taskRunsModule.enqueueTaskRun;
+  ActiveTaskRunConflictError = taskRunsModule.ActiveTaskRunConflictError;
+
   try {
     // ------------------------------------------------------------------------
     // GROUP A: Spec Generation Route & Enqueueing
@@ -221,7 +216,7 @@ async function runSpec27IntegrationSuite() {
       assert.match(
         runId,
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
-        "runId must be a valid UUID"
+        "runId must be a valid UUID",
       );
 
       // Verify task_runs table row
@@ -288,11 +283,11 @@ async function runSpec27IntegrationSuite() {
         (err: unknown) => {
           assert.ok(
             err instanceof ActiveTaskRunConflictError,
-            `Expected ActiveTaskRunConflictError, got ${err}`
+            `Expected ActiveTaskRunConflictError, got ${err}`,
           );
           return true;
         },
-        "Should reject 2nd spec run while first is queued"
+        "Should reject 2nd spec run while first is queued",
       );
 
       // 3. Attempting to enqueue design run should also throw ActiveTaskRunConflictError
@@ -309,14 +304,11 @@ async function runSpec27IntegrationSuite() {
           assert.ok(err instanceof ActiveTaskRunConflictError);
           return true;
         },
-        "Should reject design run while spec run is active"
+        "Should reject design run while spec run is active",
       );
 
       // 4. Update status to 'running' -> still conflicts
-      await supabaseAdmin
-        .from("task_runs")
-        .update({ status: "running" })
-        .eq("id", firstRunId);
+      await supabaseAdmin.from("task_runs").update({ status: "running" }).eq("id", firstRunId);
 
       await assert.rejects(
         async () => {
@@ -328,14 +320,11 @@ async function runSpec27IntegrationSuite() {
           });
         },
         ActiveTaskRunConflictError,
-        "Should reject new run while status is 'running'"
+        "Should reject new run while status is 'running'",
       );
 
       // 5. Update status to 'retrying' -> still conflicts
-      await supabaseAdmin
-        .from("task_runs")
-        .update({ status: "retrying" })
-        .eq("id", firstRunId);
+      await supabaseAdmin.from("task_runs").update({ status: "retrying" }).eq("id", firstRunId);
 
       await assert.rejects(
         async () => {
@@ -347,7 +336,7 @@ async function runSpec27IntegrationSuite() {
           });
         },
         ActiveTaskRunConflictError,
-        "Should reject new run while status is 'retrying'"
+        "Should reject new run while status is 'retrying'",
       );
 
       // 6. Complete the first run -> allows new task run to be enqueued
@@ -389,7 +378,7 @@ async function runSpec27IntegrationSuite() {
           });
         },
         PermanentAiError,
-        "Missing runId must throw PermanentAiError"
+        "Missing runId must throw PermanentAiError",
       );
 
       // 2. Missing projectId
@@ -404,7 +393,7 @@ async function runSpec27IntegrationSuite() {
           });
         },
         PermanentAiError,
-        "Missing projectId must throw PermanentAiError"
+        "Missing projectId must throw PermanentAiError",
       );
 
       // 3. Non-existent runId
@@ -419,7 +408,7 @@ async function runSpec27IntegrationSuite() {
           });
         },
         PermanentAiError,
-        "Non-existent runId must throw PermanentAiError"
+        "Non-existent runId must throw PermanentAiError",
       );
 
       // 4. Project ID mismatch
@@ -446,7 +435,7 @@ async function runSpec27IntegrationSuite() {
           assert.match(err.message, /project mismatch/i);
           return true;
         },
-        "Project mismatch must throw PermanentAiError"
+        "Project mismatch must throw PermanentAiError",
       );
 
       // 5. Kind mismatch: task_runs row is 'design', but processSpecTask called
@@ -473,7 +462,7 @@ async function runSpec27IntegrationSuite() {
           assert.match(err.message, /kind mismatch/i);
           return true;
         },
-        "Kind mismatch must throw PermanentAiError"
+        "Kind mismatch must throw PermanentAiError",
       );
     });
 
@@ -525,7 +514,9 @@ async function runSpec27IntegrationSuite() {
             { id: "node_api_gateway", type: "custom", data: { label: "API Gateway" } },
             { id: "node_order_service", type: "custom", data: { label: "Order Service" } },
           ],
-          edges: [{ id: "edge_gw_order", source: "node_api_gateway", target: "node_order_service" }],
+          edges: [
+            { id: "edge_gw_order", source: "node_api_gateway", target: "node_order_service" },
+          ],
           chatHistory: [{ role: "user", content: "Order management spec" }],
         },
         signal: new AbortController().signal,
@@ -537,21 +528,19 @@ async function runSpec27IntegrationSuite() {
 
       // 2. Verify artifact in Supabase Storage
       const storageKey = `${projectId}/${runId}.md`;
-      const { data: downloadedBlob, error: downloadErr } =
-        await supabaseAdmin.storage.from(SPECS_BUCKET).download(storageKey);
+      const { data: downloadedBlob, error: downloadErr } = await supabaseAdmin.storage
+        .from(SPECS_BUCKET)
+        .download(storageKey);
 
       assert.ifError(downloadErr);
       assert.ok(downloadedBlob, "Downloaded storage blob must exist");
       const markdownContent = await downloadedBlob.text();
-      assert.ok(
-        markdownContent.length > 50,
-        "Storage artifact must contain full Markdown spec"
-      );
+      assert.ok(markdownContent.length > 50, "Storage artifact must contain full Markdown spec");
       assert.ok(
         markdownContent.includes("# Technical Specification") ||
           markdownContent.includes("Technical Specification") ||
           markdownContent.includes("API Gateway"),
-        "Markdown spec should contain expected architectural sections"
+        "Markdown spec should contain expected architectural sections",
       );
 
       // 3. Verify project_specs metadata record
@@ -632,26 +621,24 @@ async function runSpec27IntegrationSuite() {
       assert.strictEqual(
         rowsAfterRetry?.length,
         1,
-        "Retry execution must NOT create duplicate project_specs rows"
+        "Retry execution must NOT create duplicate project_specs rows",
       );
       assert.strictEqual(
         rowsAfterRetry[0].id,
         initialSpecId,
-        "Idempotent upsert on task_run_id must update existing row without ID thrashing"
+        "Idempotent upsert on task_run_id must update existing row without ID thrashing",
       );
 
       // Verify direct database upsert idempotency test with raw query
-      const { error: rawUpsertErr } = await supabaseAdmin
-        .from("project_specs")
-        .upsert(
-          {
-            task_run_id: runId,
-            project_id: projectId,
-            file_path: `specs/${projectId}/${runId}.md`,
-            created_at: new Date().toISOString(),
-          },
-          { onConflict: "task_run_id" }
-        );
+      const { error: rawUpsertErr } = await supabaseAdmin.from("project_specs").upsert(
+        {
+          task_run_id: runId,
+          project_id: projectId,
+          file_path: `specs/${projectId}/${runId}.md`,
+          created_at: new Date().toISOString(),
+        },
+        { onConflict: "task_run_id" },
+      );
       assert.ifError(rawUpsertErr, "Raw upsert with onConflict: task_run_id should succeed");
 
       const { count } = await supabaseAdmin
@@ -689,10 +676,7 @@ async function runSpec27IntegrationSuite() {
       assert.ok(specBefore, "project_spec row must exist before deletion");
 
       // Delete the task_runs row
-      const { error: delErr } = await supabaseAdmin
-        .from("task_runs")
-        .delete()
-        .eq("id", runId);
+      const { error: delErr } = await supabaseAdmin.from("task_runs").delete().eq("id", runId);
       assert.ifError(delErr);
 
       // Verify project_specs row was cascaded and deleted
@@ -930,40 +914,29 @@ async function runSpec27IntegrationSuite() {
       });
 
       // Call listProjectSpecs
-      const specs = await listProjectSpecs(
-        supabaseAdmin,
-        projectId,
-        "Payment Infrastructure"
-      );
+      const specs = await listProjectSpecs(supabaseAdmin, projectId, "Payment Infrastructure");
 
       assert.strictEqual(specs.length, 2, "Should return 2 spec summaries");
 
       // Verify newest first ordering
-      assert.strictEqual(
-        specs[0].taskRunId,
-        runId2,
-        "Newest spec must be first in list"
-      );
+      assert.strictEqual(specs[0].taskRunId, runId2, "Newest spec must be first in list");
       assert.strictEqual(specs[1].taskRunId, runId1);
 
       // Verify filenames formatted properly with slug and short run ID
       const shortRunId2 = runId2.replace(/-/g, "").slice(0, 8);
-      assert.strictEqual(
-        specs[0].fileName,
-        `payment-infrastructure-spec-${shortRunId2}.md`
-      );
+      assert.strictEqual(specs[0].fileName, `payment-infrastructure-spec-${shortRunId2}.md`);
 
       // Security invariant: file_path must NOT be present on summary objects
       for (const item of specs) {
         assert.strictEqual(
           (item as unknown as Record<string, unknown>).filePath,
           undefined,
-          "filePath must not be exposed in ProjectSpecSummary"
+          "filePath must not be exposed in ProjectSpecSummary",
         );
         assert.strictEqual(
           (item as unknown as Record<string, unknown>).file_path,
           undefined,
-          "file_path must not be exposed in ProjectSpecSummary"
+          "file_path must not be exposed in ProjectSpecSummary",
         );
         assert.ok(item.id, "Summary has id");
         assert.ok(item.taskRunId, "Summary has taskRunId");
@@ -1011,14 +984,14 @@ async function runSpec27IntegrationSuite() {
       assert.strictEqual(
         specB,
         null,
-        "Must return null when querying a spec belonging to another project"
+        "Must return null when querying a spec belonging to another project",
       );
 
       // 3. Fetching non-existent spec ID returns null
       const nonExistent = await getProjectSpec(
         supabaseAdmin,
         projectA,
-        "00000000-0000-0000-0000-000000000000"
+        "00000000-0000-0000-0000-000000000000",
       );
       assert.strictEqual(nonExistent, null);
     });
@@ -1049,30 +1022,24 @@ This is a test spec artifact stored at a deterministic path.
       assert.ifError(uploadErr);
 
       // Download using downloadSpecMarkdown helper with 'specs/' prefix
-      const contentWithPrefix = await downloadSpecMarkdown(
-        supabaseAdmin,
-        storagePath
-      );
+      const contentWithPrefix = await downloadSpecMarkdown(supabaseAdmin, storagePath);
       assert.strictEqual(contentWithPrefix, sampleMarkdown);
 
       // Download using downloadSpecMarkdown helper without 'specs/' prefix
-      const contentWithoutPrefix = await downloadSpecMarkdown(
-        supabaseAdmin,
-        storageKey
-      );
+      const contentWithoutPrefix = await downloadSpecMarkdown(supabaseAdmin, storageKey);
       assert.strictEqual(contentWithoutPrefix, sampleMarkdown);
     });
 
     await test("Utility functions: parseSpecStoragePath, cleanMarkdownSpec, slugifySpecName, formatSpecFileName", async () => {
       // 1. parseSpecStoragePath
-      assert.deepStrictEqual(
-        parseSpecStoragePath("specs/proj-1/run-2.md"),
-        { bucket: "specs", path: "proj-1/run-2.md" }
-      );
-      assert.deepStrictEqual(
-        parseSpecStoragePath("proj-1/run-2.md"),
-        { bucket: "specs", path: "proj-1/run-2.md" }
-      );
+      assert.deepStrictEqual(parseSpecStoragePath("specs/proj-1/run-2.md"), {
+        bucket: "specs",
+        path: "proj-1/run-2.md",
+      });
+      assert.deepStrictEqual(parseSpecStoragePath("proj-1/run-2.md"), {
+        bucket: "specs",
+        path: "proj-1/run-2.md",
+      });
 
       // 2. cleanMarkdownSpec
       const rawWithThink = `<think>
@@ -1080,16 +1047,10 @@ Architectural reasoning here...
 </think>
 # Clean Spec
 Content here`;
-      assert.strictEqual(
-        cleanMarkdownSpec(rawWithThink),
-        "# Clean Spec\nContent here"
-      );
+      assert.strictEqual(cleanMarkdownSpec(rawWithThink), "# Clean Spec\nContent here");
 
       const rawWrappedFences = "```markdown\n# Wrapped Spec\nContent\n```";
-      assert.strictEqual(
-        cleanMarkdownSpec(rawWrappedFences),
-        "# Wrapped Spec\nContent"
-      );
+      assert.strictEqual(cleanMarkdownSpec(rawWrappedFences), "# Wrapped Spec\nContent");
 
       // 3. slugifySpecName
       assert.strictEqual(slugifySpecName("My Awesome App!"), "my-awesome-app");
@@ -1103,24 +1064,23 @@ Content here`;
           projectName: "Realtime Chat App",
           taskRunId: "e19411e3-1234-5678-9abc-def012345678",
         }),
-        "realtime-chat-app-spec-e19411e3.md"
+        "realtime-chat-app-spec-e19411e3.md",
       );
       assert.strictEqual(
         formatSpecFileName({
           projectName: "",
           taskRunId: "e19411e3-1234-5678-9abc-def012345678",
         }),
-        "spec-e19411e3.md"
+        "spec-e19411e3.md",
       );
       assert.strictEqual(
         formatSpecFileName({
           projectName: "Solo Project",
         }),
-        "solo-project-spec.md"
+        "solo-project-spec.md",
       );
       assert.strictEqual(formatSpecFileName({}), "spec.md");
     });
-
   } finally {
     await teardownTestContext();
   }

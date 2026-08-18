@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
-import { AuthField } from "@/components/auth/auth-field";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { AuthError } from "@/components/auth/auth-error";
+import { AuthField } from "@/components/auth/auth-field";
+import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
 
 export function SignupForm() {
   const [email, setEmail] = useState("");
@@ -48,16 +48,13 @@ export function SignupForm() {
   if (checkEmail) {
     return (
       <div>
-        <h1
-          className="text-xl font-semibold mb-1"
-          style={{ color: "var(--text-primary)" }}
-        >
+        <h1 className="text-xl font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
           Check your email
         </h1>
         <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>
           We sent a confirmation link to{" "}
-          <strong style={{ color: "var(--text-secondary)" }}>{email}</strong>.
-          Click the link in the email to activate your account.
+          <strong style={{ color: "var(--text-secondary)" }}>{email}</strong>. Click the link in the
+          email to activate your account.
         </p>
         <Link href="/login">
           <Button variant="ghost" className="w-full">
@@ -70,14 +67,11 @@ export function SignupForm() {
 
   return (
     <div>
-      <h1
-        className="text-xl font-semibold mb-1"
-        style={{ color: "var(--text-primary)" }}
-      >
+      <h1 className="text-xl font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
         Create an account
       </h1>
       <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>
-        Get started with Ghost AI for free.
+        Get started with Architype for free.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -111,16 +105,9 @@ export function SignupForm() {
         </Button>
       </form>
 
-      <p
-        className="mt-6 text-center text-sm"
-        style={{ color: "var(--text-muted)" }}
-      >
+      <p className="mt-6 text-center text-sm" style={{ color: "var(--text-muted)" }}>
         Already have an account?{" "}
-        <Link
-          href="/login"
-          className="hover:underline"
-          style={{ color: "var(--accent-primary)" }}
-        >
+        <Link href="/login" className="hover:underline" style={{ color: "var(--accent-primary)" }}>
           Sign in
         </Link>
       </p>

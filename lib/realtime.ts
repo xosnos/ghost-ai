@@ -1,13 +1,6 @@
 import type { RealtimeChannel, SupabaseClient } from "@supabase/supabase-js";
-import { createRealtimeBrowserClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/supabase/client";
 import { NODE_COLORS } from "@/types/canvas";
-import {
-  parseAiStatusMessage,
-  parseAiChatMessage,
-  type AiStatusMessage,
-  type AiChatMessage,
-  type AiChatMessageSender,
-} from "@/types/tasks";
 import type {
   CursorMovePayload,
   PresencePayload,
@@ -15,6 +8,13 @@ import type {
   SelectionChangePayload,
   UserMeta,
 } from "@/types/realtime";
+import {
+  type AiChatMessage,
+  type AiChatMessageSender,
+  type AiStatusMessage,
+  parseAiChatMessage,
+  parseAiStatusMessage,
+} from "@/types/tasks";
 
 export function getUserCursorColor(userId: string): string {
   let hash = 0;
@@ -30,12 +30,20 @@ export async function connectRealtimeChannel(
   projectId: string,
   userId: string,
 ): Promise<{ supabase: SupabaseClient; channel: RealtimeChannel }> {
-  const supabase = createRealtimeBrowserClient();
+  const supabase = createClient();
   const {
     data: { session },
   } = await supabase.auth.getSession();
   if (session?.access_token) {
     await supabase.realtime.setAuth(session.access_token);
+  }
+
+  // Remove existing channel on singleton client to guarantee fresh subscription lifecycle
+  const existing = supabase
+    .getChannels()
+    .find((c) => c.topic === `realtime:project:${projectId}` || c.topic === `project:${projectId}`);
+  if (existing) {
+    await supabase.removeChannel(existing);
   }
 
   const channel = supabase.channel(`project:${projectId}`, {
@@ -56,10 +64,7 @@ export function buildUserMeta(user: {
 }): UserMeta {
   return {
     userId: user.id,
-    displayName:
-      user.user_metadata?.display_name ??
-      user.email?.split("@")[0] ??
-      "Anonymous",
+    displayName: user.user_metadata?.display_name ?? user.email?.split("@")[0] ?? "Anonymous",
     avatarUrl: user.user_metadata?.avatar_url ?? null,
     cursorColor: getUserCursorColor(user.id),
   };
@@ -123,13 +128,9 @@ export function attachCanvasSyncListener(
   channel: RealtimeChannel,
   onEvent: (payload: unknown) => void,
 ) {
-  channel.on(
-    "broadcast",
-    { event: "canvas:sync" },
-    (message: { payload?: unknown }) => {
-      onEvent(message?.payload);
-    },
-  );
+  channel.on("broadcast", { event: "canvas:sync" }, (message: { payload?: unknown }) => {
+    onEvent(message?.payload);
+  });
 }
 
 export function parseCursorMovePayload(value: unknown): CursorMovePayload | null {
@@ -161,32 +162,21 @@ export function attachCursorMoveListener(
   channel: RealtimeChannel,
   onEvent: (payload: CursorMovePayload) => void,
 ) {
-  channel.on(
-    "broadcast",
-    { event: "cursor:move" },
-    (message: { payload?: unknown }) => {
-      const parsed = parseCursorMovePayload(message?.payload);
-      if (
-        parsed &&
-        readPresenceEntries(channel).some((entry) => entry.userId === parsed.userId)
-      ) {
-        onEvent(parsed);
-      }
-    },
-  );
+  channel.on("broadcast", { event: "cursor:move" }, (message: { payload?: unknown }) => {
+    const parsed = parseCursorMovePayload(message?.payload);
+    if (parsed && readPresenceEntries(channel).some((entry) => entry.userId === parsed.userId)) {
+      onEvent(parsed);
+    }
+  });
 }
 
-export function parseSelectionChangePayload(
-  value: unknown,
-): SelectionChangePayload | null {
+export function parseSelectionChangePayload(value: unknown): SelectionChangePayload | null {
   if (!value || typeof value !== "object") return null;
   const record = value as Record<string, unknown>;
   if (typeof record.userId !== "string" || !Array.isArray(record.nodeIds)) {
     return null;
   }
-  const nodeIds = record.nodeIds.filter(
-    (id): id is string => typeof id === "string",
-  );
+  const nodeIds = record.nodeIds.filter((id): id is string => typeof id === "string");
   return { userId: record.userId, nodeIds };
 }
 
@@ -194,51 +184,36 @@ export function attachSelectionChangeListener(
   channel: RealtimeChannel,
   onEvent: (payload: SelectionChangePayload) => void,
 ) {
-  channel.on(
-    "broadcast",
-    { event: "selection:change" },
-    (message: { payload?: unknown }) => {
-      const parsed = parseSelectionChangePayload(message?.payload);
-      if (
-        parsed &&
-        readPresenceEntries(channel).some((entry) => entry.userId === parsed.userId)
-      ) {
-        onEvent(parsed);
-      }
-    },
-  );
+  channel.on("broadcast", { event: "selection:change" }, (message: { payload?: unknown }) => {
+    const parsed = parseSelectionChangePayload(message?.payload);
+    if (parsed && readPresenceEntries(channel).some((entry) => entry.userId === parsed.userId)) {
+      onEvent(parsed);
+    }
+  });
 }
 
 export function attachAiStatusListener(
   channel: RealtimeChannel,
   onEvent: (payload: AiStatusMessage) => void,
 ) {
-  channel.on(
-    "broadcast",
-    { event: "ai-status" },
-    (message: { payload?: unknown }) => {
-      const parsed = parseAiStatusMessage(message?.payload);
-      if (parsed) {
-        onEvent(parsed);
-      }
-    },
-  );
+  channel.on("broadcast", { event: "ai-status" }, (message: { payload?: unknown }) => {
+    const parsed = parseAiStatusMessage(message?.payload);
+    if (parsed) {
+      onEvent(parsed);
+    }
+  });
 }
 
 export function attachAiChatListener(
   channel: RealtimeChannel,
   onEvent: (payload: AiChatMessage) => void,
 ) {
-  channel.on(
-    "broadcast",
-    { event: "ai-chat" },
-    (message: { payload?: unknown }) => {
-      const parsed = parseAiChatMessage(message?.payload);
-      if (parsed) {
-        onEvent(parsed);
-      }
-    },
-  );
+  channel.on("broadcast", { event: "ai-chat" }, (message: { payload?: unknown }) => {
+    const parsed = parseAiChatMessage(message?.payload);
+    if (parsed) {
+      onEvent(parsed);
+    }
+  });
 }
 
 export type {

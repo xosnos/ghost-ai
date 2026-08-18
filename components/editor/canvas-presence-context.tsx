@@ -17,11 +17,7 @@ export function CanvasPresenceProvider({
   value: CanvasPresenceContextValue;
   children: React.ReactNode;
 }) {
-  return (
-    <CanvasPresenceContext.Provider value={value}>
-      {children}
-    </CanvasPresenceContext.Provider>
-  );
+  return <CanvasPresenceContext.Provider value={value}>{children}</CanvasPresenceContext.Provider>;
 }
 
 export function useCanvasPresence(): CanvasPresenceContextValue | null {

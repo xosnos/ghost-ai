@@ -1,9 +1,9 @@
 "use client";
 
-import { memo, useCallback } from "react";
 import { useReactFlow } from "@xyflow/react";
-import { NODE_COLORS, resolveNodeColor, type CanvasNodeData, type NodeColor } from "@/types/canvas";
+import { memo, useCallback } from "react";
 import { useTheme } from "@/lib/theme-provider";
+import { type CanvasNodeData, NODE_COLORS, type NodeColor, resolveNodeColor } from "@/types/canvas";
 
 interface NodeColorToolbarProps {
   id: string;
@@ -83,10 +83,7 @@ function NodeColorToolbarInner({ id, data, selected, width, height }: NodeColorT
             }}
             aria-label={`Set node color ${color.name ?? i + 1}`}
           >
-            <span
-              className="text-[10px] font-bold leading-none"
-              style={{ color: resolved.text }}
-            >
+            <span className="text-[10px] font-bold leading-none" style={{ color: resolved.text }}>
               A
             </span>
           </button>

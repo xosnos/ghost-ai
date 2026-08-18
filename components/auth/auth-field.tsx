@@ -28,7 +28,11 @@ export function AuthField({
   return (
     <div>
       <div className={labelExtra ? "flex items-center justify-between mb-1.5" : "mb-1.5"}>
-        <label htmlFor={id} className="block text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
+        <label
+          htmlFor={id}
+          className="block text-xs font-medium"
+          style={{ color: "var(--text-secondary)" }}
+        >
           {label}
         </label>
         {labelExtra}

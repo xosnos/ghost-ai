@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { LogOut, Moon, Sun } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { LogOut, Sun, Moon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme } from "@/lib/theme-provider";
 
@@ -76,7 +76,10 @@ export function UserMenu({ email }: UserMenuProps) {
           }}
           role="menu"
         >
-          <div className="px-3 py-2 mb-1" style={{ borderBottom: "1px solid var(--border-default)" }}>
+          <div
+            className="px-3 py-2 mb-1"
+            style={{ borderBottom: "1px solid var(--border-default)" }}
+          >
             <p className="text-xs truncate font-medium" style={{ color: "var(--text-secondary)" }}>
               {email}
             </p>
@@ -97,9 +100,7 @@ export function UserMenu({ email }: UserMenuProps) {
               )}
               <span>Theme</span>
             </div>
-            <span className="text-xs text-[var(--text-muted)] capitalize">
-              {resolvedTheme}
-            </span>
+            <span className="text-xs text-[var(--text-muted)] capitalize">{resolvedTheme}</span>
           </button>
 
           <div className="my-1 border-t border-[var(--border-default)]" />

@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
-import { createClient, getCurrentUser } from "@/lib/supabase/server";
-import { listOwnedProjects, listSharedProjects } from "@/lib/projects/queries";
 import { EditorChrome } from "@/components/editor/editor-chrome";
 import { EditorHome } from "@/components/editor/editor-home";
+import { listOwnedProjects, listSharedProjects } from "@/lib/projects/queries";
+import { createClient, getCurrentUser } from "@/lib/supabase/server";
 
 export default async function EditorPage() {
   const supabase = await createClient();

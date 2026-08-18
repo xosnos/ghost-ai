@@ -7,9 +7,7 @@ export interface AuthIdentity {
   email: string;
 }
 
-export async function getAuthIdentity(
-  supabase: SupabaseClient
-): Promise<AuthIdentity | null> {
+export async function getAuthIdentity(supabase: SupabaseClient): Promise<AuthIdentity | null> {
   const user = await getCurrentUser(supabase);
   if (!user) return null;
   return {
@@ -21,7 +19,7 @@ export async function getAuthIdentity(
 async function isProjectCollaborator(
   supabase: SupabaseClient,
   projectId: string,
-  email: string
+  email: string,
 ): Promise<boolean> {
   if (!email) return false;
 
@@ -39,7 +37,7 @@ async function isProjectCollaborator(
 export async function hasProjectAccess(
   supabase: SupabaseClient,
   projectId: string,
-  identity: AuthIdentity
+  identity: AuthIdentity,
 ): Promise<boolean> {
   const project = await getProject(supabase, projectId);
   if (!project) return false;

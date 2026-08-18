@@ -11,9 +11,7 @@ function clearSelected<T extends Selectable>(item: T): T {
  * strip selected flags from add/replace payloads before they are
  * broadcast or applied from another client.
  */
-export function withoutSharedSelection<T extends NodeChange | EdgeChange>(
-  changes: T[],
-): T[] {
+export function withoutSharedSelection<T extends NodeChange | EdgeChange>(changes: T[]): T[] {
   const result: T[] = [];
   for (const change of changes) {
     if (change.type === "select") continue;

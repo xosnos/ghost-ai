@@ -32,13 +32,13 @@ Create two client helpers in `lib/supabase/`:
 
 Use `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` env vars.
 
-### Middleware
+### Routing Proxy / Middleware
 
-Create `middleware.ts` at the project root.
+Create `proxy.ts` at the project root (migrated from `middleware.ts` for Next.js 16 routing boundary conventions):
 
 - Create a Supabase server client with cookie handling on the request/response.
 - Call `supabase.auth.getUser()` to refresh the session.
-- Define public routes: `/login`, `/signup`, `/forgot-password`, `/reset-password`.
+- Define public routes: `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/auth/callback`.
 - Redirect unauthenticated users to `/login` for all other routes.
 - Redirect authenticated users from `/` to `/editor`.
 - Export a `config.matcher` that skips static assets, `_next`, and favicon.
@@ -79,8 +79,8 @@ Add a user menu component to the editor navbar right section:
 install: @supabase/supabase-js, @supabase/ssr
 
 ## Check When Done
-
-- `middleware.ts` exists at the project root
+ 
+- `proxy.ts` exists at the project root for session routing and protection
 - all routes are protected except public auth paths
 - auth pages use CSS variables with no hardcoded colors
 - Supabase client utilities exist in `lib/supabase/`

@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { createClient, getCurrentUser } from "@/lib/supabase/server";
-import { getProject, errorResponse } from "@/lib/projects/queries";
-import { hasProjectAccess } from "@/lib/project-access";
 import {
-  uploadCanvasSnapshot,
-  downloadCanvasSnapshot,
   type CanvasData,
+  downloadCanvasSnapshot,
+  uploadCanvasSnapshot,
 } from "@/lib/canvas-storage";
-import { NODE_SHAPES, type CanvasNode, type CanvasEdge } from "@/types/canvas";
+import { hasProjectAccess } from "@/lib/project-access";
+import { errorResponse, getProject } from "@/lib/projects/queries";
+import { createClient, getCurrentUser } from "@/lib/supabase/server";
+import { type CanvasEdge, type CanvasNode, NODE_SHAPES } from "@/types/canvas";
 
 interface RouteContext {
   params: Promise<{ projectId: string }>;
@@ -22,10 +22,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function isCanvasNode(value: unknown): value is CanvasNode {
   if (!isRecord(value) || typeof value.id !== "string") return false;
   if (!isRecord(value.position)) return false;
-  if (
-    typeof value.position.x !== "number" ||
-    typeof value.position.y !== "number"
-  ) {
+  if (typeof value.position.x !== "number" || typeof value.position.y !== "number") {
     return false;
   }
   if (!isRecord(value.data)) return false;
@@ -77,15 +74,12 @@ export async function GET(_req: Request, ctx: RouteContext) {
     }
 
     try {
-      const canvasData = await downloadCanvasSnapshot(
-        supabase,
-        project.canvasStoragePath
-      );
+      const canvasData = await downloadCanvasSnapshot(supabase, project.canvasStoragePath);
       return NextResponse.json(canvasData);
     } catch (downloadErr) {
       console.warn(
         `[canvas-route] could not download saved canvas at "${project.canvasStoragePath}", returning empty canvas`,
-        downloadErr
+        downloadErr,
       );
       return NextResponse.json({ nodes: [], edges: [] });
     }
@@ -117,10 +111,7 @@ export async function PUT(req: Request, ctx: RouteContext) {
     try {
       body = await req.json();
     } catch {
-      return NextResponse.json(
-        { error: "Invalid JSON request body" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid JSON request body" }, { status: 400 });
     }
 
     if (
@@ -131,21 +122,14 @@ export async function PUT(req: Request, ctx: RouteContext) {
       !body.nodes.every(isCanvasNode) ||
       !body.edges.every(isCanvasEdge)
     ) {
-      return NextResponse.json(
-        { error: "Invalid canvas data" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid canvas data" }, { status: 400 });
     }
 
     const nodes = body.nodes;
     const edges = body.edges;
 
     const canvasData: CanvasData = { nodes, edges };
-    const storagePath = await uploadCanvasSnapshot(
-      supabase,
-      projectId,
-      canvasData
-    );
+    const storagePath = await uploadCanvasSnapshot(supabase, projectId, canvasData);
 
     return NextResponse.json({ ok: true, storagePath });
   } catch (err) {

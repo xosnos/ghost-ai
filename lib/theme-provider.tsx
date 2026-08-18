@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, useMemo, useCallback } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 type Theme = "dark" | "light" | "system";
 
@@ -13,7 +13,7 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-const THEME_STORAGE_KEY = "ghost_ai_theme";
+const THEME_STORAGE_KEY = "architype_theme";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("dark");
@@ -21,17 +21,26 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    try {
-      const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-      if (saved && (saved === "dark" || saved === "light" || saved === "system")) {
-        setThemeState(saved);
-      } else {
+    let ignore = false;
+    const init = async () => {
+      await Promise.resolve();
+      if (ignore) return;
+      setMounted(true);
+      try {
+        const saved = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
+        if (saved && (saved === "dark" || saved === "light" || saved === "system")) {
+          setThemeState(saved);
+        } else {
+          setThemeState("dark");
+        }
+      } catch {
         setThemeState("dark");
       }
-    } catch {
-      setThemeState("dark");
-    }
+    };
+    void init();
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -93,7 +102,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       setTheme,
       toggleTheme,
     }),
-    [theme, resolvedTheme, setTheme, toggleTheme]
+    [theme, resolvedTheme, setTheme, toggleTheme],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

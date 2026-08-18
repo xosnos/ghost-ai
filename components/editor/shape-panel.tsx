@@ -1,12 +1,8 @@
 "use client";
 
-import { Square, Diamond, Circle, Pill, Cylinder, Hexagon } from "lucide-react";
 import { Panel, useReactFlow } from "@xyflow/react";
-import {
-  NODE_SHAPES,
-  SHAPE_DEFAULT_SIZES,
-  type NodeShape,
-} from "@/types/canvas";
+import { Circle, Cylinder, Diamond, Hexagon, Pill, Square } from "lucide-react";
+import { NODE_SHAPES, type NodeShape, SHAPE_DEFAULT_SIZES } from "@/types/canvas";
 
 const SHAPE_ICONS: Record<NodeShape, typeof Square> = {
   rectangle: Square,
@@ -54,8 +50,7 @@ function buildDragPreview(shape: NodeShape, width: number, height: number): HTML
     inner.style.height = "100%";
     inner.style.backgroundColor = "var(--bg-elevated)";
     inner.style.border = "1.5px solid var(--border-subtle)";
-    inner.style.borderRadius =
-      shape === "rectangle" ? "12px" : shape === "pill" ? "999px" : "50%";
+    inner.style.borderRadius = shape === "rectangle" ? "12px" : shape === "pill" ? "999px" : "50%";
     container.appendChild(inner);
   } else {
     const svg = buildShapeSvg(shape, width, height);

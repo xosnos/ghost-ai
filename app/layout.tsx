@@ -4,12 +4,20 @@ import "./globals.css";
 import { ThemeProvider } from "@/lib/theme-provider";
 
 export const metadata: Metadata = {
-  title: "Ghost AI",
-  description: "AI-powered diagramming & collaborative architecture canvas",
+  metadataBase: new URL("https://architype.xosnos.com"),
+  title: "Architype — AI Systems Architecture Canvas",
+  description: "AI-powered system design & collaborative architecture workspace",
   icons: {
-    icon: "/icon.svg",
-    shortcut: "/icon.svg",
-    apple: "/icon.svg",
+    icon: "/favicon.svg",
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg",
+  },
+  openGraph: {
+    title: "Architype — AI Systems Architecture Canvas",
+    description: "AI-powered system design & collaborative architecture workspace",
+    url: "https://architype.xosnos.com",
+    siteName: "Architype",
+    type: "website",
   },
 };
 
@@ -25,7 +33,7 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                const saved = localStorage.getItem('ghost_ai_theme');
+                const saved = localStorage.getItem('architype_theme');
                 const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
                 const theme = saved === 'light' || saved === 'dark' ? saved : (prefersDark ? 'dark' : 'light');
                 document.documentElement.classList.remove('light', 'dark');
@@ -43,4 +51,3 @@ export default function RootLayout({
     </html>
   );
 }
-

@@ -43,7 +43,7 @@ export interface UseShareDialogResult {
 
 export function useShareDialog(
   projectId: string | undefined,
-  initialIsOwner = false
+  initialIsOwner = false,
 ): UseShareDialogResult {
   const [open, setOpen] = useState(false);
   const [collaborators, setCollaborators] = useState<Collaborator[]>([]);
@@ -62,6 +62,12 @@ export function useShareDialog(
         ? `/editor/${projectId}`
         : "";
 
+  const [prevOwnerProps, setPrevOwnerProps] = useState({ initialIsOwner, projectId });
+  if (prevOwnerProps.initialIsOwner !== initialIsOwner || prevOwnerProps.projectId !== projectId) {
+    setPrevOwnerProps({ initialIsOwner, projectId });
+    setIsOwner(initialIsOwner);
+  }
+
   const loadCollaborators = useCallback(async () => {
     if (!projectId) return;
     setLoading(true);
@@ -72,6 +78,7 @@ export function useShareDialog(
       const data = await res.json();
       setCollaborators(Array.isArray(data.collaborators) ? data.collaborators : []);
       setIsOwner(Boolean(data.isOwner));
+      setError(null);
     } catch (err) {
       setError(unwrapErrorMessage(err, "Failed to load collaborators"));
     } finally {
@@ -80,12 +87,18 @@ export function useShareDialog(
   }, [projectId]);
 
   useEffect(() => {
-    setIsOwner(initialIsOwner);
-  }, [initialIsOwner, projectId]);
-
-  useEffect(() => {
     if (!open || !projectId) return;
-    void loadCollaborators();
+    let ignore = false;
+    const run = async () => {
+      await Promise.resolve();
+      if (!ignore) {
+        void loadCollaborators();
+      }
+    };
+    void run();
+    return () => {
+      ignore = true;
+    };
   }, [open, projectId, loadCollaborators]);
 
   useEffect(() => {
@@ -138,7 +151,7 @@ export function useShareDialog(
     async (email: string) => {
       if (!projectId) return;
       const target = collaborators.find(
-        (person) => person.email.toLowerCase() === email.toLowerCase()
+        (person) => person.email.toLowerCase() === email.toLowerCase(),
       );
       if (target?.role === "owner") return;
       setRemovingEmail(email);
@@ -151,7 +164,7 @@ export function useShareDialog(
         });
         if (!res.ok) throw new Error(await parseJsonError(res));
         setCollaborators((prev) =>
-          prev.filter((c) => c.email.toLowerCase() !== email.toLowerCase())
+          prev.filter((c) => c.email.toLowerCase() !== email.toLowerCase()),
         );
       } catch (err) {
         setError(unwrapErrorMessage(err, "Failed to remove collaborator"));
@@ -159,7 +172,7 @@ export function useShareDialog(
         setRemovingEmail(null);
       }
     },
-    [projectId, collaborators]
+    [projectId, collaborators],
   );
 
   const copyLink = useCallback(async () => {

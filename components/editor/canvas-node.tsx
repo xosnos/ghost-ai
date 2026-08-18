@@ -1,21 +1,11 @@
 "use client";
 
+import { Handle, type NodeProps, NodeResizer, Position, useReactFlow } from "@xyflow/react";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import {
-  Handle,
-  Position,
-  NodeResizer,
-  useReactFlow,
-  type NodeProps,
-} from "@xyflow/react";
-import {
-  resolveNodeColor,
-  type CanvasNodeData,
-  type NodeShape,
-} from "@/types/canvas";
 import { NodeColorToolbar } from "@/components/editor/node-color-toolbar";
 import { useRemoteHighlights } from "@/components/editor/remote-selection-context";
 import { useTheme } from "@/lib/theme-provider";
+import { type CanvasNodeData, type NodeShape, resolveNodeColor } from "@/types/canvas";
 
 const CSS_SHAPE_RADIUS: Partial<Record<NodeShape, string>> = {
   rectangle: "12px",
@@ -197,8 +187,8 @@ function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
   const stroke = selected
     ? resolvedColor.text
     : resolvedTheme === "light"
-    ? resolvedColor.border
-    : "var(--border-default)";
+      ? resolvedColor.border
+      : "var(--border-default)";
   const strokeWidth = selected ? 2 : 1.25;
   const labelColor = resolvedColor.text;
 
@@ -249,9 +239,7 @@ function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
       className="pointer-events-none relative z-10 px-3 text-center text-sm font-semibold tracking-tight"
       style={{ color: labelColor }}
     >
-      {nodeData.label || (
-        <span style={{ color: labelColor, opacity: 0.4 }}>Label</span>
-      )}
+      {nodeData.label || <span style={{ color: labelColor, opacity: 0.4 }}>Label</span>}
     </span>
   );
 
@@ -295,12 +283,7 @@ function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
       className="group relative flex items-center justify-center overflow-visible"
       style={{ width: w, height: h }}
     >
-      <RemoteSelectionRings
-        shape={shape}
-        width={w}
-        height={h}
-        highlights={remoteHighlights}
-      />
+      <RemoteSelectionRings shape={shape} width={w} height={h} highlights={remoteHighlights} />
       <NodeResizer
         minWidth={MIN_NODE_WIDTH}
         minHeight={MIN_NODE_HEIGHT}
@@ -309,10 +292,14 @@ function CanvasNodeInner({ id, data, selected, width, height }: NodeProps) {
         handleClassName="h-2! w-2! rounded-sm! border-[var(--accent-primary)]! bg-[var(--bg-elevated)]!"
       />
       {content}
-      <NodeColorToolbar id={id} data={nodeData} selected={!!selected} width={width} height={height} />
-      {(
-        [Position.Top, Position.Right, Position.Bottom, Position.Left] as const
-      ).map((pos) => (
+      <NodeColorToolbar
+        id={id}
+        data={nodeData}
+        selected={!!selected}
+        width={width}
+        height={height}
+      />
+      {([Position.Top, Position.Right, Position.Bottom, Position.Left] as const).map((pos) => (
         <Handle
           key={pos}
           type="source"

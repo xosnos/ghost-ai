@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
+import { deleteProject, errorResponse, getProject, renameProject } from "@/lib/projects/queries";
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
-import {
-  deleteProject,
-  getProject,
-  renameProject,
-  errorResponse,
-} from "@/lib/projects/queries";
 
 interface RouteContext {
   params: Promise<{ projectId: string }>;

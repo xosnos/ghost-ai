@@ -204,7 +204,7 @@ export function calculateEdgeHandles(
 }
 
 export const CANVAS_BUCKET = "canvas";
-const AI_AGENT_USER_ID = "ghost-ai-agent";
+const AI_AGENT_USER_ID = "architype-ai-agent";
 const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 const OPENROUTER_MODEL_ID = "nvidia/nemotron-3.5-lightning:free";
 
@@ -815,7 +815,7 @@ export async function generateDesignPlanWithOpenRouter(
     );
   }
 
-  const systemPrompt = `You are Ghost AI, an expert system architect and visual technical diagram designer.
+  const systemPrompt = `You are Architype, an expert system architect and visual technical diagram designer.
 Given a user prompt and existing canvas state, return ONLY a JSON object with this EXACT structure:
 {
   "summary": "Brief 1-sentence description of the system architecture",
@@ -911,8 +911,8 @@ User Prompt: "${prompt}"`;
         headers: {
           "Authorization": `Bearer ${openRouterApiKey}`,
           "Content-Type": "application/json",
-          "HTTP-Referer": "https://ghost-ai.dev",
-          "X-Title": "Ghost AI",
+          "HTTP-Referer": "https://architype.xosnos.com",
+          "X-Title": "Architype",
         },
         body: JSON.stringify({
           model: modelId,
@@ -1190,7 +1190,7 @@ export async function processDesignTask(
     await subscribeRealtimeChannel(channel);
     await channel.track({
       userId: AI_AGENT_USER_ID,
-      displayName: "Ghost AI",
+      displayName: "Architype",
       avatarUrl: null,
       cursorColor: "#00F5FF",
       cursor: null,
@@ -1320,8 +1320,8 @@ export async function processDesignTask(
         payload: {
           id: `ai-${runId}`,
           sender: {
-            id: "ghost-ai",
-            name: "Ghost AI",
+            id: "architype",
+            name: "Architype",
             avatarUrl: null,
           },
           role: "assistant",
@@ -1361,8 +1361,8 @@ export async function processDesignTask(
             payload: {
               id: `ai-err-${runId}`,
               sender: {
-                id: "ghost-ai",
-                name: "Ghost AI",
+                id: "architype",
+                name: "Architype",
                 avatarUrl: null,
               },
               role: "assistant",

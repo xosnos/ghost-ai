@@ -21,9 +21,7 @@ export function RemoteSelectionProvider({
   children: React.ReactNode;
 }) {
   return (
-    <RemoteSelectionContext.Provider value={value}>
-      {children}
-    </RemoteSelectionContext.Provider>
+    <RemoteSelectionContext.Provider value={value}>{children}</RemoteSelectionContext.Provider>
   );
 }
 
