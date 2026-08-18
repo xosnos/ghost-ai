@@ -1,3 +1,7 @@
+# 29 Spec UI Integration
+
+**Status:** Complete
+
 Integrate spec generation results into the editor so users can view, preview, and download specs from the existing ai sidebar specs tab.
 
 ### Implementation

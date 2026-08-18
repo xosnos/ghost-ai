@@ -1,3 +1,7 @@
+# 03 Authentication
+
+**Status:** Complete
+
 Supabase Auth is already provisioned. Wire it into the Next.js app: client utilities, auth pages, middleware route protection, and user menu.
 
 ## Design

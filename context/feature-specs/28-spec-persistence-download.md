@@ -1,3 +1,7 @@
+# 28 Spec Persistence and Download
+
+**Status:** Complete
+
 Expose Edge Function-generated specs through project-scoped metadata APIs and a secure download route.
 
 ### Implementation

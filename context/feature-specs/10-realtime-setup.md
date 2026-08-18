@@ -1,3 +1,7 @@
+# 10 Realtime Setup
+
+**Status:** Complete
+
 Set up the realtime collaboration infrastructure using Supabase Realtime.
 
 ## Configuration

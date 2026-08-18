@@ -1,3 +1,7 @@
+# 08 Editor Workspace Shell
+
+**Status:** Complete
+
 Build the `/editor/[roomId]` workspace shell with server-side access checks. No canvas logic yet.
 
 ## Access

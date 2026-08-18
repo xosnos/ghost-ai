@@ -142,4 +142,121 @@ export const SHAPE_DEFAULT_SIZES: Record<NodeShape, { width: number; height: num
 
 export type CanvasNodeType = "canvasNode";
 
+export type HandlePosition = "top" | "right" | "bottom" | "left";
+
+export interface NodeGeometry {
+  position: { x: number; y: number };
+  width?: number;
+  height?: number;
+  initialWidth?: number;
+  initialHeight?: number;
+  style?: { width?: number | string; height?: number | string };
+  measured?: { width?: number; height?: number };
+  data?: { shape?: NodeShape; [key: string]: unknown };
+}
+
+export function getNodeDimensions(node: NodeGeometry): { width: number; height: number } {
+  const shape = (node.data?.shape || "rectangle") as NodeShape;
+  const def = SHAPE_DEFAULT_SIZES[shape] || { width: 176, height: 64 };
+  const w =
+    node.measured?.width ??
+    node.width ??
+    node.initialWidth ??
+    (typeof node.style?.width === "number" ? node.style.width : undefined) ??
+    def.width;
+  const h =
+    node.measured?.height ??
+    node.height ??
+    node.initialHeight ??
+    (typeof node.style?.height === "number" ? node.style.height : undefined) ??
+    def.height;
+  return { width: w, height: h };
+}
+
+export function calculateEdgeHandles(
+  sourceNode: NodeGeometry,
+  targetNode: NodeGeometry
+): { sourceHandle: HandlePosition; targetHandle: HandlePosition } {
+  const sourceDims = getNodeDimensions(sourceNode);
+  const targetDims = getNodeDimensions(targetNode);
+
+  const sourceCenterX = sourceNode.position.x + sourceDims.width / 2;
+  const sourceCenterY = sourceNode.position.y + sourceDims.height / 2;
+  const targetCenterX = targetNode.position.x + targetDims.width / 2;
+  const targetCenterY = targetNode.position.y + targetDims.height / 2;
+
+  const dx = targetCenterX - sourceCenterX;
+  const dy = targetCenterY - sourceCenterY;
+
+  // Determine dominant axis for natural routing
+  if (Math.abs(dx) >= Math.abs(dy)) {
+    return dx >= 0
+      ? { sourceHandle: "right", targetHandle: "left" }
+      : { sourceHandle: "left", targetHandle: "right" };
+  } else {
+    return dy >= 0
+      ? { sourceHandle: "bottom", targetHandle: "top" }
+      : { sourceHandle: "top", targetHandle: "bottom" };
+  }
+}
+
+export function normalizeCanvasNode(node: CanvasNode): CanvasNode {
+  const dims = getNodeDimensions(node);
+  return {
+    ...node,
+    width: dims.width,
+    height: dims.height,
+    initialWidth: dims.width,
+    initialHeight: dims.height,
+    style: {
+      ...(node.style || {}),
+      width: dims.width,
+      height: dims.height,
+    },
+  };
+}
+
+export function toNodeMap(
+  nodes: Map<string, CanvasNode> | CanvasNode[]
+): Map<string, CanvasNode> {
+  return Array.isArray(nodes) ? new Map(nodes.map((node) => [node.id, node])) : nodes;
+}
+
+export function normalizeCanvasEdges(
+  edges: CanvasEdge[],
+  nodes: Map<string, CanvasNode> | CanvasNode[]
+): CanvasEdge[] {
+  const nodeMap = toNodeMap(nodes);
+  return edges.map((edge) => normalizeCanvasEdge(edge, nodeMap));
+}
+
+export function normalizeCanvasEdge(
+  edge: CanvasEdge,
+  nodeMap?: Map<string, CanvasNode> | CanvasNode[]
+): CanvasEdge {
+  if (edge.sourceHandle && edge.targetHandle) {
+    return edge;
+  }
+
+  const lookup = nodeMap ? toNodeMap(nodeMap) : undefined;
+  const sourceNode = lookup?.get(edge.source);
+  const targetNode = lookup?.get(edge.target);
+
+  if (sourceNode && targetNode) {
+    const handles = calculateEdgeHandles(sourceNode, targetNode);
+    return {
+      ...edge,
+      sourceHandle: edge.sourceHandle || handles.sourceHandle,
+      targetHandle: edge.targetHandle || handles.targetHandle,
+    };
+  }
+
+  return {
+    ...edge,
+    sourceHandle: edge.sourceHandle || "right",
+    targetHandle: edge.targetHandle || "left",
+  };
+}
+
+
 

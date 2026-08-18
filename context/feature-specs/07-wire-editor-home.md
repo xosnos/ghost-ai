@@ -1,3 +1,7 @@
+# 07 Wire Editor Home
+
+**Status:** Complete
+
 Wire the editor home sidebar and dialogs to the real project API.
 
 ### Data Fetching

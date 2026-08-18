@@ -4,13 +4,14 @@
 
 | Layer            | Technology                    | Role                                                           |
 | ---------------- | ----------------------------- | -------------------------------------------------------------- |
-| Framework        | Next.js 16 + TypeScript       | Full-stack app with server/client boundaries                   |
+| Framework        | Next.js 15.4 + TypeScript     | Full-stack app with server/client boundaries                   |
 | UI               | Tailwind + shadcn/ui          | Component composition and styling                              |
 | Auth             | Supabase Auth                 | User identity and route protection                             |
 | Database         | Supabase (PostgreSQL)         | Relational metadata: projects, collaborators, specs, task runs |
 | Canvas           | Supabase Realtime + React Flow | Real-time collaborative canvas, presence, and cursors          |
 | Background tasks | Supabase Queues + Edge Functions + Cron | Durable delivery and asynchronous AI generation                |
 | Artifact storage | Supabase Storage              | Canvas snapshots and generated Markdown specs                  |
+| AI models        | OpenRouter                    | OpenAI-compatible model gateway for design and spec generation |
 
 ## System Boundaries
 
@@ -54,6 +55,13 @@
 
 ## AI Generation Model
 
+### Provider
+
+- All model inference goes through OpenRouter's OpenAI-compatible HTTP API (`https://openrouter.ai/api/v1`) from the Edge Function worker.
+- Store `OPENROUTER_API_KEY` as a Supabase Edge Function secret. Keep it out of browser code and API responses. `.env.local` is only for local Next.js development.
+- Design and spec generation use `nvidia/nemotron-3.5-lightning:free` as the primary AI model, with `openrouter/free` as the fallback. Never use a paid model or call another provider directly.
+- Treat free-router rate limits and temporary unavailability as transient failures so the queue can retry. Do not call Google AI, Anthropic, or OpenAI APIs directly, and do not add a second provider client.
+
 ### Design Generation
 
 - Input: user prompt, project context, and current canvas state.
@@ -75,7 +83,7 @@
 - The worker moves the run through `queued`, `running`, `retrying`, `completed`, or `failed` and records attempt count, timestamps, and a sanitized error message when applicable.
 - Project members track authorized `task_runs` rows through Supabase Realtime Postgres Changes. A partial unique index permits only one active AI run per project. Room-wide progress details remain on the project-scoped `ai-status` Broadcast channel.
 - Queue messages contain the trusted task payload and are not exposed to browser clients. The browser receives only the task-run ID and its RLS filtered status row.
-- The worker accepts only a named Supabase secret key through `withSupabase({ auth: "secret:automations" })`. Its function config disables the legacy gateway JWT check because secret key authentication happens in the handler. The secret is stored in the Next.js server environment and Supabase Vault for Cron, never in browser code.
+- The worker accepts only a named secret (`AUTOMATION_SECRET` / Vault `automations`) through `withSupabase({ auth: "secret:automations" })`. Its function config disables the legacy gateway JWT check because secret key authentication happens in the handler. Cron reads the worker URL from Vault (`ai_worker_url`) and the same automation secret. Neither value belongs in browser code.
 - Processing must be idempotent for a task-run ID. Retries are bounded by queue delivery count. Edge work must remain under 256 MB memory, 2 seconds CPU time per request, and the deployment tier wall clock limit of 150 seconds on Free or 400 seconds on paid plans.
 - Each AI provider call has an application deadline below the platform wall clock limit so the worker has time to record retry state before shutdown. If normal generation cannot stay within that budget, Edge Functions are not a suitable execution layer for that workload.
 

@@ -19,6 +19,16 @@ import {
   CanvasPresenceProvider,
   type CanvasPresenceContextValue,
 } from "@/components/editor/canvas-presence-context";
+import {
+  AiStatusProvider,
+  type AiStatusContextValue,
+  type ActiveTaskRun,
+} from "@/components/editor/ai-status-context";
+import {
+  AiChatProvider,
+  type AiChatContextValue,
+} from "@/components/editor/ai-chat-context";
+import type { AiStatusMessage, AiChatMessage } from "@/types/tasks";
 import type { SaveStatus } from "@/hooks/use-canvas-autosave";
 import { AiSidebar } from "@/components/editor/ai-sidebar";
 import {
@@ -93,6 +103,96 @@ export function EditorChrome({
     saveNow: handleSaveNow,
   }), [saveStatus, handleRegisterSave, handleSaveNow]);
 
+  const [isAiActive, setIsAiActive] = useState(false);
+  const [latestAiStatus, setLatestAiStatus] = useState<AiStatusMessage | null>(null);
+  const [activeTaskRun, setActiveTaskRun] = useState<ActiveTaskRun | null>(null);
+  const trackRunRef = useRef<((runId: string) => Promise<void>) | null>(null);
+
+  const handleRegisterTrackRun = useCallback(
+    (handler: ((runId: string) => Promise<void>) | null) => {
+      trackRunRef.current = handler;
+    },
+    []
+  );
+
+  const handleTrackRun = useCallback(async (runId: string) => {
+    if (trackRunRef.current) {
+      await trackRunRef.current(runId);
+    }
+  }, []);
+
+  const aiStatusContextValue = useMemo<AiStatusContextValue>(() => ({
+    isAiActive,
+    latestStatus: latestAiStatus,
+    activeTaskRun,
+    currentRunId: activeTaskRun?.id ?? null,
+    trackRun: handleTrackRun,
+    registerTrackRun: handleRegisterTrackRun,
+    setIsAiActive,
+    setLatestStatus: setLatestAiStatus,
+    setActiveTaskRun,
+  }), [isAiActive, latestAiStatus, activeTaskRun, handleTrackRun, handleRegisterTrackRun]);
+
+  const [chatMessages, setChatMessages] = useState<AiChatMessage[]>([]);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const sendChatRef = useRef<((content: string) => Promise<boolean>) | null>(null);
+  const addChatRef = useRef<((message: AiChatMessage) => void) | null>(null);
+
+  const handleRegisterChatSend = useCallback(
+    (handler: ((content: string) => Promise<boolean>) | null) => {
+      sendChatRef.current = handler;
+    },
+    [],
+  );
+
+  const handleSendChatMessage = useCallback(async (content: string) => {
+    if (sendChatRef.current) {
+      return sendChatRef.current(content);
+    }
+    return false;
+  }, []);
+
+  const handleRegisterAddMessage = useCallback(
+    (handler: ((message: AiChatMessage) => void) | null) => {
+      addChatRef.current = handler;
+    },
+    []
+  );
+
+  const handleAddChatMessage = useCallback((message: AiChatMessage) => {
+    if (addChatRef.current) {
+      addChatRef.current(message);
+      return;
+    }
+    setChatMessages((prev) => [...prev, message]);
+  }, []);
+
+  const handleClearChatError = useCallback(() => {
+    setChatError(null);
+  }, []);
+
+  const aiChatContextValue = useMemo<AiChatContextValue>(() => ({
+    messages: chatMessages,
+    sendMessage: handleSendChatMessage,
+    sendError: chatError,
+    clearSendError: handleClearChatError,
+    setSendError: setChatError,
+    registerSendHandler: handleRegisterChatSend,
+    setMessages: setChatMessages,
+    addMessage: handleAddChatMessage,
+    registerAddMessage: handleRegisterAddMessage,
+    currentUserId,
+  }), [
+    chatMessages,
+    handleSendChatMessage,
+    chatError,
+    handleClearChatError,
+    handleRegisterChatSend,
+    handleAddChatMessage,
+    handleRegisterAddMessage,
+    currentUserId,
+  ]);
+
   const contextValue = useMemo<ProjectDialogContextValue>(() => ({
     openCreate: dialogs.openCreate,
     openRename: dialogs.openRename,
@@ -132,6 +232,8 @@ export function EditorChrome({
         <TemplateSelectionProvider onOpen={() => setTemplatesOpen(true)}>
           <CanvasPresenceProvider value={presenceContextValue}>
             <CanvasSaveProvider value={saveContextValue}>
+              <AiStatusProvider value={aiStatusContextValue}>
+                <AiChatProvider value={aiChatContextValue}>
             <div className="relative flex h-screen flex-col overflow-hidden bg-[var(--bg-base)]">
               <EditorNavbar
                 sidebarOpen={sidebarOpen}
@@ -189,6 +291,7 @@ export function EditorChrome({
             <AiSidebar
               isOpen={aiSidebarOpen}
               onClose={() => setAiSidebarOpen(false)}
+              projectId={project.id}
             />
           )}
         </div>
@@ -216,14 +319,16 @@ export function EditorChrome({
           />
         )}
 
-          <StarterTemplatesModal
-            open={templatesOpen}
-            onImport={(template) => {
-              void handleTemplateSelect(template);
-              setTemplatesOpen(false);
-            }}
-            onClose={() => setTemplatesOpen(false)}
-          />
+            <StarterTemplatesModal
+              open={templatesOpen}
+              onImport={(template) => {
+                void handleTemplateSelect(template);
+                setTemplatesOpen(false);
+              }}
+              onClose={() => setTemplatesOpen(false)}
+            />
+                </AiChatProvider>
+              </AiStatusProvider>
             </CanvasSaveProvider>
           </CanvasPresenceProvider>
         </TemplateSelectionProvider>

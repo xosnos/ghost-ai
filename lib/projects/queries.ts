@@ -9,10 +9,18 @@ export class ProjectQueryError extends Error {
   constructor(
     message: string,
     readonly operation: string,
-    readonly detail: string
+    readonly detail: string,
+    readonly code?: string
   ) {
     super(message);
     this.name = "ProjectQueryError";
+  }
+}
+
+export class StorageObjectNotFoundError extends ProjectQueryError {
+  constructor(operation: string, detail: string) {
+    super("Spec file not found in storage", operation, detail, "STORAGE_NOT_FOUND");
+    this.name = "StorageObjectNotFoundError";
   }
 }
 
@@ -161,12 +169,10 @@ export async function renameProject(
 
 export async function deleteProject(
   supabase: SupabaseClient,
-  projectId: string,
-  ownerId: string
+  projectId: string
 ): Promise<void> {
   const { error } = await supabase.rpc("delete_project", {
     project_uuid: projectId,
-    owner_uuid: ownerId,
   });
 
   if (error) {

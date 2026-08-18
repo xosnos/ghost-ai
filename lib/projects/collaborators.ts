@@ -126,7 +126,7 @@ export async function listCollaborators(
 
 export async function inviteCollaborator(
   supabase: SupabaseClient,
-  params: { projectId: string; email: string; ownerEmail?: string; ownerId: string }
+  params: { projectId: string; email: string; ownerEmail?: string }
 ): Promise<Collaborator> {
   const email = normalizeEmail(params.email);
   if (!isValidEmail(email)) {
@@ -140,7 +140,6 @@ export async function inviteCollaborator(
   const { data, error } = await supabase.rpc("add_project_collaborator", {
     project_uuid: params.projectId,
     collaborator_email: email,
-    owner_uuid: params.ownerId,
   });
 
   if (error) {
@@ -179,7 +178,6 @@ export async function removeCollaborator(
   params: {
     projectId: string;
     email: string;
-    ownerId: string;
     ownerEmail?: string;
   }
 ): Promise<void> {
@@ -195,7 +193,6 @@ export async function removeCollaborator(
   const { data, error } = await supabase.rpc("remove_project_collaborator", {
     project_uuid: params.projectId,
     collaborator_email: email,
-    owner_uuid: params.ownerId,
   });
 
   if (error) {

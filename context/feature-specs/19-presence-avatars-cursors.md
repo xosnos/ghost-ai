@@ -1,5 +1,8 @@
-Show active room participants inside the editor canvas view,
-without changing the editor home navbar.
+# 19 Presence Avatars and Cursors
+
+**Status:** Complete
+
+Show active room participants in the workspace navbar and live collaborator cursors on the canvas, without changing the editor home navbar.
 
 ## Implementation
 
@@ -10,18 +13,15 @@ without changing the editor home navbar.
      component, make sure this presence UI only appears in the
      canvas/editor room view
 
-2. Add the participant avatar group inside the editor canvas area.
-   - position it in the top-right corner of the editor canvas view
-   - keep it visually separate from the main navbar actions
+2. Add the participant avatar group to the workspace navbar.
+   - position it in the right floating utility island beside the current user's menu
+   - render it only in the canvas workspace, not on editor home
    - get the current user's ID from the active Supabase Auth session
    - filter the Supabase Realtime Presence list to exclude any entry
      whose user ID matches the current Supabase Auth user ID
    - render the filtered list as collaborator avatars only
-   - render the current user separately using the existing
-     UserMenu component — do not render a second avatar for them from
-     the Realtime Presence list
-   - keep collaborator avatars and the UserMenu the same
-     size so the group looks visually consistent
+   - render the current user separately using the existing UserMenu component, do not render a second avatar from the Realtime Presence list
+   - keep collaborator avatars and the UserMenu the same size so the group looks visually consistent
    - collaborator avatars are display-only, not interactive
    - show a divider between the collaborator avatars and the
      UserMenu only when at least one collaborator exists

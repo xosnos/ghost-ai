@@ -1,3 +1,7 @@
+# 26 Functional AI Chat
+
+**Status:** Complete
+
 Wire up the AI sidebar so users can submit design prompts, track Edge Function run status in real time, and reflect AI-driven canvas updates through Supabase Realtime.
 
 ### Implementation
