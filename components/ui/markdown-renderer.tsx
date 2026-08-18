@@ -24,7 +24,7 @@ function sanitizeHref(href: string): string | null {
   if (!trimmed) return null;
   if (trimmed.startsWith("#") || trimmed.startsWith("/")) return trimmed;
   try {
-    const parsed = new URL(trimmed, "https://ghost-ai.invalid");
+    const parsed = new URL(trimmed, "https://architype.invalid");
     if (
       parsed.protocol === "http:" ||
       parsed.protocol === "https:" ||

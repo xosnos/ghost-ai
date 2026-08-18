@@ -23,7 +23,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useProjectDialogs } from "@/components/editor/project-dialog-context";
 import { useTemplateSelection } from "@/components/editor/template-import-context";
-import { GhostIcon, GhostLogo } from "@/components/ui/ghost-logo";
+import { ArchitypeIcon, ArchitypeLogo } from "@/components/ui/architype-logo";
 import { useTheme } from "@/lib/theme-provider";
 import { cn } from "@/lib/utils";
 
@@ -186,8 +186,8 @@ export function EditorHome() {
       {/* Top Banner - Google Stitch Style */}
       {!bannerDismissed && (
         <div className="animate-in fade-in slide-in-from-top-2 duration-300 mb-6 flex items-center gap-2 rounded-full border border-[var(--border-default)] bg-[var(--bg-surface)]/90 px-3.5 py-1 text-xs text-[var(--text-secondary)] shadow-sm backdrop-blur-md hover:border-[var(--border-subtle)]">
-          <GhostIcon size={14} glow />
-          <span className="font-medium">Meet the new Ghost AI Architect</span>
+          <ArchitypeIcon size={14} glow />
+          <span className="font-medium">Meet the new Architype Architect</span>
           <button
             type="button"
             onClick={() => setBannerDismissed(true)}
@@ -204,7 +204,7 @@ export function EditorHome() {
         {/* Title & Emblem */}
         <div className="text-center space-y-3">
           <div className="flex justify-center">
-            <GhostLogo
+            <ArchitypeLogo
               size={36}
               variant="mark"
               glow
@@ -212,7 +212,7 @@ export function EditorHome() {
             />
           </div>
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[var(--text-primary)]">
-            Welcome to Ghost AI..
+            Welcome to Architype..
           </h1>
         </div>
 

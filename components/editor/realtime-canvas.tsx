@@ -139,7 +139,7 @@ function FlowCanvas({
       : "AI design generation encountered an issue. Please try again.";
     addLocalMessageRef.current?.({
       id: `err-${runId}`,
-      sender: { id: "ghost-ai", name: "Ghost AI", avatarUrl: null },
+      sender: { id: "architype", name: "Architype", avatarUrl: null },
       role: "assistant",
       content: `Generation failed: ${sanitizedMsg}`,
       timestamp: new Date().toISOString(),

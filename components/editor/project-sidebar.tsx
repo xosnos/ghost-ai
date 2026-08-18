@@ -21,8 +21,8 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useProjectDialogs } from "@/components/editor/project-dialog-context";
 import { CANVAS_TEMPLATES, type CanvasTemplate } from "@/components/editor/starter-templates";
+import { ArchitypeIcon } from "@/components/ui/architype-logo";
 import { Button } from "@/components/ui/button";
-import { GhostIcon } from "@/components/ui/ghost-logo";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { Project } from "@/lib/projects/types";
 import { cn } from "@/lib/utils";
@@ -303,7 +303,7 @@ export function ProjectSidebar({
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-default)]">
           <div className="flex items-center gap-2">
-            <GhostIcon size={16} glow />
+            <ArchitypeIcon size={16} glow />
             <span className="text-sm font-semibold text-[var(--text-primary)]">
               Projects & Examples
             </span>

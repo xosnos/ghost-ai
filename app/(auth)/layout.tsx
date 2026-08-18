@@ -1,4 +1,4 @@
-import { GhostLogo } from "@/components/ui/ghost-logo";
+import { ArchitypeLogo } from "@/components/ui/architype-logo";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,7 +11,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         }}
       >
         <div className="mb-8">
-          <GhostLogo size="lg" variant="full" glow />
+          <ArchitypeLogo size="lg" variant="full" glow />
         </div>
 
         <p className="text-sm mb-8" style={{ color: "var(--text-secondary)" }}>
@@ -44,7 +44,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       >
         {/* Mobile Header Branding */}
         <div className="lg:hidden mb-8">
-          <GhostLogo size="md" variant="full" glow />
+          <ArchitypeLogo size="md" variant="full" glow />
         </div>
         <div className="w-full max-w-sm">{children}</div>
       </div>

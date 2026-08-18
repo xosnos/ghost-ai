@@ -1,13 +1,13 @@
 import { Lock } from "lucide-react";
 import Link from "next/link";
+import { ArchitypeLogo } from "@/components/ui/architype-logo";
 import { Button } from "@/components/ui/button";
-import { GhostLogo } from "@/components/ui/ghost-logo";
 
 export function AccessDenied() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
       <div className="mb-2">
-        <GhostLogo size={40} variant="mark" glow />
+        <ArchitypeLogo size={40} variant="mark" glow />
       </div>
       <div
         className="flex h-12 w-12 items-center justify-center rounded-2xl"

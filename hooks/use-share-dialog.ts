@@ -70,6 +70,8 @@ export function useShareDialog(
 
   const loadCollaborators = useCallback(async () => {
     if (!projectId) return;
+    setLoading(true);
+    setError(null);
     try {
       const res = await fetch(`/api/projects/${projectId}/collaborators`);
       if (!res.ok) throw new Error(await parseJsonError(res));

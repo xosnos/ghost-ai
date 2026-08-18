@@ -3,7 +3,7 @@
 
 ## Summary
 
-This migration introduces the core project data model for Ghost AI, backed by
+This migration introduces the core project data model for Architype, backed by
 Bolt's integrated Supabase (PostgreSQL) database. It adds two tables that store
 project metadata and collaborator invitations, plus owner-scoped Row Level
 Security so each authenticated user can only access projects they own (and, by

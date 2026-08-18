@@ -20,8 +20,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useAiChat } from "@/components/editor/ai-chat-context";
 import { useAiStatus } from "@/components/editor/ai-status-context";
 import { SpecPreviewModal } from "@/components/editor/spec-preview-modal";
+import { ArchitypeLogo } from "@/components/ui/architype-logo";
 import { Button } from "@/components/ui/button";
-import { GhostLogo } from "@/components/ui/ghost-logo";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useProjectSpecs } from "@/hooks/use-project-specs";
 import { cn, formatMessageTime, formatSpecDate } from "@/lib/utils";
@@ -183,11 +183,11 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
         {/* Header - Matches Editor Chrome & Project Sidebar */}
         <div className="flex h-12 shrink-0 items-center justify-between px-4 border-b border-[var(--border-default)] bg-[var(--bg-surface)]">
           <div className="flex items-center gap-2.5">
-            <GhostLogo size="xs" variant="mark" glow />
+            <ArchitypeLogo size="xs" variant="mark" glow />
             <div className="flex flex-col">
               <span className="text-sm font-semibold text-[var(--text-primary)]">AI Workspace</span>
               <span className="text-[10px] text-[var(--text-muted)]">
-                Collaborate with Ghost AI
+                Collaborate with Architype
               </span>
             </div>
           </div>
@@ -260,13 +260,13 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
                   /* Empty State */
                   <div className="flex flex-col items-center justify-center py-6 text-center">
                     <div className="mb-3">
-                      <GhostLogo size={36} variant="mark" glow className="shadow-lg" />
+                      <ArchitypeLogo size={36} variant="mark" glow className="shadow-lg" />
                     </div>
                     <h4 className="text-sm font-semibold text-[var(--text-primary)] mb-1">
                       Design with AI Architect
                     </h4>
                     <p className="text-xs text-[var(--text-muted)] max-w-[260px] mb-5 leading-relaxed">
-                      Describe a system or ask Ghost AI to generate canvas architectures, refine
+                      Describe a system or ask Architype to generate canvas architectures, refine
                       components, or generate specifications.
                     </p>
 
@@ -340,9 +340,9 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
                             <div className="flex items-center gap-1.5 px-1">
                               {isAssistant ? (
                                 <>
-                                  <GhostLogo size={12} variant="mark" />
+                                  <ArchitypeLogo size={12} variant="mark" />
                                   <span className="text-[11px] font-semibold text-[var(--accent-ai-text)]">
-                                    Ghost AI
+                                    Architype
                                   </span>
                                 </>
                               ) : (

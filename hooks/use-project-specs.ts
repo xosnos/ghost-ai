@@ -73,6 +73,8 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
     }
 
     const requestId = ++listRequestIdRef.current;
+    setLoading(true);
+    setError(null);
 
     try {
       const res = await fetch(`/api/projects/${projectId}/specs`);

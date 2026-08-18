@@ -1,6 +1,6 @@
-# Ghost AI
+# Architype
 
-Ghost AI is a collaborative system design workspace. Teams build architecture diagrams on a shared canvas, ask an AI agent to create or revise designs, and generate downloadable Markdown technical specifications.
+Architype is a collaborative AI system design workspace. Teams build architecture diagrams on a shared canvas, ask an AI agent to create or revise designs, and generate downloadable Markdown technical specifications.
 
 ## Features
 

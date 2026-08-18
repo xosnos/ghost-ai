@@ -71,7 +71,7 @@ export function SignupForm() {
         Create an account
       </h1>
       <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>
-        Get started with Ghost AI for free.
+        Get started with Architype for free.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-4">

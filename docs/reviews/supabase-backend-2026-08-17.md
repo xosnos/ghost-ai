@@ -8,7 +8,7 @@
 
 ## Verdict
 
-The local Ghost AI stack is mostly set up correctly. Public app tables have RLS. Policies use `TO authenticated` with ownership or membership predicates, not deprecated `auth.role()`. UPDATE policies include `WITH CHECK`. Browser clients only receive the anon key. Middleware uses `@supabase/ssr` and `getUser()`. `verify_jwt = false` on `ai-worker` matches the documented pattern for named secret (service-to-service) calls.
+The local Architype stack is mostly set up correctly. Public app tables have RLS. Policies use `TO authenticated` with ownership or membership predicates, not deprecated `auth.role()`. UPDATE policies include `WITH CHECK`. Browser clients only receive the anon key. Middleware uses `@supabase/ssr` and `getUser()`. `verify_jwt = false` on `ai-worker` matches the documented pattern for named secret (service-to-service) calls.
 
 It was not production-safe as reviewed. Owner RPCs trusted a client-supplied `owner_uuid`. Local seed re-granted `EXECUTE` on sensitive functions. A vault automation secret was committed in a migration. The custom `ai-worker` auth wrapper failed open when no expected secret resolved. Cron targeted a local Docker hostname.
 
@@ -72,7 +72,7 @@ The custom `withSupabase` wrapper rejected a mismatch only when `expectedSecret`
 
 ### 6. Cron worker URL is local Docker only
 
-`pg_cron` posted to `http://supabase_kong_ghost-ai:8000/functions/v1/ai-worker`. That hostname exists only on the local CLI network. A hosted project would not recover queued jobs until Cron is pointed at the project Functions URL.
+`pg_cron` posted to `http://supabase_kong_architype:8000/functions/v1/ai-worker`. That hostname exists only on the local CLI network. A hosted project would not recover queued jobs until Cron is pointed at the project Functions URL.
 
 **Fix:** Store `ai_worker_url` in Vault and read it from the Cron command. Local seed sets the Kong URL. Hosted operators must set Vault `ai_worker_url` to `https://<project-ref>.supabase.co/functions/v1/ai-worker`.
 

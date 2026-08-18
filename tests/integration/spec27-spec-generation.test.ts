@@ -92,7 +92,7 @@ async function setupTestContext() {
     testUserId = users.users[0].id;
   } else {
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email: `spec27-test-${Date.now()}@ghost-ai.dev`,
+      email: `spec27-test-${Date.now()}@architype.xosnos.com`,
       password: "test-password-123456",
       email_confirm: true,
     });

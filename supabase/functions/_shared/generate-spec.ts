@@ -97,7 +97,7 @@ export async function generateSpecWithOpenRouter(
     );
   }
 
-  const systemPrompt = `You are Ghost AI, a Principal Systems Architect and Staff Software Engineer.
+  const systemPrompt = `You are Architype, a Principal Systems Architect and Staff Software Engineer.
 Your task is to analyze the provided system architecture diagram (nodes and connecting edges) and relevant collaborative chat context, and write a thorough, production-grade Technical Specification Document formatted in clean Markdown.
 
 Your specification must include the following structured sections:
@@ -175,8 +175,8 @@ ${
         headers: {
           "Authorization": `Bearer ${openRouterApiKey}`,
           "Content-Type": "application/json",
-          "HTTP-Referer": "https://ghost-ai.dev",
-          "X-Title": "Ghost AI Spec Generator",
+          "HTTP-Referer": "https://architype.xosnos.com",
+          "X-Title": "Architype Spec Generator",
         },
         body: JSON.stringify({
           model: modelId,

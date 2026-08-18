@@ -15,8 +15,8 @@ import {
 import Link from "next/link";
 import { PresenceAvatars } from "@/components/editor/presence-avatars";
 import { UserMenu } from "@/components/editor/user-menu";
+import { ArchitypeIcon, ArchitypeLogo } from "@/components/ui/architype-logo";
 import { Button } from "@/components/ui/button";
-import { GhostIcon, GhostLogo } from "@/components/ui/ghost-logo";
 import type { SaveStatus } from "@/hooks/use-canvas-autosave";
 import { cn } from "@/lib/utils";
 import type { PresencePayload } from "@/types/realtime";
@@ -73,9 +73,9 @@ export function EditorNavbar({
             <Link
               href="/editor"
               className="flex items-center gap-1.5 transition-opacity hover:opacity-80"
-              title="Ghost AI Home"
+              title="Architype Home"
             >
-              <GhostLogo size="xs" variant="mark" glow />
+              <ArchitypeLogo size="xs" variant="mark" glow />
             </Link>
 
             <span
@@ -96,12 +96,12 @@ export function EditorNavbar({
               href="/editor"
               className="flex items-center gap-2 transition-opacity hover:opacity-90"
             >
-              <GhostLogo size="xs" variant="mark" glow />
+              <ArchitypeLogo size="xs" variant="mark" glow />
               <span
                 className="font-semibold tracking-tight text-xs md:text-sm"
                 style={{ color: "var(--text-primary)" }}
               >
-                Ghost AI
+                Architype
               </span>
               <span className="rounded-full border border-[var(--border-subtle)] bg-[var(--bg-subtle)] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                 BETA
@@ -196,7 +196,7 @@ export function EditorNavbar({
             aria-label="Toggle AI sidebar"
             aria-pressed={aiSidebarOpen}
           >
-            <GhostIcon size={14} glow={aiSidebarOpen} />
+            <ArchitypeIcon size={14} glow={aiSidebarOpen} />
           </Button>
         </div>
       )}

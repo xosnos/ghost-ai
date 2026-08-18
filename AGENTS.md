@@ -25,7 +25,7 @@ If implementation changes the architecture, scope, or standards documented in th
 
 ## Cursor Cloud specific instructions
 
-Ghost AI is a single Next.js 16 app (`pnpm dev`, port 3000) backed by **Supabase** (Auth, Postgres, Realtime, Storage, Queues, Cron, and Edge Functions). OpenRouter is the only external AI provider (`nvidia/nemotron-3.5-lightning:free` primary, `openrouter/free` fallback). Route protection and session refresh run through `proxy.ts` (Next.js 16 proxy convention). Biome (`@biomejs/biome`) handles linting, formatting, and import organization; pnpm is the project package manager. Features through spec 29 are implemented. Liveblocks and Trigger.dev are not used.
+Architype is a single Next.js 16 app (`pnpm dev`, port 3000) backed by **Supabase** (Auth, Postgres, Realtime, Storage, Queues, Cron, and Edge Functions). OpenRouter is the only external AI provider (`nvidia/nemotron-3.5-lightning:free` primary, `openrouter/free` fallback). Route protection and session refresh run through `proxy.ts` (Next.js 16 proxy convention). Biome (`@biomejs/biome`) handles linting, formatting, and import organization; pnpm is the project package manager. Features through spec 29 are implemented. Liveblocks and Trigger.dev are not used.
 
 The VM image already has the Docker engine, pnpm, and the Supabase CLI installed; the update script runs `pnpm install`. Bring the stack up in this order:
 
