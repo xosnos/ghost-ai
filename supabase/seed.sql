@@ -73,9 +73,9 @@ declare
 begin
   select id into v_id from vault.secrets where name = 'automations';
   if v_id is null then
-    perform vault.create_secret('sb_secret_automations_ghost_ai_2026', 'automations');
+    perform vault.create_secret('local-dev-automation-secret', 'automations');
   else
-    perform vault.update_secret(v_id, 'sb_secret_automations_ghost_ai_2026');
+    perform vault.update_secret(v_id, 'local-dev-automation-secret');
   end if;
 
   select id into v_id from vault.secrets where name = 'ai_worker_url';

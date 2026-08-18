@@ -108,6 +108,13 @@ export function EditorChrome({
   const [activeTaskRun, setActiveTaskRun] = useState<ActiveTaskRun | null>(null);
   const trackRunRef = useRef<((runId: string) => Promise<void>) | null>(null);
 
+  const handleRegisterTrackRun = useCallback(
+    (handler: ((runId: string) => Promise<void>) | null) => {
+      trackRunRef.current = handler;
+    },
+    []
+  );
+
   const handleTrackRun = useCallback(async (runId: string) => {
     if (trackRunRef.current) {
       await trackRunRef.current(runId);
@@ -120,14 +127,16 @@ export function EditorChrome({
     activeTaskRun,
     currentRunId: activeTaskRun?.id ?? null,
     trackRun: handleTrackRun,
+    registerTrackRun: handleRegisterTrackRun,
     setIsAiActive,
     setLatestStatus: setLatestAiStatus,
     setActiveTaskRun,
-  }), [isAiActive, latestAiStatus, activeTaskRun, handleTrackRun]);
+  }), [isAiActive, latestAiStatus, activeTaskRun, handleTrackRun, handleRegisterTrackRun]);
 
   const [chatMessages, setChatMessages] = useState<AiChatMessage[]>([]);
   const [chatError, setChatError] = useState<string | null>(null);
   const sendChatRef = useRef<((content: string) => Promise<boolean>) | null>(null);
+  const addChatRef = useRef<((message: AiChatMessage) => void) | null>(null);
 
   const handleRegisterChatSend = useCallback(
     (handler: ((content: string) => Promise<boolean>) | null) => {
@@ -143,7 +152,18 @@ export function EditorChrome({
     return false;
   }, []);
 
+  const handleRegisterAddMessage = useCallback(
+    (handler: ((message: AiChatMessage) => void) | null) => {
+      addChatRef.current = handler;
+    },
+    []
+  );
+
   const handleAddChatMessage = useCallback((message: AiChatMessage) => {
+    if (addChatRef.current) {
+      addChatRef.current(message);
+      return;
+    }
     setChatMessages((prev) => [...prev, message]);
   }, []);
 
@@ -160,6 +180,7 @@ export function EditorChrome({
     registerSendHandler: handleRegisterChatSend,
     setMessages: setChatMessages,
     addMessage: handleAddChatMessage,
+    registerAddMessage: handleRegisterAddMessage,
     currentUserId,
   }), [
     chatMessages,
@@ -168,6 +189,7 @@ export function EditorChrome({
     handleClearChatError,
     handleRegisterChatSend,
     handleAddChatMessage,
+    handleRegisterAddMessage,
     currentUserId,
   ]);
 

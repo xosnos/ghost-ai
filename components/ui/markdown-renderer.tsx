@@ -19,6 +19,21 @@ type InlineToken =
   | { type: "strikethrough"; text: string }
   | { type: "link"; text: string; href: string };
 
+function sanitizeHref(href: string): string | null {
+  const trimmed = href.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith("#") || trimmed.startsWith("/")) return trimmed;
+  try {
+    const parsed = new URL(trimmed, "https://ghost-ai.invalid");
+    if (parsed.protocol === "http:" || parsed.protocol === "https:" || parsed.protocol === "mailto:") {
+      return trimmed;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 function parseInlineTokens(text: string): InlineToken[] {
   const tokens: InlineToken[] = [];
   let remaining = text;
@@ -108,11 +123,15 @@ function renderInlineTokens(tokens: InlineToken[], keyPrefix = ""): React.ReactN
             {token.text}
           </del>
         );
-      case "link":
+      case "link": {
+        const href = sanitizeHref(token.href);
+        if (!href) {
+          return <React.Fragment key={key}>{token.text}</React.Fragment>;
+        }
         return (
           <a
             key={key}
-            href={token.href}
+            href={href}
             target="_blank"
             rel="noopener noreferrer"
             className="text-[var(--accent-primary)] underline underline-offset-2 hover:opacity-80 transition-opacity"
@@ -120,6 +139,7 @@ function renderInlineTokens(tokens: InlineToken[], keyPrefix = ""): React.ReactN
             {token.text}
           </a>
         );
+      }
       case "text":
       default:
         return <React.Fragment key={key}>{token.text}</React.Fragment>;
@@ -233,7 +253,8 @@ function parseMarkdownBlocks(markdown: string): BlockItem[] {
       continue;
     }
 
-    // Headings (#, ##, ###, etc.)
+    // Headings (#, ##, ###, etc.) — require a space after hashes so
+    // "#not-a-heading" cannot stall the paragraph collector.
     const headingMatch = /^(#{1,6})\s+(.*)$/.exec(line);
     if (headingMatch) {
       const level = headingMatch[1].length;
@@ -333,14 +354,23 @@ function parseMarkdownBlocks(markdown: string): BlockItem[] {
       i < lines.length &&
       lines[i].trim() &&
       !lines[i].trim().startsWith("```") &&
-      !lines[i].trim().startsWith("#") &&
+      !/^(#{1,6})\s+/.test(lines[i]) &&
       !lines[i].trim().startsWith(">") &&
       !/^(---|___|\*\*\*)\s*$/.test(lines[i].trim()) &&
-      !lines[i].trim().startsWith("|") &&
+      !(
+        lines[i].trim().startsWith("|") &&
+        i + 1 < lines.length &&
+        lines[i + 1].trim().startsWith("|") &&
+        lines[i + 1].includes("---")
+      ) &&
       !/^(\s*)[-*+]\s+/.test(lines[i]) &&
       !/^(\s*)\d+\.\s+/.test(lines[i])
     ) {
       paragraphLines.push(lines[i]);
+      i++;
+    }
+    if (paragraphLines.length === 0) {
+      paragraphLines.push(line);
       i++;
     }
     blocks.push({

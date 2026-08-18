@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
-import { getProject, errorResponse, ProjectQueryError } from "@/lib/projects/queries";
+import { getProject, errorResponse, StorageObjectNotFoundError } from "@/lib/projects/queries";
 import { hasProjectAccess } from "@/lib/project-access";
 import {
   getProjectSpec,
@@ -51,12 +51,7 @@ export async function GET(_req: Request, ctx: RouteContext) {
     try {
       markdownContent = await downloadSpecMarkdown(supabase, spec.filePath);
     } catch (storageErr) {
-      if (
-        storageErr instanceof ProjectQueryError &&
-        (storageErr.detail.includes("not found") ||
-          storageErr.detail.includes("404") ||
-          storageErr.message.includes("not found"))
-      ) {
+      if (storageErr instanceof StorageObjectNotFoundError) {
         return NextResponse.json(
           { error: "Spec file not found in storage" },
           { status: 404 }

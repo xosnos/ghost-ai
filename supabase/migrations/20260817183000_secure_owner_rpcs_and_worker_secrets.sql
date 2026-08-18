@@ -156,7 +156,9 @@ REVOKE EXECUTE ON FUNCTION public.remove_project_collaborator(uuid, text) FROM a
 GRANT EXECUTE ON FUNCTION public.remove_project_collaborator(uuid, text) TO authenticated;
 
 -- ---------------------------------------------------------------------------
--- Rotate leaked automations secret and point Cron at a Vault worker URL
+-- Point Cron at a Vault worker URL. Do not invent hosted secrets here.
+-- Local seed.sql owns the local Vault values. Hosted operators must set
+-- `automations` and `ai_worker_url` to match AUTOMATION_SECRET.
 -- ---------------------------------------------------------------------------
 DO $$
 DECLARE
@@ -167,18 +169,18 @@ BEGIN
   FROM vault.decrypted_secrets
   WHERE name = 'automations';
 
-  IF v_id IS NULL THEN
-    PERFORM vault.create_secret(encode(extensions.gen_random_bytes(32), 'hex'), 'automations');
-  ELSIF v_current = 'sb_secret_automations_ghost_ai_2026' THEN
-    PERFORM vault.update_secret(v_id, encode(extensions.gen_random_bytes(32), 'hex'));
+  IF v_id IS NOT NULL AND v_current = 'sb_secret_automations_ghost_ai_2026' THEN
+    RAISE WARNING
+      'Vault secret automations still contains the leaked placeholder. Set a unique value and keep it in sync with the ai-worker AUTOMATION_SECRET.';
+  ELSIF v_id IS NULL THEN
+    RAISE WARNING
+      'Vault secret automations is unset. Hosted projects must set it to the same value as AUTOMATION_SECRET before cron recovery can authenticate.';
   END IF;
 
   SELECT id INTO v_id FROM vault.secrets WHERE name = 'ai_worker_url';
   IF v_id IS NULL THEN
-    PERFORM vault.create_secret(
-      'http://supabase_kong_ghost-ai:8000/functions/v1/ai-worker',
-      'ai_worker_url'
-    );
+    RAISE WARNING
+      'Vault secret ai_worker_url is unset. Hosted projects must set it to https://<project-ref>.supabase.co/functions/v1/ai-worker.';
   END IF;
 END $$;
 
@@ -200,7 +202,9 @@ BEGIN
         'Authorization', 'Bearer ' || public.get_vault_secret('automations')
       ),
       body := '{}'::jsonb
-    ) AS request_id;
+    ) AS request_id
+    WHERE public.get_vault_secret('ai_worker_url') IS NOT NULL
+      AND public.get_vault_secret('automations') IS NOT NULL;
     $cmd$
   );
 END $$;

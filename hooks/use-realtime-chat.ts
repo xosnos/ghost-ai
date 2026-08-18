@@ -35,17 +35,25 @@ export function useRealtimeChat({
   const [sendError, setSendError] = useState<string | null>(null);
   const seenIdsRef = useRef<Set<string>>(new Set());
   const userRef = useRef(user);
-  userRef.current = user;
   const isAiActiveRef = useRef(isAiActive);
-  isAiActiveRef.current = isAiActive;
   const trackRunRef = useRef(trackRun);
-  trackRunRef.current = trackRun;
 
-  const addLocalMessage = useCallback((msg: AiChatMessage) => {
-    if (!msg || !msg.id) return;
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  useEffect(() => {
+    isAiActiveRef.current = isAiActive;
+  }, [isAiActive]);
+
+  useEffect(() => {
+    trackRunRef.current = trackRun;
+  }, [trackRun]);
+
+  const upsertMessage = useCallback((msg: unknown) => {
     const validated = parseAiChatMessage(msg);
-    if (!validated) return;
-    if (seenIdsRef.current.has(validated.id)) return;
+    if (!validated) return null;
+    if (seenIdsRef.current.has(validated.id)) return validated;
     if (
       validated.role === "assistant" &&
       validated.runId &&
@@ -53,7 +61,7 @@ export function useRealtimeChat({
         seenIdsRef.current.has(`ai-err-${validated.runId}`) ||
         seenIdsRef.current.has(`err-${validated.runId}`))
     ) {
-      return;
+      return validated;
     }
     seenIdsRef.current.add(validated.id);
     if (validated.role === "assistant" && validated.runId) {
@@ -62,7 +70,15 @@ export function useRealtimeChat({
       seenIdsRef.current.add(`err-${validated.runId}`);
     }
     setMessages((prev) => [...prev, validated]);
+    return validated;
   }, []);
+
+  const addLocalMessage = useCallback(
+    (msg: AiChatMessage) => {
+      upsertMessage(msg);
+    },
+    [upsertMessage]
+  );
 
   const addMessage = addLocalMessage;
 
@@ -73,25 +89,7 @@ export function useRealtimeChat({
   // Listen to broadcast `ai-chat` events
   useEffect(() => {
     const handleIncomingMessage = (payload: unknown) => {
-      const parsed = parseAiChatMessage(payload);
-      if (!parsed) return;
-      if (seenIdsRef.current.has(parsed.id)) return;
-      if (
-        parsed.role === "assistant" &&
-        parsed.runId &&
-        (seenIdsRef.current.has(`ai-${parsed.runId}`) ||
-          seenIdsRef.current.has(`ai-err-${parsed.runId}`) ||
-          seenIdsRef.current.has(`err-${parsed.runId}`))
-      ) {
-        return;
-      }
-      seenIdsRef.current.add(parsed.id);
-      if (parsed.role === "assistant" && parsed.runId) {
-        seenIdsRef.current.add(`ai-${parsed.runId}`);
-        seenIdsRef.current.add(`ai-err-${parsed.runId}`);
-        seenIdsRef.current.add(`err-${parsed.runId}`);
-      }
-      setMessages((prev) => [...prev, parsed]);
+      upsertMessage(payload);
     };
 
     if (incomingAiChatRef) {
@@ -111,7 +109,7 @@ export function useRealtimeChat({
         incomingAiChatRef.current = null;
       }
     };
-  }, [channel, incomingAiChatRef]);
+  }, [channel, incomingAiChatRef, upsertMessage]);
 
   const sendMessage = useCallback(
     async (content: string): Promise<boolean> => {
@@ -152,60 +150,48 @@ export function useRealtimeChat({
       }
 
       try {
-        // 1. Push the user message to the `ai-chat` Broadcast channel
-        const res = await channel.send({
-          type: "broadcast",
-          event: "ai-chat",
-          payload: validated,
-        });
-
-        if (res !== "ok") {
-          setSendError("Failed to send message. Please try again.");
-          return false;
-        }
-
-        seenIdsRef.current.add(validated.id);
-        setMessages((prev) => [...prev, validated]);
-        setSendError(null);
-
-        // If no projectId is available (e.g. outside workspace), do not call design API
+        // If no projectId is available (e.g. outside workspace), only broadcast.
         if (!projectId) {
+          const res = await channel.send({
+            type: "broadcast",
+            event: "ai-chat",
+            payload: validated,
+          });
+          if (res !== "ok") {
+            setSendError("Failed to send message. Please try again.");
+            return false;
+          }
+          upsertMessage(validated);
+          setSendError(null);
           return true;
         }
 
-        // 2. Call POST /api/ai/design with { prompt, roomId }
-        try {
-          const apiRes = await fetch("/api/ai/design", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              prompt: trimmed,
-              roomId: projectId,
-            }),
-          });
+        // Accept the design task before publishing the prompt so a failed
+        // enqueue cannot leave an orphaned chat message or duplicate on retry.
+        const apiRes = await fetch("/api/ai/design", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            prompt: trimmed,
+            roomId: projectId,
+          }),
+          signal: AbortSignal.timeout(15_000),
+        });
 
-          if (apiRes.status === 202) {
-            // 3. Read { runId } from HTTP 202 response
-            const data = (await apiRes.json()) as { runId?: string };
-            if (data.runId) {
-              void trackRunRef.current?.(data.runId);
-            }
-            return true;
-          }
+        if (apiRes.status === 409) {
+          const data = (await apiRes.json().catch(() => ({}))) as {
+            error?: string;
+          };
+          setSendError(
+            data.error ||
+              "An AI generation task is already active for this project."
+          );
+          return false;
+        }
 
-          if (apiRes.status === 409) {
-            const data = (await apiRes.json().catch(() => ({}))) as {
-              error?: string;
-            };
-            setSendError(
-              data.error ||
-                "An AI generation task is already active for this project."
-            );
-            return false;
-          }
-
+        if (apiRes.status !== 202) {
           const errData = (await apiRes.json().catch(() => ({}))) as {
             error?: string;
           };
@@ -213,20 +199,39 @@ export function useRealtimeChat({
             errData.error || "Failed to start AI generation. Please try again."
           );
           return false;
-        } catch (fetchErr) {
-          console.error("[useRealtimeChat] Failed to call /api/ai/design:", fetchErr);
-          setSendError(
-            "Network error: Failed to reach AI service. Please try again."
-          );
-          return false;
         }
+
+        const data = (await apiRes.json()) as { runId?: string };
+
+        const res = await channel.send({
+          type: "broadcast",
+          event: "ai-chat",
+          payload: validated,
+        });
+        if (res !== "ok") {
+          console.warn(
+            "[useRealtimeChat] Design task accepted but chat broadcast failed."
+          );
+        }
+
+        upsertMessage(validated);
+        setSendError(null);
+
+        if (data.runId) {
+          void trackRunRef.current?.(data.runId);
+        }
+        return true;
       } catch (err) {
-        console.error("[useRealtimeChat] Failed to broadcast message:", err);
-        setSendError("Failed to send message. Please try again.");
+        console.error("[useRealtimeChat] Failed to send design message:", err);
+        setSendError(
+          err instanceof DOMException && err.name === "TimeoutError"
+            ? "The AI service took too long to respond. Please try again."
+            : "Failed to start AI generation. Please try again."
+        );
         return false;
       }
     },
-    [channel, projectId],
+    [channel, projectId, upsertMessage],
   );
 
   return {

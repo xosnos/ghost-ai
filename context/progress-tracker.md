@@ -20,6 +20,13 @@ Update this file whenever the current phase, active feature, or implementation s
 
 The entries below record implementation state at the time each change landed. The current status and known gaps above take precedence where later work changed behavior.
 
+- **PR review follow-up (2026-08-18)**:
+  - Accept design tasks before broadcasting the prompt so failed enqueue paths cannot leave orphaned or duplicate chat messages.
+  - Register `useAiTaskStatus.trackRun` with `AiStatusContext` so spec generation from the sidebar is tracked.
+  - Stop markdown preview hangs on lines that look like headings or tables, and restrict rendered link schemes.
+  - Bound AI request payload sizes, surface typed storage not-found errors, and fail closed on `ai-worker` named-secret auth.
+  - Stop hosted migrations from inventing Vault automation secrets or local Docker worker URLs.
+
 - **Spec 27 Acceptance Gap Resolution — Retained Integration Test Suite (2026-08-17)**:
   - Created comprehensive retained integration test suite in `tests/integration/spec27-spec-generation.test.ts` runnable with `npx tsx tests/integration/spec27-spec-generation.test.ts`.
   - Tested against local Supabase stack (`http://127.0.0.1:54321` DB, Queues, Storage, and Realtime).
@@ -41,7 +48,7 @@ The entries below record implementation state at the time each change landed. Th
   - **Spec 26 (Stable Run-Keyed Terminal Assistant Message on `ai-chat`)**:
     - Updated `supabase/functions/_shared/design-agent.ts` to broadcast a terminal completion message (`id: "ai-${runId}"`) and terminal permanent error message (`id: "ai-err-${runId}"`) on the `ai-chat` Broadcast channel.
     - Enhanced `hooks/use-realtime-chat.ts` to perform runId-based deduplication (`ai-${runId}`, `ai-err-${runId}`, and `err-${runId}`), guaranteeing that multiple open tabs and client fallback mechanisms do not duplicate assistant completion or error entries.
-    - Added comprehensive verification test suite in `scratch/test-ai-presence-and-chat.ts` verifying all presence payloads, thinking states, stable message IDs, and multi-tab deduplication scenarios. Verified `npm run lint` and `npm run build` pass cleanly.
+    - Added comprehensive verification test suite in `scratch/test-ai-chat-functional.ts` and `scratch/test-ai-presence-state.ts` verifying presence payloads, thinking states, stable message IDs, and multi-tab deduplication scenarios. Verified `npm run lint` and `npm run build` pass cleanly.
 
 - **AI Worker Fast-Path & Cron Authentication Fix (2026-08-17)**:
   - Resolved `[ai-worker fast-path] Worker returned status 401` and Cron recovery 401 errors when running AI generation.
@@ -56,7 +63,7 @@ The entries below record implementation state at the time each change landed. Th
   - Aligned Edge Functions with standard Supabase Deno runtime practices (`Deno.env.get()`) for both production secrets (set via `supabase secrets set`) and local development.
   - Removed all hardcoded local demo JWT and secret fallback strings from Edge Function workers and Next.js server fast-path calls.
   - Stripped local absolute user paths (`/Users/xosnos/...`) from Edge Function `.env` loader helpers in `supabase/functions/_shared/generate-spec.ts` and `supabase/functions/_shared/design-agent.ts`.
-  - Added `scratch/` directory and `*.env` patterns to root `.gitignore` to prevent accidental staging or commits of local test artifacts and environment files.
+  - Added `/scratch/`, `scratch/`, `.env*`, and `*.env` patterns to root `.gitignore` to prevent accidental staging or commits of local test artifacts and environment files.
   - Verified 0 secrets, tokens, or API keys are leaked across client bundles, API routes, or git history.
 
 - 29-spec-ui-integration — Spec UI Integration in AI Sidebar, Rendered Markdown Preview Modal, and Direct Browser Downloads:

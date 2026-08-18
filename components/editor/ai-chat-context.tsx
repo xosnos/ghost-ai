@@ -14,6 +14,9 @@ export interface AiChatContextValue {
   ) => void;
   setMessages: React.Dispatch<React.SetStateAction<AiChatMessage[]>>;
   addMessage: (message: AiChatMessage) => void;
+  registerAddMessage?: (
+    handler: ((message: AiChatMessage) => void) | null
+  ) => void;
   currentUserId: string | null;
 }
 

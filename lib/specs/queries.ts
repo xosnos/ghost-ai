@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ProjectQueryError } from "@/lib/projects/queries";
+import { ProjectQueryError, StorageObjectNotFoundError } from "@/lib/projects/queries";
 import {
   type ProjectSpec,
   type ProjectSpecRow,
@@ -154,6 +154,26 @@ export async function downloadSpecMarkdown(
     .download(path);
 
   if (error) {
+    const statusCode =
+      typeof error === "object" && error !== null && "statusCode" in error
+        ? String((error as { statusCode?: string | number }).statusCode ?? "")
+        : "";
+    const errorName =
+      typeof error === "object" && error !== null && "name" in error
+        ? String((error as { name?: string }).name ?? "")
+        : "";
+    const isNotFound =
+      statusCode === "404" ||
+      errorName === "StorageObjectNotFoundError" ||
+      /not found|404/i.test(error.message);
+
+    if (isNotFound) {
+      throw new StorageObjectNotFoundError(
+        "download_spec_markdown",
+        error.message
+      );
+    }
+
     throw new ProjectQueryError(
       "Failed to download spec from storage",
       "download_spec_markdown",
@@ -162,8 +182,7 @@ export async function downloadSpecMarkdown(
   }
 
   if (!data) {
-    throw new ProjectQueryError(
-      "Spec file not found in storage",
+    throw new StorageObjectNotFoundError(
       "download_spec_markdown",
       `Storage file empty for path: ${filePath}`
     );

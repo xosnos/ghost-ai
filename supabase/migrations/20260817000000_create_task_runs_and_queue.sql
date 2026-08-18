@@ -304,15 +304,12 @@ $$;
 REVOKE ALL ON FUNCTION public.get_cron_job(text) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.get_cron_job(text) TO service_role, postgres;
 
--- Seed default local automation secret in Vault if not present
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM vault.secrets WHERE name = 'automations') THEN
-    PERFORM vault.create_secret('sb_secret_automations_ghost_ai_2026', 'automations');
-  END IF;
-END $$;
+-- Local Vault values live in supabase/seed.sql so hosted projects do not inherit
+-- a leaked or environment-specific automation secret. Hosted operators must set
+-- Vault `automations` and `ai_worker_url` to match the Edge Function secret.
 
--- Schedule Cron recovery job every 30 seconds
+-- Schedule Cron recovery job every 30 seconds. The command is a no-op until
+-- both Vault secrets exist, so hosted deploys do not POST to a local hostname.
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'ai-worker-recovery') THEN
@@ -324,14 +321,16 @@ BEGIN
     '30 seconds',
     $cmd$
     SELECT net.http_post(
-      url := 'http://supabase_kong_ghost-ai:8000/functions/v1/ai-worker',
+      url := public.get_vault_secret('ai_worker_url'),
       headers := jsonb_build_object(
         'Content-Type', 'application/json',
         'apikey', public.get_vault_secret('automations'),
         'Authorization', 'Bearer ' || public.get_vault_secret('automations')
       ),
       body := '{}'::jsonb
-    ) AS request_id;
+    ) AS request_id
+    WHERE public.get_vault_secret('ai_worker_url') IS NOT NULL
+      AND public.get_vault_secret('automations') IS NOT NULL;
     $cmd$
   );
 END $$;

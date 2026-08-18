@@ -60,9 +60,9 @@ The local GRANT bootstrap restored `EXECUTE` on `get_vault_secret`, `enqueue_tas
 
 ### 4. Hardcoded vault automation secret
 
-`20260817000000_create_task_runs_and_queue.sql` inserted `sb_secret_automations_ghost_ai_2026` into Vault and used it as Cron `apikey`/`Authorization`. Combined with `verify_jwt = false`, anyone who knows that value could invoke the worker.
+`20260817000000_create_task_runs_and_queue.sql` originally inserted a committed Vault placeholder and used it as Cron `apikey`/`Authorization`. Combined with `verify_jwt = false`, anyone who knows that value could invoke the worker.
 
-**Fix:** If the leaked value is still stored, the new migration replaces it with a random secret. Local `seed.sql` then sets `local-dev-automation-secret` (must match `.env.example`). Hosted projects must set a unique Vault `automations` secret and the same value as the Edge Function `AUTOMATION_SECRET`. The leaked value is in git history and must be treated as compromised.
+**Fix:** Later migrations no longer invent hosted secrets. Local `seed.sql` sets `local-dev-automation-secret` (must match `.env.example`). Hosted projects must set a unique Vault `automations` secret and the same value as the Edge Function `AUTOMATION_SECRET`. The leaked placeholder remains in git history and must be treated as compromised.
 
 ### 5. `ai-worker` fail-open auth
 

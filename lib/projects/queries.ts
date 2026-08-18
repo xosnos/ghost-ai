@@ -9,10 +9,18 @@ export class ProjectQueryError extends Error {
   constructor(
     message: string,
     readonly operation: string,
-    readonly detail: string
+    readonly detail: string,
+    readonly code?: string
   ) {
     super(message);
     this.name = "ProjectQueryError";
+  }
+}
+
+export class StorageObjectNotFoundError extends ProjectQueryError {
+  constructor(operation: string, detail: string) {
+    super("Spec file not found in storage", operation, detail, "STORAGE_NOT_FOUND");
+    this.name = "StorageObjectNotFoundError";
   }
 }
 

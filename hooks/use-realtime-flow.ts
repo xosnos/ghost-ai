@@ -20,6 +20,7 @@ import {
   type CanvasEdge,
   normalizeCanvasNode,
   normalizeCanvasEdge,
+  normalizeCanvasEdges,
 } from "@/types/canvas";
 
 export type BroadcastEvent =
@@ -193,10 +194,10 @@ export function useRealtimeFlow(
         const nextNodes = [...nodesRef.current, ...uniqueNodes];
 
         const existingEdgeIds = new Set(edgesRef.current.map((e) => e.id));
-        const uniqueEdges = raw.edges
-          .filter((e) => !existingEdgeIds.has(e.id))
-          .map(asUnselected)
-          .map((e) => normalizeCanvasEdge(e, nextNodes));
+        const uniqueEdges = normalizeCanvasEdges(
+          raw.edges.filter((e) => !existingEdgeIds.has(e.id)).map(asUnselected),
+          nextNodes
+        );
         const nextEdges = [...edgesRef.current, ...uniqueEdges];
 
         nodesRef.current = nextNodes;
@@ -271,7 +272,8 @@ export function useRealtimeFlow(
   const onConnect: OnConnect = useCallback(
     (connection: Connection) => {
       if (!connection.source || !connection.target) return;
-      const edgeId = `${connection.source}-${connection.target}-${Date.now()}`;
+      const handleKey = `${connection.sourceHandle ?? ""}:${connection.targetHandle ?? ""}`;
+      const edgeId = `${connection.source}-${connection.target}-${handleKey}`;
       if (edgesRef.current.some((e) => e.id === edgeId)) return;
       pushHistory(snapshotRef.current);
       const rawEdge: CanvasEdge = {
@@ -366,9 +368,7 @@ export function useRealtimeFlow(
   const loadInitialState = useCallback(
     (initialNodes: CanvasNode[], initialEdges: CanvasEdge[]) => {
       const normalizedNodes = initialNodes.map(normalizeCanvasNode);
-      const normalizedEdges = initialEdges.map((e) =>
-        normalizeCanvasEdge(e, normalizedNodes),
-      );
+      const normalizedEdges = normalizeCanvasEdges(initialEdges, normalizedNodes);
       setNodes(normalizedNodes);
       setEdges(normalizedEdges);
       nodesRef.current = normalizedNodes;

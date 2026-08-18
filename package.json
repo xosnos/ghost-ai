@@ -2,6 +2,9 @@
   "name": "ghost-ai",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
@@ -9,7 +12,6 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^4.0.42",
     "@eslint/eslintrc": "^3.3.5",
     "@netlify/plugin-nextjs": "^5.15.12",
     "@radix-ui/react-dialog": "^1.1.18",
@@ -19,13 +21,13 @@
     "@supabase/ssr": "0.12.0",
     "@supabase/supabase-js": "2.110.0",
     "@xyflow/react": "^12.11.2",
-    "ai": "^7.0.66",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.22.0",
     "next": "15.4.11",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "server-only": "^0.0.1",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3"
   },

@@ -123,6 +123,7 @@ export interface CanvasNode {
   initialWidth?: number;
   initialHeight?: number;
   style?: { width: number; height: number };
+  measured?: { width?: number; height?: number };
   data: CanvasNodeData;
 }
 
@@ -155,13 +156,33 @@ export function calculateEdgeHandles(
 ): { sourceHandle: "top" | "right" | "bottom" | "left"; targetHandle: "top" | "right" | "bottom" | "left" } {
   const sShape = sourceNode.data?.shape || "rectangle";
   const sDef = SHAPE_DEFAULT_SIZES[sShape] || { width: 176, height: 64 };
-  const sW = sourceNode.width ?? sourceNode.initialWidth ?? (sourceNode.style?.width as number) ?? sDef.width;
-  const sH = sourceNode.height ?? sourceNode.initialHeight ?? (sourceNode.style?.height as number) ?? sDef.height;
+  const sW =
+    sourceNode.measured?.width ??
+    sourceNode.width ??
+    sourceNode.initialWidth ??
+    (sourceNode.style?.width as number) ??
+    sDef.width;
+  const sH =
+    sourceNode.measured?.height ??
+    sourceNode.height ??
+    sourceNode.initialHeight ??
+    (sourceNode.style?.height as number) ??
+    sDef.height;
 
   const tShape = targetNode.data?.shape || "rectangle";
   const tDef = SHAPE_DEFAULT_SIZES[tShape] || { width: 176, height: 64 };
-  const tW = targetNode.width ?? targetNode.initialWidth ?? (targetNode.style?.width as number) ?? tDef.width;
-  const tH = targetNode.height ?? targetNode.initialHeight ?? (targetNode.style?.height as number) ?? tDef.height;
+  const tW =
+    targetNode.measured?.width ??
+    targetNode.width ??
+    targetNode.initialWidth ??
+    (targetNode.style?.width as number) ??
+    tDef.width;
+  const tH =
+    targetNode.measured?.height ??
+    targetNode.height ??
+    targetNode.initialHeight ??
+    (targetNode.style?.height as number) ??
+    tDef.height;
 
   const sCenterX = sourceNode.position.x + sW / 2;
   const sCenterY = sourceNode.position.y + sH / 2;
@@ -318,6 +339,26 @@ function deriveStableNodeId(runId: string, tempId: string, index: number): strin
     .replace(/[^a-z0-9_]/g, "_")
     .replace(/^_+|_+$/g, "") || `n_${index}`;
   return `node_${shortRunId}_${cleanKey}`;
+}
+
+async function subscribeRealtimeChannel(channel: RealtimeChannel): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new TransientAiError("Timed out waiting for realtime channel subscription"));
+    }, 8_000);
+
+    channel.subscribe((status) => {
+      if (status === "SUBSCRIBED") {
+        clearTimeout(timeout);
+        resolve();
+        return;
+      }
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+        clearTimeout(timeout);
+        reject(new TransientAiError(`Realtime channel subscription failed: ${status}`));
+      }
+    });
+  });
 }
 
 function deriveStableEdgeId(runId: string, sourceId: string, targetId: string, index: number): string {
@@ -718,10 +759,17 @@ function parseAndNormalizePlan(rawText: string): DesignPlan {
     }
   }
 
-  return {
+  const parsedPlan = designPlanSchema.safeParse({
     summary,
     actions: validatedActions,
-  };
+  });
+  if (!parsedPlan.success) {
+    throw new PermanentAiError(
+      `Normalized design plan failed schema validation: ${parsedPlan.error.message}`
+    );
+  }
+
+  return parsedPlan.data;
 }
 
 function getOpenRouterApiKey(): string | null {
@@ -733,25 +781,6 @@ function getOpenRouterApiKey(): string | null {
   if (typeof process !== "undefined" && process?.env?.OPENROUTER_API_KEY) {
     const envVal = process.env.OPENROUTER_API_KEY;
     if (envVal && envVal.trim()) return envVal.trim();
-  }
-
-  // Fallback: read from main supabase functions .env file in local dev
-  try {
-    if (typeof Deno !== "undefined" && typeof Deno?.readTextFileSync === "function") {
-      const content = Deno.readTextFileSync("./supabase/functions/.env");
-      for (const line of content.split("\n")) {
-        const trimmed = line.trim();
-        if (trimmed.startsWith("OPENROUTER_API_KEY=")) {
-          const val = trimmed
-            .slice("OPENROUTER_API_KEY=".length)
-            .replace(/^["']|["']$/g, "")
-            .trim();
-          if (val) return val;
-        }
-      }
-    }
-  } catch {
-    // ignore
   }
 
   return null;
@@ -1123,7 +1152,7 @@ export async function processDesignTask(
         broadcast: { self: false, ack: false },
       },
     });
-    await channel.subscribe();
+    await subscribeRealtimeChannel(channel);
     await channel.track({
       userId: AI_AGENT_USER_ID,
       displayName: "Ghost AI",
@@ -1213,17 +1242,26 @@ export async function processDesignTask(
       });
     }
 
-    if (nodeChanges.length > 0 && newNodes.length === 0) {
+    const remainingNodeChanges = nodeChanges.filter((change) => {
+      const typed = change as { type?: string };
+      return typed.type !== "add";
+    });
+    const remainingEdgeChanges = edgeChanges.filter((change) => {
+      const typed = change as { type?: string };
+      return typed.type !== "add";
+    });
+
+    if (remainingNodeChanges.length > 0) {
       await sendCanvasSync(channel, {
         type: "nodes:change",
-        changes: nodeChanges,
+        changes: remainingNodeChanges,
       });
     }
 
-    if (edgeChanges.length > 0 && newEdges.length === 0) {
+    if (remainingEdgeChanges.length > 0) {
       await sendCanvasSync(channel, {
         type: "edges:change",
-        changes: edgeChanges,
+        changes: remainingEdgeChanges,
       });
     }
 

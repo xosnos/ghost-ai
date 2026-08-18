@@ -4,7 +4,7 @@ import {
   type CanvasNode,
   type CanvasEdge,
   normalizeCanvasNode,
-  normalizeCanvasEdge,
+  normalizeCanvasEdges,
 } from "@/types/canvas";
 
 export const CANVAS_BUCKET = "canvas";
@@ -107,7 +107,7 @@ export async function downloadCanvasSnapshot(
     const rawNodes: CanvasNode[] = Array.isArray(parsed.nodes) ? parsed.nodes : [];
     const rawEdges: CanvasEdge[] = Array.isArray(parsed.edges) ? parsed.edges : [];
     const nodes = rawNodes.map(normalizeCanvasNode);
-    const edges = rawEdges.map((e) => normalizeCanvasEdge(e, nodes));
+    const edges = normalizeCanvasEdges(rawEdges, nodes);
     return {
       nodes,
       edges,

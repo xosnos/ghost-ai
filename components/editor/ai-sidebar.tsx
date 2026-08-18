@@ -24,43 +24,12 @@ import { useAiChat } from "@/components/editor/ai-chat-context";
 import { useProjectSpecs } from "@/hooks/use-project-specs";
 import { SpecPreviewModal } from "@/components/editor/spec-preview-modal";
 import { getSenderDisplayName } from "@/types/tasks";
-import { cn } from "@/lib/utils";
+import { cn, formatMessageTime, formatSpecDate } from "@/lib/utils";
 
 interface AiSidebarProps {
   isOpen: boolean;
   onClose: () => void;
   projectId?: string;
-}
-
-function formatMessageTime(timestamp: string): string {
-  try {
-    const date = new Date(timestamp);
-    if (isNaN(date.getTime())) {
-      return timestamp;
-    }
-    return date.toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return timestamp;
-  }
-}
-
-function formatSpecDate(isoDateString?: string): string {
-  if (!isoDateString) return "";
-  try {
-    const d = new Date(isoDateString);
-    if (isNaN(d.getTime())) return isoDateString;
-    return d.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  } catch {
-    return isoDateString;
-  }
 }
 
 const STEP_LABELS: Record<string, string> = {
@@ -560,6 +529,7 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
                   <button
                     type="button"
                     onClick={clearGenerationError}
+                    aria-label="Dismiss error"
                     className="shrink-0 text-[var(--state-error)]/70 hover:text-[var(--state-error)] cursor-pointer"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -666,7 +636,15 @@ export function AiSidebar({ isOpen, onClose, projectId }: AiSidebarProps) {
                     {specs.map((spec) => (
                       <div
                         key={spec.id}
+                        role="button"
+                        tabIndex={0}
                         onClick={() => openSpecPreview(spec.id)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            openSpecPreview(spec.id);
+                          }
+                        }}
                         className="group flex items-center justify-between gap-2.5 rounded-2xl border border-[var(--border-default)] bg-[var(--bg-elevated)] p-3 text-left transition-all hover:border-[var(--accent-primary)]/50 hover:bg-[var(--bg-subtle)] cursor-pointer shadow-sm"
                       >
                         {/* Left Icon & Details */}

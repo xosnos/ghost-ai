@@ -7,6 +7,10 @@ import {
   ActiveTaskRunConflictError,
 } from "@/lib/ai/task-runs";
 
+const MAX_SPEC_NODES = 250;
+const MAX_SPEC_EDGES = 500;
+const MAX_SPEC_CHAT_HISTORY = 50;
+
 export async function POST(req: NextRequest) {
   let body: unknown;
   try {
@@ -60,6 +64,26 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const normalizedChatHistory = Array.isArray(chatHistory)
+    ? chatHistory.slice(-MAX_SPEC_CHAT_HISTORY)
+    : [];
+  const normalizedNodes = Array.isArray(nodes) ? nodes : [];
+  const normalizedEdges = Array.isArray(edges) ? edges : [];
+
+  if (normalizedNodes.length > MAX_SPEC_NODES) {
+    return NextResponse.json(
+      { error: `nodes must contain ${MAX_SPEC_NODES} items or fewer` },
+      { status: 400 }
+    );
+  }
+
+  if (normalizedEdges.length > MAX_SPEC_EDGES) {
+    return NextResponse.json(
+      { error: `edges must contain ${MAX_SPEC_EDGES} items or fewer` },
+      { status: 400 }
+    );
+  }
+
   const trimmedRoomId = roomId.trim();
 
   // 1. Authenticate current user
@@ -95,9 +119,9 @@ export async function POST(req: NextRequest) {
       kind: "spec",
       input: {
         roomId: trimmedRoomId,
-        chatHistory: Array.isArray(chatHistory) ? chatHistory : [],
-        nodes: Array.isArray(nodes) ? nodes : [],
-        edges: Array.isArray(edges) ? edges : [],
+        chatHistory: normalizedChatHistory,
+        nodes: normalizedNodes,
+        edges: normalizedEdges,
       },
     });
   } catch (err: unknown) {
@@ -115,7 +139,9 @@ export async function POST(req: NextRequest) {
   }
 
   // 4. Best-effort fast-path Edge Function invocation after transaction commits
-  void invokeAiWorkerFastPath();
+  invokeAiWorkerFastPath().catch((err) => {
+    console.error("[POST /api/ai/spec] Fast-path invocation failed:", err);
+  });
 
   // 5. Return run ID with HTTP 202 Accepted
   return NextResponse.json(

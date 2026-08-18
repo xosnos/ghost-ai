@@ -36,25 +36,6 @@ function getOpenRouterApiKey(): string | null {
     if (envVal && envVal.trim()) return envVal.trim();
   }
 
-  // Fallback: read from main supabase functions .env file in local dev
-  try {
-    if (typeof Deno !== "undefined" && typeof Deno?.readTextFileSync === "function") {
-      const content = Deno.readTextFileSync("./supabase/functions/.env");
-      for (const line of content.split("\n")) {
-        const trimmed = line.trim();
-        if (trimmed.startsWith("OPENROUTER_API_KEY=")) {
-          const val = trimmed
-            .slice("OPENROUTER_API_KEY=".length)
-            .replace(/^["']|["']$/g, "")
-            .trim();
-          if (val) return val;
-        }
-      }
-    }
-  } catch {
-    // ignore
-  }
-
   return null;
 }
 
@@ -308,7 +289,23 @@ export async function processSpecTask(
         broadcast: { self: false, ack: false },
       },
     });
-    await channel.subscribe();
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new TransientAiError("Timed out waiting for realtime channel subscription"));
+      }, 8_000);
+
+      channel.subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          clearTimeout(timeout);
+          resolve();
+          return;
+        }
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          clearTimeout(timeout);
+          reject(new TransientAiError(`Realtime channel subscription failed: ${status}`));
+        }
+      });
+    });
 
     // 4. Broadcast start step
     await sendAiStatus(channel, {
@@ -420,10 +417,9 @@ export async function processSpecTask(
     const classified = classifyError(err);
     const isPermanent = classified instanceof PermanentAiError;
 
-    const sanitizedMsg =
-      classified instanceof Error
-        ? classified.message.slice(0, 500)
-        : "An unexpected error occurred during spec generation";
+    const sanitizedMsg = isPermanent
+      ? "Specification generation failed. Please try again."
+      : "Specification generation is retrying after a temporary error.";
 
     if (channel) {
       await sendAiStatus(channel, {

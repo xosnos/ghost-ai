@@ -36,6 +36,9 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
   const [generationError, setGenerationError] = useState<string | null>(null);
 
   const prevIsAiActiveRef = useRef(isAiActive);
+  const projectIdRef = useRef(projectId);
+  projectIdRef.current = projectId;
+  const selectedSpecIdRef = useRef<string | null>(null);
 
   // 1. Fetch specs list
   const fetchSpecs = useCallback(async () => {
@@ -54,6 +57,7 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
         throw new Error(errorData.error || `Failed to fetch specs (HTTP ${res.status})`);
       }
 
+      if (projectIdRef.current !== projectId) return;
       const data = (await res.json()) as { specs: ProjectSpecSummary[] };
       setSpecs(Array.isArray(data.specs) ? data.specs : []);
     } catch (err: unknown) {
@@ -83,6 +87,7 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
     async (specId: string) => {
       if (!projectId || !specId) return;
 
+      selectedSpecIdRef.current = specId;
       setSelectedSpecId(specId);
       setSelectedSpec(null);
       setLoadingDetail(true);
@@ -93,6 +98,10 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
         if (!res.ok) {
           const errorData = await res.json().catch(() => ({}));
           throw new Error(errorData.error || `Failed to fetch spec content (HTTP ${res.status})`);
+        }
+
+        if (selectedSpecIdRef.current !== specId || projectIdRef.current !== projectId) {
+          return;
         }
 
         const data = (await res.json()) as { spec: ProjectSpecDetail };
@@ -109,6 +118,7 @@ export function useProjectSpecs({ projectId, isAiActive }: UseProjectSpecsProps)
 
   // 3. Close preview modal
   const closeSpecPreview = useCallback(() => {
+    selectedSpecIdRef.current = null;
     setSelectedSpecId(null);
     setSelectedSpec(null);
     setLoadingDetail(false);

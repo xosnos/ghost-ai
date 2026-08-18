@@ -10,7 +10,25 @@ import { processSpecTask } from "../_shared/generate-spec.ts";
 const QUEUE_NAME = "ai-generation";
 const VISIBILITY_TIMEOUT_SECONDS = 300; // 5 min visibility timeout (longer than maximum processing duration)
 const APPLICATION_DEADLINE_MS = 120_000; // 120 sec deadline (below 150 sec platform wall clock limit)
+const QUEUE_FETCH_TIMEOUT_MS = 8_000;
 const MAX_ATTEMPTS = 3;
+
+function timingSafeEqual(left: string, right: string): boolean {
+  const encoder = new TextEncoder();
+  const leftBytes = encoder.encode(left);
+  const rightBytes = encoder.encode(right);
+  const maxLength = Math.max(leftBytes.length, rightBytes.length);
+  const paddedLeft = new Uint8Array(maxLength);
+  const paddedRight = new Uint8Array(maxLength);
+  paddedLeft.set(leftBytes);
+  paddedRight.set(rightBytes);
+
+  let mismatch = leftBytes.length === rightBytes.length ? 0 : 1;
+  for (let i = 0; i < maxLength; i++) {
+    mismatch |= paddedLeft[i] ^ paddedRight[i];
+  }
+  return mismatch === 0;
+}
 
 interface WithSupabaseOptions {
   auth?: string;
@@ -64,10 +82,13 @@ export function withSupabase(
       const expectedSecret =
         (secretName && secretKeysObj[secretName]) ||
         Deno.env.get("AUTOMATION_SECRET") ||
-        Deno.env.get("SUPABASE_SECRET_KEY") ||
         "";
 
-      if (!expectedSecret || !apiKeyHeader || apiKeyHeader !== expectedSecret) {
+      if (
+        !expectedSecret ||
+        !apiKeyHeader ||
+        !timingSafeEqual(apiKeyHeader, expectedSecret)
+      ) {
         return new Response(JSON.stringify({ error: "Unauthorized" }), {
           status: 401,
           headers: {
@@ -144,7 +165,6 @@ async function readQueueMessages(
 ): Promise<QueueMessage[]> {
   const { supabaseUrl, serviceRoleKey } = getSupabaseConfig();
   const endpoints = [
-    "http://supabase_rest_ghost-ai:3000/rpc/read",
     `${supabaseUrl.replace(/\/$/, "")}/rest/v1/rpc/read`,
     `${supabaseUrl.replace(/\/$/, "")}/rpc/read`,
   ];
@@ -167,6 +187,7 @@ async function readQueueMessages(
           sleep_seconds: sleepSeconds,
           n,
         }),
+        signal: AbortSignal.timeout(QUEUE_FETCH_TIMEOUT_MS),
       });
 
       if (resp.ok) {
@@ -188,11 +209,11 @@ async function archiveQueueMessage(msgId: number): Promise<void> {
   try {
     const { supabaseUrl, serviceRoleKey } = getSupabaseConfig();
     const endpoints = [
-      "http://supabase_rest_ghost-ai:3000/rpc/archive",
       `${supabaseUrl.replace(/\/$/, "")}/rest/v1/rpc/archive`,
       `${supabaseUrl.replace(/\/$/, "")}/rpc/archive`,
     ];
 
+    let lastError: unknown = null;
     for (const endpoint of endpoints) {
       try {
         const resp = await fetch(endpoint, {
@@ -208,12 +229,15 @@ async function archiveQueueMessage(msgId: number): Promise<void> {
             queue_name: QUEUE_NAME,
             message_id: msgId,
           }),
+          signal: AbortSignal.timeout(QUEUE_FETCH_TIMEOUT_MS),
         });
         if (resp.ok) return;
-      } catch {
-        // try next endpoint
+        lastError = new Error(`Endpoint ${endpoint} returned ${resp.status}`);
+      } catch (err) {
+        lastError = err;
       }
     }
+    console.warn(`[ai-worker] Failed to archive message ${msgId}:`, lastError);
   } catch (err) {
     console.error(`[ai-worker] Error archiving message ${msgId}:`, err);
   }
@@ -237,7 +261,16 @@ async function executeWithDeadline<T>(
   }, deadlineMs);
 
   try {
-    return await task(controller.signal);
+    return await Promise.race([
+      task(controller.signal),
+      new Promise<T>((_, reject) => {
+        controller.signal.addEventListener(
+          "abort",
+          () => reject(controller.signal.reason ?? new Error(`Execution deadline of ${deadlineMs}ms exceeded`)),
+          { once: true }
+        );
+      }),
+    ]);
   } finally {
     clearTimeout(timer);
   }
@@ -311,8 +344,8 @@ async function processQueueMessage(
     return;
   }
 
-  // 4. Update task run to 'running' and increment attempt count
-  const { error: updateRunningError } = await supabaseAdmin
+  // 4. Claim the run only while it is still queued/retrying.
+  const { data: claimedRun, error: updateRunningError } = await supabaseAdmin
     .from("task_runs")
     .update({
       status: "running",
@@ -321,7 +354,17 @@ async function processQueueMessage(
       updated_at: new Date().toISOString(),
       error_message: null,
     })
-    .eq("id", runId);
+    .eq("id", runId)
+    .in("status", ["queued", "retrying"])
+    .select("id")
+    .maybeSingle();
+
+  if (!claimedRun && !updateRunningError) {
+    console.log(
+      `[ai-worker] Task run ${runId} was already claimed. Leaving message for visibility timeout.`
+    );
+    return;
+  }
 
   if (updateRunningError) {
     console.error(
@@ -453,12 +496,11 @@ const fetchHandler = withSupabase({ auth: "secret:automations" }, async (_req, c
   const msg = messageList[0];
 
   // Register background processing with EdgeRuntime.waitUntil
-  const processPromise = processQueueMessage(supabaseAdmin, msg);
+  const processPromise = processQueueMessage(supabaseAdmin, msg).catch((err) => {
+    console.error("[ai-worker] Background queue processing failed:", err);
+  });
   if (typeof EdgeRuntime !== "undefined" && typeof EdgeRuntime.waitUntil === "function") {
     EdgeRuntime.waitUntil(processPromise);
-  } else {
-    // Non-EdgeRuntime environment fallback
-    void processPromise;
   }
 
   // Immediately return HTTP 202 Accepted

@@ -7,6 +7,8 @@ import {
   ActiveTaskRunConflictError,
 } from "@/lib/ai/task-runs";
 
+const MAX_DESIGN_PROMPT_LENGTH = 8_000;
+
 export async function POST(req: NextRequest) {
   let body: unknown;
   try {
@@ -43,6 +45,13 @@ export async function POST(req: NextRequest) {
 
   const trimmedPrompt = prompt.trim();
   const trimmedRoomId = roomId.trim();
+
+  if (trimmedPrompt.length > MAX_DESIGN_PROMPT_LENGTH) {
+    return NextResponse.json(
+      { error: `Prompt must be ${MAX_DESIGN_PROMPT_LENGTH} characters or fewer` },
+      { status: 400 }
+    );
+  }
 
   // 1. Authenticate user
   const supabase = await createClient();
@@ -96,7 +105,9 @@ export async function POST(req: NextRequest) {
 
   // 4. Best-effort fast-path Edge Function invocation
   // Fast-path invocation does not block or fail durability
-  void invokeAiWorkerFastPath();
+  invokeAiWorkerFastPath().catch((err) => {
+    console.error("[POST /api/ai/design] Fast-path invocation failed:", err);
+  });
 
   // 5. Return run ID with HTTP 202 Accepted
   return NextResponse.json(

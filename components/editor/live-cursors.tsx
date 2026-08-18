@@ -42,7 +42,11 @@ function CursorPointer({
         }}
       >
         {thinking && (
-          <Loader2 className="h-2.5 w-2.5 animate-spin shrink-0" aria-label="Thinking" />
+          <Loader2
+            className="h-2.5 w-2.5 animate-spin shrink-0"
+            role="img"
+            aria-label="Thinking"
+          />
         )}
         <span className="truncate">{name}</span>
       </span>

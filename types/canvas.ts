@@ -216,6 +216,20 @@ export function normalizeCanvasNode(node: CanvasNode): CanvasNode {
   };
 }
 
+export function toNodeMap(
+  nodes: Map<string, CanvasNode> | CanvasNode[]
+): Map<string, CanvasNode> {
+  return Array.isArray(nodes) ? new Map(nodes.map((node) => [node.id, node])) : nodes;
+}
+
+export function normalizeCanvasEdges(
+  edges: CanvasEdge[],
+  nodes: Map<string, CanvasNode> | CanvasNode[]
+): CanvasEdge[] {
+  const nodeMap = toNodeMap(nodes);
+  return edges.map((edge) => normalizeCanvasEdge(edge, nodeMap));
+}
+
 export function normalizeCanvasEdge(
   edge: CanvasEdge,
   nodeMap?: Map<string, CanvasNode> | CanvasNode[]
@@ -224,18 +238,9 @@ export function normalizeCanvasEdge(
     return edge;
   }
 
-  let sourceNode: CanvasNode | undefined;
-  let targetNode: CanvasNode | undefined;
-
-  if (nodeMap) {
-    if (Array.isArray(nodeMap)) {
-      sourceNode = nodeMap.find((n) => n.id === edge.source);
-      targetNode = nodeMap.find((n) => n.id === edge.target);
-    } else {
-      sourceNode = nodeMap.get(edge.source);
-      targetNode = nodeMap.get(edge.target);
-    }
-  }
+  const lookup = nodeMap ? toNodeMap(nodeMap) : undefined;
+  const sourceNode = lookup?.get(edge.source);
+  const targetNode = lookup?.get(edge.target);
 
   if (sourceNode && targetNode) {
     const handles = calculateEdgeHandles(sourceNode, targetNode);

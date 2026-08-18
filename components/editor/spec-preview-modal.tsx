@@ -21,6 +21,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import type { ProjectSpecDetail } from "@/types/specs";
+import { formatSpecDate } from "@/lib/utils";
 
 interface SpecPreviewModalProps {
   open: boolean;
@@ -30,24 +31,6 @@ interface SpecPreviewModalProps {
   onRetry?: () => void;
   onDownload: () => void;
   onClose: () => void;
-}
-
-function formatSpecDate(isoDateString?: string): string {
-  if (!isoDateString) return "";
-  try {
-    const d = new Date(isoDateString);
-    if (isNaN(d.getTime())) return isoDateString;
-    return d.toLocaleString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-  } catch {
-    return isoDateString;
-  }
 }
 
 export function SpecPreviewModal({

@@ -38,7 +38,7 @@ npm install
 supabase start
 ```
 
-Copy `.env.example` to `.env.local`. Fill the Supabase URL, anon key, and service role key from `supabase status`.
+Copy `.env.example` to `.env.local`. Fill the Supabase URL, anon key, and service role key from `supabase status`. Set `AUTOMATION_SECRET=local-dev-automation-secret` so it matches the Vault value from `supabase/seed.sql`.
 
 Copy `.env.example` to `supabase/functions/.env`. Set `OPENROUTER_API_KEY`. For local development, keep `AUTOMATION_SECRET=local-dev-automation-secret` so it matches the value seeded into Supabase Vault.
 

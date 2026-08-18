@@ -177,6 +177,14 @@ function FlowCanvas({
     aiStatusContext,
   ]);
 
+  useEffect(() => {
+    if (!aiStatusContext?.registerTrackRun) return;
+    aiStatusContext.registerTrackRun(aiTaskStatus.trackRun);
+    return () => {
+      aiStatusContext.registerTrackRun?.(null);
+    };
+  }, [aiTaskStatus.trackRun, aiStatusContext]);
+
   const realtimeChat = useRealtimeChat({
     projectId,
     channel,
@@ -185,7 +193,10 @@ function FlowCanvas({
     trackRun: aiTaskStatus.trackRun,
     isAiActive: aiTaskStatus.isAiActive,
   });
-  addLocalMessageRef.current = realtimeChat.addLocalMessage;
+
+  useEffect(() => {
+    addLocalMessageRef.current = realtimeChat.addLocalMessage;
+  }, [realtimeChat.addLocalMessage]);
 
   const aiChatContext = useAiChat();
 
@@ -207,6 +218,14 @@ function FlowCanvas({
       aiChatContext.registerSendHandler(null);
     };
   }, [realtimeChat.sendMessage, aiChatContext]);
+
+  useEffect(() => {
+    if (!aiChatContext?.registerAddMessage) return;
+    aiChatContext.registerAddMessage(realtimeChat.addLocalMessage);
+    return () => {
+      aiChatContext.registerAddMessage?.(null);
+    };
+  }, [realtimeChat.addLocalMessage, aiChatContext]);
 
   const { others, remoteHighlights, updateCursor, updateSelection, updateThinking } =
     useRealtimePresence(

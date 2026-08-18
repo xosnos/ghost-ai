@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useRef, type MutableRefObject } from "react";
+import { useCallback, useEffect, useState, useMemo, useRef, type MutableRefObject } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { parseAiStatusMessage, type AiStatusMessage } from "@/types/tasks";
@@ -24,12 +24,18 @@ export function useAiTaskStatus({
   const [overrideActive, setOverrideActive] = useState<boolean | null>(null);
   const [currentRunId, setCurrentRunId] = useState<string | null>(null);
   const currentRunIdRef = useRef<string | null>(null);
-  currentRunIdRef.current = currentRunId;
   const onRunFailedRef = useRef(onRunFailed);
-  onRunFailedRef.current = onRunFailed;
+
+  useEffect(() => {
+    currentRunIdRef.current = currentRunId;
+  }, [currentRunId]);
+
+  useEffect(() => {
+    onRunFailedRef.current = onRunFailed;
+  }, [onRunFailed]);
 
   // Single-fetch run details when a specific runId is registered or tracked
-  const trackRun = async (runId: string) => {
+  const trackRun = useCallback(async (runId: string) => {
     if (!runId || !runId.trim()) return;
     const cleanRunId = runId.trim();
     setCurrentRunId(cleanRunId);
@@ -88,7 +94,7 @@ export function useAiTaskStatus({
     } catch (err) {
       console.warn("[useAiTaskStatus] Unexpected error during trackRun fetch:", err);
     }
-  };
+  }, []);
 
   // 1. Initial fetch & reconnection recovery: read active task_runs row
   useEffect(() => {
@@ -253,7 +259,7 @@ export function useAiTaskStatus({
         setCurrentRunId(parsed.runId);
         currentRunIdRef.current = parsed.runId;
       } else if (
-        ["complete", "completed", "failed"].includes(parsed.status) ||
+        ["completed", "failed"].includes(parsed.status) ||
         parsed.step === "complete" ||
         parsed.step === "failed"
       ) {
