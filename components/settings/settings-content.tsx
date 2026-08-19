@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 interface SettingsContentProps {
   currentEmail: string;
   displayName?: string | null;
+  embedded?: boolean;
 }
 
 type SettingsSection = "profile" | "email";
@@ -136,7 +137,11 @@ function SettingsRow({
   );
 }
 
-export function SettingsContent({ currentEmail, displayName }: SettingsContentProps) {
+export function SettingsContent({
+  currentEmail,
+  displayName,
+  embedded = false,
+}: SettingsContentProps) {
   const router = useRouter();
   const normalizedCurrentEmail = normalizeEmail(currentEmail);
   const profileLabel = displayName?.trim() || currentEmail.split("@")[0] || "Account";
@@ -287,12 +292,14 @@ export function SettingsContent({ currentEmail, displayName }: SettingsContentPr
 
   return (
     <>
-      <div className="mb-8 space-y-1">
-        <p className="text-sm text-[var(--text-muted)]">Manage your Architype account.</p>
-      </div>
+      {!embedded ? (
+        <div className="mb-8 space-y-1">
+          <p className="text-sm text-[var(--text-muted)]">Manage your Architype account.</p>
+        </div>
+      ) : null}
 
-      <div className="flex flex-col gap-8 md:flex-row md:gap-10">
-        <aside className="md:w-44 md:shrink-0">
+      <div className={cn("flex flex-col gap-6 md:flex-row md:gap-8", embedded && "gap-5")}>
+        <aside className="md:w-40 md:shrink-0">
           <SettingsNav active={activeSection} onChange={setActiveSection} />
         </aside>
 

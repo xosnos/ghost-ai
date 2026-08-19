@@ -33,6 +33,11 @@ export default async function EditorWorkspacePage({ params }: EditorWorkspacePag
     return (
       <EditorChrome
         userEmail={identity.email}
+        displayName={
+          typeof user.user_metadata?.display_name === "string"
+            ? user.user_metadata.display_name
+            : null
+        }
         currentUserId={identity.userId}
         ownedProjects={ownedProjects}
         sharedProjects={sharedProjects}
@@ -45,6 +50,11 @@ export default async function EditorWorkspacePage({ params }: EditorWorkspacePag
   return (
     <EditorChrome
       userEmail={identity.email}
+      displayName={
+        typeof user.user_metadata?.display_name === "string"
+          ? user.user_metadata.display_name
+          : null
+      }
       currentUserId={identity.userId}
       ownedProjects={ownedProjects}
       sharedProjects={sharedProjects}

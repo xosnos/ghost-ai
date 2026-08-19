@@ -33,6 +33,7 @@ interface EditorNavbarProps {
   saveStatus?: SaveStatus;
   onSaveNow?: () => void;
   presenceOthers?: PresencePayload[];
+  onOpenSettings?: () => void;
 }
 
 export function EditorNavbar({
@@ -47,6 +48,7 @@ export function EditorNavbar({
   saveStatus,
   onSaveNow,
   presenceOthers,
+  onOpenSettings,
 }: EditorNavbarProps) {
   const isWorkspace = Boolean(projectName);
 
@@ -254,7 +256,7 @@ export function EditorNavbar({
         )}
 
         {/* Single consolidated user avatar menu */}
-        <UserMenu email={userEmail} />
+        <UserMenu email={userEmail} onOpenSettings={onOpenSettings} />
       </div>
     </header>
   );
