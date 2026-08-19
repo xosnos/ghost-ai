@@ -7,10 +7,11 @@ Update this file whenever the current phase, active feature, or implementation s
 - Feature specifications 01 through 29 are implemented.
 - Specs 01 through 29 satisfy their current acceptance checks.
 - All previously identified acceptance gaps (Specs 22, 23, 24, 26, 27) are resolved.
+- Spec 30 (passwordless OTP auth and account settings) is written and Proposed. It is not implemented.
 
 ## Current Goal
 
-- Milestone complete: all features 01 through 29 verified against local Supabase stack and test suites.
+- Next: implement spec 30 from `context/feature-specs/30-otp-auth-settings.md` (Journey: signup OTP, login OTP, settings email change and revert, then account delete).
 
 ## Acceptance Gaps
 
@@ -19,6 +20,11 @@ Update this file whenever the current phase, active feature, or implementation s
 ## Historical Implementation Log
 
 The entries below record implementation state at the time each change landed. The current status and known gaps above take precedence where later work changed behavior.
+
+- **Spec 30 proposed: Passwordless OTP Auth and Account Settings (2026-08-19)**:
+  - Wrote `context/feature-specs/30-otp-auth-settings.md` (status Proposed). Password signup/login/reset are replaced by email OTP; signup collects `user_metadata.display_name`; `/settings` covers email change (OTP on the new inbox, 7-day hashed revert from the old inbox) and account deletion.
+  - Spec 03 remains Complete for original client/`proxy.ts`/layout wiring, with a pointer that password and reset flows are superseded by spec 30.
+  - Implementation is not started.
 
 - **Hosted `ai-worker` Secret Key Resolution Fix (2026-08-18)**:
   - Diagnosed hosted `ai-worker` failures on project `itzerwlcphlsfzfjcpbp`: first HTTP 404 (`{"code":"NOT_FOUND"}`) because the function had never been deployed, then HTTP 500 after deployment.
