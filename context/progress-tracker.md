@@ -11,7 +11,7 @@ Update this file whenever the current phase, active feature, or implementation s
 
 ## Current Goal
 
-- Spec 30 complete: passwordless OTP signup/login, `/settings` (email change with revert, account delete), branded OTP templates, and `account-mailer` edge function.
+- Spec 30 complete: passwordless OTP signup/login, settings modal (email change with revert, account delete), branded OTP templates, and `account-mailer` edge function.
 
 ## Acceptance Gaps
 
@@ -23,7 +23,7 @@ The entries below record implementation state at the time each change landed. Th
 
 - **Spec 30 implemented: Passwordless OTP Auth and Account Settings (2026-08-19)**:
   - Replaced password signup/login/reset with email OTP flows (`SignupForm`, `LoginForm`, shared `OtpVerificationStep`).
-  - Added `/settings` with profile email, change-email OTP, and delete-account OTP + typed confirmation.
+  - Added in-app settings modal (Profile / Email, delete account OTP) opened from the user menu; `/settings` redirects to `/editor?settings=1`.
   - Added `email_change_reversions` migration, Auth email-change trigger, `reassign_collaborator_email`, revert page/API, and `account-mailer` edge function.
   - Updated `proxy.ts` public routes, Auth templates/config, and user menu Settings link.
   - Verified: signup/login OTP via Mailpit, settings UI, revert email + RPC restore, spec 22 (25/25) and spec 27 (13/13) integration tests, `pnpm lint`, `pnpm build`.
