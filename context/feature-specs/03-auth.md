@@ -2,6 +2,8 @@
 
 **Status:** Complete
 
+Password signup, password login, and password reset are superseded by [spec 30](30-otp-auth-settings.md). This spec still describes the original wiring: Supabase clients, `proxy.ts`, the two-panel auth layout, the auth callback, and the user menu.
+
 Supabase Auth is already provisioned. Wire it into the Next.js app: client utilities, auth pages, middleware route protection, and user menu.
 
 ## Design
