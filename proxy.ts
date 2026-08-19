@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
-const publicRoutes = ["/login", "/signup", "/forgot-password", "/reset-password", "/auth/callback"];
+const publicRoutes = ["/login", "/signup", "/auth/callback", "/auth/revert-email"];
 
 export async function proxy(request: NextRequest) {
   const response = NextResponse.next({
@@ -48,7 +48,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && isPublicRoute && !pathname.startsWith("/reset-password")) {
+  if (user && isPublicRoute && !pathname.startsWith("/auth/revert-email")) {
     const url = request.nextUrl.clone();
     url.pathname = "/editor";
     return NextResponse.redirect(url);

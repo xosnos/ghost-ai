@@ -1,6 +1,6 @@
 # 30 Passwordless OTP Auth and Account Settings
 
-**Status:** Proposed
+**Status:** Accepted
 **Date:** 2026-08-19
 
 Replace password signup, login, and reset with email one-time codes (OTP). Collect a display name at signup. Add a signed-in settings page for email change (OTP on the new inbox, 7-day revert from the old inbox) and account deletion.

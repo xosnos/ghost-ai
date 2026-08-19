@@ -6,10 +6,13 @@ interface AuthFieldProps {
   type: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onPaste?: (e: React.ClipboardEvent<HTMLInputElement>) => void;
   placeholder?: string;
   required?: boolean;
   autoComplete?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   minLength?: number;
+  maxLength?: number;
   labelExtra?: React.ReactNode;
 }
 
@@ -22,7 +25,10 @@ export function AuthField({
   placeholder,
   required,
   autoComplete,
+  inputMode,
   minLength,
+  maxLength,
+  onPaste,
   labelExtra,
 }: AuthFieldProps) {
   return (
@@ -45,7 +51,10 @@ export function AuthField({
         placeholder={placeholder}
         required={required}
         autoComplete={autoComplete}
+        inputMode={inputMode}
         minLength={minLength}
+        maxLength={maxLength}
+        onPaste={onPaste}
       />
     </div>
   );
