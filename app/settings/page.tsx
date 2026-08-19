@@ -24,7 +24,14 @@ export default async function SettingsPage() {
       ownedProjects={ownedProjects}
       sharedProjects={sharedProjects}
     >
-      <SettingsContent currentEmail={user.email ?? ""} />
+      <SettingsContent
+        currentEmail={user.email ?? ""}
+        displayName={
+          typeof user.user_metadata?.display_name === "string"
+            ? user.user_metadata.display_name
+            : null
+        }
+      />
     </EditorChrome>
   );
 }
