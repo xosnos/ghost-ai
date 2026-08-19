@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
-import { EditorChrome } from "@/components/editor/editor-chrome";
 import { SettingsContent } from "@/components/settings/settings-content";
-import { listOwnedProjects, listSharedProjects } from "@/lib/projects/queries";
+import { SettingsShell } from "@/components/settings/settings-shell";
 import { createClient, getCurrentUser } from "@/lib/supabase/server";
 
 export default async function SettingsPage() {
@@ -12,18 +11,8 @@ export default async function SettingsPage() {
     redirect("/login");
   }
 
-  const [ownedProjects, sharedProjects] = await Promise.all([
-    listOwnedProjects(supabase, user.id),
-    listSharedProjects(supabase, user.email ?? ""),
-  ]);
-
   return (
-    <EditorChrome
-      userEmail={user.email ?? ""}
-      currentUserId={user.id}
-      ownedProjects={ownedProjects}
-      sharedProjects={sharedProjects}
-    >
+    <SettingsShell userEmail={user.email ?? ""}>
       <SettingsContent
         currentEmail={user.email ?? ""}
         displayName={
@@ -32,6 +21,6 @@ export default async function SettingsPage() {
             : null
         }
       />
-    </EditorChrome>
+    </SettingsShell>
   );
 }
