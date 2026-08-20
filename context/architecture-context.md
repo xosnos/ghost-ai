@@ -45,6 +45,8 @@
 - Auth is handled via `@supabase/ssr` with cookie-based sessions and Next.js `proxy.ts` routing conventions.
 - Route protection: `proxy.ts` checks session on every request, redirects unauthenticated users to `/login`.
 - Public routes: `/login`, `/signup`, `/auth/callback`, `/auth/revert-email`, `/api/account/email/revert`. Session-protected routes include `/editor`, `/settings`, and workspace paths.
+- Hosted Auth OTP mail and `account-mailer` revert mail send through Resend SMTP (`smtp.resend.com:465`, from `Architype <noreply@mail.architype.xosnos.com>`). Local Auth and revert mail stay on Inbucket. Templates live in `supabase/templates/` and are applied to hosted Auth by `supabase config push`.
+- Hosted migrations and Edge Functions declared in `supabase/config.toml` deploy from the Supabase GitHub integration on `main`. GitHub Actions only `config push`es Auth settings (templates, SMTP, URLs). Seed never runs on hosted.
 - Collaborator management (`/api/projects/[projectId]/collaborators`): invite/remove are owner-only (enforced in the route handler). Listing requires project membership. `get_project_collaborators` returns the owner first (from `projects.owner_id`) then invited collaborators, with Auth profile enrichment. The owner is not a `project_collaborators` row and cannot be removed.
 
 ## Starter System Designs

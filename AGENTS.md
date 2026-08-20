@@ -36,8 +36,9 @@ The VM image already has the Docker engine, pnpm, and the Supabase CLI installed
     - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` — the `publishable key` (`sb_publishable_...`)
     - `SUPABASE_SECRET_KEY` — the `secret key` (`sb_secret_...`, server-only; required for collaborator listing and Auth admin enrichment in spec 09). Never expose this to the browser.
     - `AUTOMATION_SECRET` — `local-dev-automation-secret`, matching the value seeded into Vault for local worker invocation.
+    - `RESEND_API_KEY` — unused placeholder from `.env.example` so `[remotes.production.auth.email.smtp]` can load. Real Resend key stays in GitHub secrets. Auth `site_url` is a literal in `supabase/config.toml`.
 4. Copy `.env.example` to `supabase/functions/.env`, then set `OPENROUTER_API_KEY`. Keep the local `AUTOMATION_SECRET` aligned with the Vault `automations` secret seeded by `supabase/seed.sql`.
-5. `pnpm dev` → http://localhost:3000. Unauthenticated visits redirect to `/login`; sign up/in creates a real Supabase Auth user (email confirmation is off locally).
+5. `pnpm dev` → <http://localhost:3000>. Unauthenticated visits redirect to `/login`; sign up/in creates a real Supabase Auth user (email confirmation is off locally).
 
 Non-obvious gotchas:
 
