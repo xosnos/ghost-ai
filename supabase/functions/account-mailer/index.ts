@@ -59,18 +59,21 @@ function getSiteUrl(): string {
   throw new Error("Missing SITE_URL environment variable");
 }
 
-function isLocalSmtpHost(host: string): boolean {
-  return host === "inbucket" || host === "127.0.0.1" || host === "localhost";
-}
-
 function isLocalRuntime(): boolean {
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-  const smtpHost = Deno.env.get("ACCOUNT_SMTP_HOST") ?? "inbucket";
-  return (
-    isLocalSmtpHost(smtpHost) ||
-    supabaseUrl.includes("127.0.0.1") ||
-    supabaseUrl.includes("localhost")
-  );
+  return supabaseUrl.includes("127.0.0.1") || supabaseUrl.includes("localhost");
+}
+
+function assertMailerConfig(): void {
+  getSiteUrl();
+  const configuredHost = Deno.env.get("ACCOUNT_SMTP_HOST")?.trim();
+  if (!configuredHost && !isLocalRuntime()) {
+    throw new Error("Missing ACCOUNT_SMTP_HOST environment variable");
+  }
+}
+
+function isLocalSmtpHost(host: string): boolean {
+  return host === "inbucket" || host === "127.0.0.1" || host === "localhost";
 }
 
 function buildRevertEmailHtml(payload: RevertEmailPayload, siteUrl: string): string {
@@ -110,11 +113,16 @@ function buildRevertEmailHtml(payload: RevertEmailPayload, siteUrl: string): str
 }
 
 function createSmtpTransporter() {
-  const smtpHost = Deno.env.get("ACCOUNT_SMTP_HOST") ?? "inbucket";
-  const smtpPort = Number(Deno.env.get("ACCOUNT_SMTP_PORT") ?? "1025");
+  const configuredHost = Deno.env.get("ACCOUNT_SMTP_HOST")?.trim();
+  const smtpHost = configuredHost || (isLocalRuntime() ? "inbucket" : "");
+  if (!smtpHost) {
+    throw new Error("Missing ACCOUNT_SMTP_HOST environment variable");
+  }
+
+  const smtpPort = Number(Deno.env.get("ACCOUNT_SMTP_PORT") ?? (isLocalRuntime() ? "1025" : "587"));
   const smtpUser = Deno.env.get("ACCOUNT_SMTP_USER");
   const smtpPass = Deno.env.get("ACCOUNT_SMTP_PASS");
-  const isLocalDev = isLocalSmtpHost(smtpHost);
+  const isLocalDev = isLocalRuntime() && isLocalSmtpHost(smtpHost);
   const secure =
     Deno.env.get("ACCOUNT_SMTP_SECURE") === "true" || smtpPort === 465;
 
@@ -272,41 +280,41 @@ async function processQueueMessage(
     return;
   }
 
-  const expiresAt = Date.parse(payload.expires_at);
-  if (!Number.isNaN(expiresAt) && expiresAt <= Date.now()) {
-    await admin.rpc("mark_email_revert_notification_failed", {
-      p_reversion_id: payload.reversion_id,
-      p_error: "Notification expired before delivery",
-    });
-    console.error(
-      `[account-mailer] Revert notification ${payload.reversion_id} expired. Deleting.`,
-    );
-    await deleteQueueMessage(msgId);
-    return;
-  }
-
-  if (await isRevertNotificationAlreadySent(admin, payload.reversion_id)) {
-    console.log(
-      `[account-mailer] Revert notification ${payload.reversion_id} already sent. Deleting duplicate.`,
-    );
-    await deleteQueueMessage(msgId);
-    return;
-  }
-
-  if (readCt > MAX_ATTEMPTS) {
-    await admin.rpc("mark_email_revert_notification_failed", {
-      p_reversion_id: payload.reversion_id,
-      p_error: `Exceeded max delivery attempts (${MAX_ATTEMPTS})`,
-    });
-    console.error(
-      `[account-mailer] Revert notification ${payload.reversion_id} exceeded max attempts. Deleting.`,
-    );
-    await deleteQueueMessage(msgId);
-    return;
-  }
-
   let sent = false;
   try {
+    const expiresAt = Date.parse(payload.expires_at);
+    if (!Number.isNaN(expiresAt) && expiresAt <= Date.now()) {
+      await admin.rpc("mark_email_revert_notification_failed", {
+        p_reversion_id: payload.reversion_id,
+        p_error: "Notification expired before delivery",
+      });
+      console.error(
+        `[account-mailer] Revert notification ${payload.reversion_id} expired. Deleting.`,
+      );
+      await deleteQueueMessage(msgId);
+      return;
+    }
+
+    if (await isRevertNotificationAlreadySent(admin, payload.reversion_id)) {
+      console.log(
+        `[account-mailer] Revert notification ${payload.reversion_id} already sent. Deleting duplicate.`,
+      );
+      await deleteQueueMessage(msgId);
+      return;
+    }
+
+    if (readCt > MAX_ATTEMPTS) {
+      await admin.rpc("mark_email_revert_notification_failed", {
+        p_reversion_id: payload.reversion_id,
+        p_error: `Exceeded max delivery attempts (${MAX_ATTEMPTS})`,
+      });
+      console.error(
+        `[account-mailer] Revert notification ${payload.reversion_id} exceeded max attempts. Deleting.`,
+      );
+      await deleteQueueMessage(msgId);
+      return;
+    }
+
     await sendRevertEmail(payload);
     sent = true;
 
@@ -365,7 +373,7 @@ declare const EdgeRuntime: {
 Deno.serve(
   withAutomationSecret(async () => {
     try {
-      getSiteUrl();
+      assertMailerConfig();
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error("[account-mailer] Invalid mailer configuration:", message);

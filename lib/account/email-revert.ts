@@ -44,6 +44,10 @@ export async function executeEmailRevert(token: string): Promise<{
     throw new Error(error.message);
   }
 
+  if (!data) {
+    throw new Error("invalid_token");
+  }
+
   const payload = data as { user_id?: string; old_email?: string };
   if (!payload.user_id || !payload.old_email) {
     throw new Error("invalid_token");
