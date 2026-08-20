@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { type AiChatContextValue, AiChatProvider } from "@/components/editor/ai-chat-context";
 import { AiSidebar } from "@/components/editor/ai-sidebar";
 import {
@@ -31,6 +31,7 @@ import {
   TemplateImportProvider,
   TemplateSelectionProvider,
 } from "@/components/editor/template-import-context";
+import { SettingsModal } from "@/components/settings/settings-modal";
 import type { SaveStatus } from "@/hooks/use-canvas-autosave";
 import { useProjectActions } from "@/hooks/use-project-actions";
 import { useShareDialog } from "@/hooks/use-share-dialog";
@@ -41,31 +42,47 @@ import type { AiChatMessage, AiStatusMessage } from "@/types/tasks";
 interface EditorChromeProps {
   children: React.ReactNode;
   userEmail: string;
+  displayName?: string | null;
   currentUserId: string;
   ownedProjects: Project[];
   sharedProjects: Project[];
   project?: Project;
   currentRoomId?: string;
+  openSettingsInitially?: boolean;
 }
 
 export function EditorChrome({
   children,
   userEmail,
+  displayName,
   currentUserId,
   ownedProjects,
   sharedProjects,
   project,
   currentRoomId,
+  openSettingsInitially = false,
 }: EditorChromeProps) {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [aiSidebarOpen, setAiSidebarOpen] = useState(false);
   const [templatesOpen, setTemplatesOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(openSettingsInitially);
   const dialogs = useProjectActions();
   const openCreate = dialogs.openCreate;
   const isWorkspace = Boolean(project);
   const isProjectOwner = Boolean(project && project.ownerId === currentUserId);
   const share = useShareDialog(project?.id, isProjectOwner);
+
+  useEffect(() => {
+    if (openSettingsInitially) {
+      setSettingsOpen(true);
+      router.replace("/editor", { scroll: false });
+    }
+  }, [openSettingsInitially, router]);
+
+  const handleCloseSettings = useCallback(() => {
+    setSettingsOpen(false);
+  }, []);
 
   const templateImportRef = useRef<((template: CanvasTemplate) => void) | null>(null);
 
@@ -258,6 +275,7 @@ export function EditorChrome({
                       saveStatus={isWorkspace ? saveStatus : undefined}
                       onSaveNow={isWorkspace ? handleSaveNow : undefined}
                       presenceOthers={isWorkspace ? presenceOthers : undefined}
+                      onOpenSettings={() => setSettingsOpen(true)}
                     />
 
                     {/* Drawer Sidebar for Mobile or Workspace Overlay */}
@@ -335,6 +353,13 @@ export function EditorChrome({
                       setTemplatesOpen(false);
                     }}
                     onClose={() => setTemplatesOpen(false)}
+                  />
+
+                  <SettingsModal
+                    open={settingsOpen}
+                    currentEmail={userEmail}
+                    displayName={displayName}
+                    onClose={handleCloseSettings}
                   />
                 </AiChatProvider>
               </AiStatusProvider>

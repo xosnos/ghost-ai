@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Architype sign-in code</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0b0f14;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#0b0f14;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:480px;background-color:#121820;border:1px solid #1e2a38;border-radius:16px;padding:32px 28px;">
+          <tr>
+            <td align="center" style="padding-bottom:24px;">
+              <img src="{{ .SiteURL }}/favicon.svg" alt="Architype" width="40" height="40" style="display:block;" />
+            </td>
+          </tr>
+          <tr>
+            <td style="color:#e8eef4;font-size:22px;font-weight:600;text-align:center;padding-bottom:8px;">
+              Your Architype sign-in code
+            </td>
+          </tr>
+          <tr>
+            <td style="color:#8b9cb3;font-size:14px;line-height:1.6;text-align:center;padding-bottom:24px;">
+              {{ if .Data.display_name }}Hi {{ .Data.display_name }},{{ else }}Hi,{{ end }}
+              enter this 6-digit code to continue. It expires in 10 minutes.
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding-bottom:24px;">
+              <div style="display:inline-block;background-color:#0b1219;border:1px solid #00f5ff;border-radius:12px;padding:16px 32px;font-size:32px;font-weight:700;letter-spacing:8px;color:#00f5ff;">
+                {{ .Token }}
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="color:#6b7d94;font-size:12px;line-height:1.5;text-align:center;">
+              If you did not request this code, you can ignore this email.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

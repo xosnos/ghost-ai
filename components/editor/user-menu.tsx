@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, Moon, Sun } from "lucide-react";
+import { LogOut, Moon, Settings, Sun } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
@@ -8,9 +8,10 @@ import { useTheme } from "@/lib/theme-provider";
 
 interface UserMenuProps {
   email: string;
+  onOpenSettings?: () => void;
 }
 
-export function UserMenu({ email }: UserMenuProps) {
+export function UserMenu({ email, onOpenSettings }: UserMenuProps) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -84,6 +85,20 @@ export function UserMenu({ email }: UserMenuProps) {
               {email}
             </p>
           </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              onOpenSettings?.();
+            }}
+            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors hover:bg-[var(--bg-subtle)]"
+            style={{ color: "var(--text-secondary)" }}
+            role="menuitem"
+          >
+            <Settings className="h-4 w-4" />
+            Settings
+          </button>
 
           <button
             type="button"

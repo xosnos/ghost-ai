@@ -1,7 +1,19 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 
-const publicRoutes = ["/login", "/signup", "/forgot-password", "/reset-password", "/auth/callback"];
+const publicRoutes = [
+  "/login",
+  "/signup",
+  "/auth/callback",
+  "/auth/revert-email",
+  "/api/account/email/revert",
+];
+
+const publicRoutesAllowedWhenAuthenticated = ["/auth/revert-email", "/api/account/email/revert"];
+
+function matchesRoute(pathname: string, route: string): boolean {
+  return pathname === route || pathname.startsWith(`${route}/`);
+}
 
 export async function proxy(request: NextRequest) {
   const response = NextResponse.next({
@@ -34,7 +46,10 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
+  const isPublicRoute = publicRoutes.some((route) => matchesRoute(pathname, route));
+  const allowAuthenticatedPublic = publicRoutesAllowedWhenAuthenticated.some((route) =>
+    matchesRoute(pathname, route),
+  );
 
   if (!user && !isPublicRoute) {
     const url = request.nextUrl.clone();
@@ -48,7 +63,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && isPublicRoute && !pathname.startsWith("/reset-password")) {
+  if (user && isPublicRoute && !allowAuthenticatedPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/editor";
     return NextResponse.redirect(url);

@@ -7,11 +7,11 @@ Update this file whenever the current phase, active feature, or implementation s
 - Feature specifications 01 through 29 are implemented.
 - Specs 01 through 29 satisfy their current acceptance checks.
 - All previously identified acceptance gaps (Specs 22, 23, 24, 26, 27) are resolved.
-- Spec 30 (passwordless OTP auth and account settings) is written and Proposed. It is not implemented.
+- Spec 30 (passwordless OTP auth and account settings) is implemented and verified locally.
 
 ## Current Goal
 
-- Next: implement spec 30 from `context/feature-specs/30-otp-auth-settings.md` (Journey: signup OTP, login OTP, settings email change and revert, then account delete).
+- Spec 30 complete: passwordless OTP signup/login, settings modal (email change with revert, account delete), branded OTP templates, and `account-mailer` edge function.
 
 ## Acceptance Gaps
 
@@ -20,6 +20,27 @@ Update this file whenever the current phase, active feature, or implementation s
 ## Historical Implementation Log
 
 The entries below record implementation state at the time each change landed. The current status and known gaps above take precedence where later work changed behavior.
+
+- **Spec 30 PR review follow-ups (2026-08-20)**:
+  - `account-mailer` now checks errors from `mark_email_revert_notification_failed` before deleting expired/exhausted queue messages; catch-path failures are logged when the failure-state RPC itself errors.
+  - Collapsed redundant email-change trigger migrations into a single fail-closed enqueue + guarded Vault wake-up migration.
+
+- **Spec 30 PR review follow-ups (2026-08-19)**:
+  - Made `POST /api/account/email/revert` a public route so signed-out revert completes; tightened public-route matching.
+  - Revert now clears pending GoTrue email-change state, updates the email identity, and deletes Auth sessions in the same RPC. Mailer deletes queue messages (no plaintext token archive), requires `SITE_URL` when hosted, and does not retry after a successful SMTP send. Enqueue failure rolls the email change back so a revert link cannot be silently skipped.
+  - Account deletion paginates spec Storage listing; delete/settings/auth forms reset loading on rejection.
+
+- **Spec 30 implemented: Passwordless OTP Auth and Account Settings (2026-08-19)**:
+  - Replaced password signup/login/reset with email OTP flows (`SignupForm`, `LoginForm`, shared `OtpVerificationStep`).
+  - Added in-app settings modal (Profile / Email, delete account OTP) opened from the user menu; `/settings` redirects to `/editor?settings=1`.
+  - Added `email_change_reversions` migration, Auth email-change trigger, `reassign_collaborator_email`, revert page/API, and `account-mailer` edge function.
+  - Updated `proxy.ts` public routes, Auth templates/config, and user menu Settings link.
+  - Verified: signup/login OTP via Mailpit, settings UI, revert email + RPC restore, spec 22 (25/25) and spec 27 (13/13) integration tests, `pnpm lint`, `pnpm build`.
+
+- **Spec 30 PR review fixes (2026-08-19)**:
+  - Hardened `account-mailer` SMTP: require TLS and validate certificates in hosted environments; keep relaxed settings only for local Inbucket.
+  - Made revert-email delivery durable via `email-revert` pgmq queue, delivery tracking columns, and a 30s cron recovery job (replacing fire-and-forget HTTP from the Auth trigger).
+  - Account deletion now fails closed when canvas or spec Storage cleanup returns an error.
 
 - **Spec 30 proposed: Passwordless OTP Auth and Account Settings (2026-08-19)**:
   - Wrote `context/feature-specs/30-otp-auth-settings.md` (status Proposed). Password signup/login/reset are replaced by email OTP; signup collects `user_metadata.display_name`; `/settings` covers email change (OTP on the new inbox, 7-day hashed revert from the old inbox) and account deletion.
@@ -484,7 +505,7 @@ The entries below record implementation state at the time each change landed. Th
 - Tailwind v4 CSS-first config — design tokens defined as CSS custom properties in globals.css, mapped to Tailwind via @theme inline.
 - shadcn/ui components authored directly (no CLI); live in components/ui/.
 - ProjectSidebar is a fixed overlay (does not push page content) positioned below the navbar.
-- Auth uses Supabase Auth (not Clerk). Cookie-based sessions via @supabase/ssr. Routing proxy (`proxy.ts`) at project root handles session refresh and route protection. Public routes: /login, /signup, /forgot-password, /reset-password, /auth/callback.
+- Auth uses Supabase Auth (not Clerk). Cookie-based sessions via @supabase/ssr. Routing proxy (`proxy.ts`) at project root handles session refresh and route protection. Public routes: /login, /signup, /auth/callback, /auth/revert-email, /api/account/email/revert. Passwordless email OTP for signup and login (spec 30); account settings at /settings.
 - Editor page at /editor is a server component that fetches user then renders client EditorChrome with userEmail prop.
 - Auth route pages (`app/(auth)/*/page.tsx`) are Server Components that render client form components. Avoid `"use client"` on `page.tsx` itself — Next.js wraps client pages in `ClientPageRoot`, which requires `workStore` for `searchParams` instrumentation and can throw in WebContainer environments (Bolt/StackBlitz).
 - Database layer uses Bolt's integrated Supabase database (PostgreSQL) instead of Prisma. Schema is applied via the Supabase migration tool, not a Prisma schema file. All tables use RLS with owner-scoped policies.

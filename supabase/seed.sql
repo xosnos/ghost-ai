@@ -31,6 +31,8 @@ alter default privileges in schema public
 -- Enforce explicit privilege restrictions for task_runs, project_specs, and pgmq queues
 revoke insert, update, delete on public.task_runs from anon, authenticated;
 revoke insert, update, delete on public.project_specs from anon, authenticated;
+revoke all on public.email_change_reversions from anon, authenticated;
+grant all on public.email_change_reversions to service_role;
 revoke all on schema pgmq from anon, authenticated;
 revoke all on schema pgmq_public from public, anon, authenticated;
 revoke all on all functions in schema pgmq_public from public, anon, authenticated;
@@ -88,6 +90,19 @@ begin
     perform vault.update_secret(
       v_id,
       'http://supabase_kong_architype:8000/functions/v1/ai-worker'
+    );
+  end if;
+
+  select id into v_id from vault.secrets where name = 'account_mailer_url';
+  if v_id is null then
+    perform vault.create_secret(
+      'http://supabase_kong_architype:8000/functions/v1/account-mailer',
+      'account_mailer_url'
+    );
+  else
+    perform vault.update_secret(
+      v_id,
+      'http://supabase_kong_architype:8000/functions/v1/account-mailer'
     );
   end if;
 end $$;
