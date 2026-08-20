@@ -21,6 +21,10 @@ Update this file whenever the current phase, active feature, or implementation s
 
 The entries below record implementation state at the time each change landed. The current status and known gaps above take precedence where later work changed behavior.
 
+- **Spec 30 PR review follow-ups (2026-08-20)**:
+  - `account-mailer` now checks errors from `mark_email_revert_notification_failed` before deleting expired/exhausted queue messages; catch-path failures are logged when the failure-state RPC itself errors.
+  - Collapsed redundant email-change trigger migrations into a single fail-closed enqueue + guarded Vault wake-up migration.
+
 - **Spec 30 PR review follow-ups (2026-08-19)**:
   - Made `POST /api/account/email/revert` a public route so signed-out revert completes; tightened public-route matching.
   - Revert now clears pending GoTrue email-change state, updates the email identity, and deletes Auth sessions in the same RPC. Mailer deletes queue messages (no plaintext token archive), requires `SITE_URL` when hosted, and does not retry after a successful SMTP send. Enqueue failure rolls the email change back so a revert link cannot be silently skipped.

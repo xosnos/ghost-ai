@@ -1,8 +1,10 @@
 /*
-# Fail closed when revert enqueue fails
+# Fail closed on revert enqueue; guard mailer wake-up Vault lookups
 
 Keep Auth email changes from committing without a queued revert
-notification. Wake-up HTTP remains best-effort because cron recovers
+notification. Vault lookups and mailer wake-up stay outside the enqueue
+path so a raised get_vault_secret or HTTP error cannot roll back the
+queued message. Wake-up HTTP remains best-effort because cron recovers
 queued messages.
 */
 
@@ -67,11 +69,11 @@ BEGIN
 
   PERFORM pgmq.send('email-revert', queue_payload);
 
-  mailer_url := public.get_vault_secret('account_mailer_url');
-  automation_secret := public.get_vault_secret('automations');
+  BEGIN
+    mailer_url := public.get_vault_secret('account_mailer_url');
+    automation_secret := public.get_vault_secret('automations');
 
-  IF mailer_url IS NOT NULL AND automation_secret IS NOT NULL THEN
-    BEGIN
+    IF mailer_url IS NOT NULL AND automation_secret IS NOT NULL THEN
       PERFORM net.http_post(
         url := mailer_url,
         headers := jsonb_build_object(
@@ -81,10 +83,10 @@ BEGIN
         ),
         body := '{}'::jsonb
       );
-    EXCEPTION WHEN OTHERS THEN
-      RAISE LOG 'account-mailer wake-up failed: %', SQLERRM;
-    END;
-  END IF;
+    END IF;
+  EXCEPTION WHEN OTHERS THEN
+    RAISE LOG 'account-mailer wake-up failed: %', SQLERRM;
+  END;
 
   RETURN NEW;
 END;

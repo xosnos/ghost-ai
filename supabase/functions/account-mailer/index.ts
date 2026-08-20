@@ -284,10 +284,18 @@ async function processQueueMessage(
   try {
     const expiresAt = Date.parse(payload.expires_at);
     if (!Number.isNaN(expiresAt) && expiresAt <= Date.now()) {
-      await admin.rpc("mark_email_revert_notification_failed", {
-        p_reversion_id: payload.reversion_id,
-        p_error: "Notification expired before delivery",
-      });
+      const { error: expiredError } = await admin.rpc(
+        "mark_email_revert_notification_failed",
+        {
+          p_reversion_id: payload.reversion_id,
+          p_error: "Notification expired before delivery",
+        },
+      );
+      if (expiredError) {
+        throw new Error(
+          `Failed to mark notification expired: ${expiredError.message}`,
+        );
+      }
       console.error(
         `[account-mailer] Revert notification ${payload.reversion_id} expired. Deleting.`,
       );
@@ -304,10 +312,18 @@ async function processQueueMessage(
     }
 
     if (readCt > MAX_ATTEMPTS) {
-      await admin.rpc("mark_email_revert_notification_failed", {
-        p_reversion_id: payload.reversion_id,
-        p_error: `Exceeded max delivery attempts (${MAX_ATTEMPTS})`,
-      });
+      const { error: exhaustedError } = await admin.rpc(
+        "mark_email_revert_notification_failed",
+        {
+          p_reversion_id: payload.reversion_id,
+          p_error: `Exceeded max delivery attempts (${MAX_ATTEMPTS})`,
+        },
+      );
+      if (exhaustedError) {
+        throw new Error(
+          `Failed to mark notification exhausted: ${exhaustedError.message}`,
+        );
+      }
       console.error(
         `[account-mailer] Revert notification ${payload.reversion_id} exceeded max attempts. Deleting.`,
       );
@@ -355,10 +371,16 @@ async function processQueueMessage(
     }
 
     const message = sanitizeErrorMessage(err);
-    await admin.rpc("mark_email_revert_notification_failed", {
-      p_reversion_id: payload.reversion_id,
-      p_error: message,
-    });
+    const { error: failError } = await admin.rpc(
+      "mark_email_revert_notification_failed",
+      { p_reversion_id: payload.reversion_id, p_error: message },
+    );
+    if (failError) {
+      console.error(
+        `[account-mailer] Failed to record delivery failure for ${payload.reversion_id}:`,
+        failError.message,
+      );
+    }
     console.error(
       `[account-mailer] Failed to send revert notification ${payload.reversion_id} (attempt ${readCt}):`,
       message,
