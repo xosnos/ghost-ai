@@ -7,17 +7,8 @@ import { AuthError } from "@/components/auth/auth-error";
 import { AuthField } from "@/components/auth/auth-field";
 import { OtpVerificationStep } from "@/components/auth/otp-verification-step";
 import { Button } from "@/components/ui/button";
+import { mapAuthError } from "@/lib/auth/errors";
 import { createClient } from "@/lib/supabase/client";
-
-function mapAuthError(message: string): string {
-  if (/rate limit|too many/i.test(message)) {
-    return "Too many requests. Please wait a moment and try again.";
-  }
-  if (/expired|invalid/i.test(message)) {
-    return "That code is invalid or expired. Request a new code and try again.";
-  }
-  return message;
-}
 
 export function LoginForm() {
   const [email, setEmail] = useState("");
@@ -34,7 +25,11 @@ export function LoginForm() {
     });
 
     if (otpError) {
-      setError("We could not send a sign-in code. Check the address or sign up.");
+      setError(
+        /rate limit|too many/i.test(otpError.message)
+          ? mapAuthError(otpError.message)
+          : "We could not send a sign-in code. Check the address or sign up.",
+      );
       return false;
     }
 
@@ -47,11 +42,15 @@ export function LoginForm() {
     setError(null);
     setLoading(true);
 
-    const sent = await sendOtp(email);
-    setLoading(false);
-
-    if (sent) {
-      setStep("otp");
+    try {
+      const sent = await sendOtp(email);
+      if (sent) {
+        setStep("otp");
+      }
+    } catch {
+      setError("Something went wrong. Try again.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -59,21 +58,26 @@ export function LoginForm() {
     setError(null);
     setLoading(true);
 
-    const supabase = createClient();
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      email: email.trim(),
-      token,
-      type: "email",
-    });
+    try {
+      const supabase = createClient();
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token,
+        type: "email",
+      });
 
-    if (verifyError) {
-      setError(mapAuthError(verifyError.message));
+      if (verifyError) {
+        setError(mapAuthError(verifyError.message));
+        return;
+      }
+
+      router.refresh();
+      router.push("/editor");
+    } catch {
+      setError("Something went wrong. Try again.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    router.refresh();
-    router.push("/editor");
   }
 
   if (step === "otp") {

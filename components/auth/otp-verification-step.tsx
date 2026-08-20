@@ -47,10 +47,15 @@ export function OtpVerificationStep({
     if (resendCooldown > 0 || resending) return;
     setResendError(null);
     setResending(true);
-    const sent = await onResend();
-    setResending(false);
-    if (sent) {
-      setResendCooldown(RESEND_COOLDOWN_SECONDS);
+    try {
+      const sent = await onResend();
+      if (sent) {
+        setResendCooldown(RESEND_COOLDOWN_SECONDS);
+      }
+    } catch {
+      setResendError("Could not resend the verification code.");
+    } finally {
+      setResending(false);
     }
   }, [onResend, resendCooldown, resending]);
 

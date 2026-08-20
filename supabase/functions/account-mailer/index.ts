@@ -47,11 +47,30 @@ function getSupabaseConfig(): SupabaseConfig {
 }
 
 function getSiteUrl(): string {
-  return Deno.env.get("SITE_URL") ?? "http://127.0.0.1:3000";
+  const siteUrl = Deno.env.get("SITE_URL")?.trim().replace(/\/$/, "");
+  if (siteUrl) {
+    return siteUrl;
+  }
+
+  if (isLocalRuntime()) {
+    return "http://127.0.0.1:3000";
+  }
+
+  throw new Error("Missing SITE_URL environment variable");
 }
 
 function isLocalSmtpHost(host: string): boolean {
   return host === "inbucket" || host === "127.0.0.1" || host === "localhost";
+}
+
+function isLocalRuntime(): boolean {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  const smtpHost = Deno.env.get("ACCOUNT_SMTP_HOST") ?? "inbucket";
+  return (
+    isLocalSmtpHost(smtpHost) ||
+    supabaseUrl.includes("127.0.0.1") ||
+    supabaseUrl.includes("localhost")
+  );
 }
 
 function buildRevertEmailHtml(payload: RevertEmailPayload, siteUrl: string): string {
@@ -105,6 +124,9 @@ function createSmtpTransporter() {
     secure,
     auth: smtpUser && smtpPass ? { user: smtpUser, pass: smtpPass } : undefined,
     requireTLS: !secure && !isLocalDev,
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 20_000,
     ...(isLocalDev ? { tls: { rejectUnauthorized: false } } : {}),
   });
 }
@@ -169,11 +191,11 @@ async function readQueueMessages(
   throw lastError || new Error("All queue read endpoints failed");
 }
 
-async function archiveQueueMessage(msgId: number): Promise<void> {
+async function deleteQueueMessage(msgId: number): Promise<void> {
   const { supabaseUrl, supabaseSecretKey } = getSupabaseConfig();
   const endpoints = [
-    `${supabaseUrl.replace(/\/$/, "")}/rest/v1/rpc/archive`,
-    `${supabaseUrl.replace(/\/$/, "")}/rpc/archive`,
+    `${supabaseUrl.replace(/\/$/, "")}/rest/v1/rpc/delete`,
+    `${supabaseUrl.replace(/\/$/, "")}/rpc/delete`,
   ];
 
   for (const endpoint of endpoints) {
@@ -202,7 +224,7 @@ async function archiveQueueMessage(msgId: number): Promise<void> {
     }
   }
 
-  console.warn(`[account-mailer] Failed to archive message ${msgId}`);
+  console.warn(`[account-mailer] Failed to delete message ${msgId}`);
 }
 
 function sanitizeErrorMessage(err: unknown): string {
@@ -242,18 +264,32 @@ async function processQueueMessage(
     !payload.reversion_id ||
     !payload.old_email ||
     !payload.new_email ||
-    !payload.raw_token
+    !payload.raw_token ||
+    !payload.expires_at
   ) {
-    console.error("[account-mailer] Invalid queue payload. Archiving.");
-    await archiveQueueMessage(msgId);
+    console.error("[account-mailer] Invalid queue payload. Deleting.");
+    await deleteQueueMessage(msgId);
+    return;
+  }
+
+  const expiresAt = Date.parse(payload.expires_at);
+  if (!Number.isNaN(expiresAt) && expiresAt <= Date.now()) {
+    await admin.rpc("mark_email_revert_notification_failed", {
+      p_reversion_id: payload.reversion_id,
+      p_error: "Notification expired before delivery",
+    });
+    console.error(
+      `[account-mailer] Revert notification ${payload.reversion_id} expired. Deleting.`,
+    );
+    await deleteQueueMessage(msgId);
     return;
   }
 
   if (await isRevertNotificationAlreadySent(admin, payload.reversion_id)) {
     console.log(
-      `[account-mailer] Revert notification ${payload.reversion_id} already sent. Archiving duplicate.`,
+      `[account-mailer] Revert notification ${payload.reversion_id} already sent. Deleting duplicate.`,
     );
-    await archiveQueueMessage(msgId);
+    await deleteQueueMessage(msgId);
     return;
   }
 
@@ -263,14 +299,16 @@ async function processQueueMessage(
       p_error: `Exceeded max delivery attempts (${MAX_ATTEMPTS})`,
     });
     console.error(
-      `[account-mailer] Revert notification ${payload.reversion_id} exceeded max attempts. Archiving.`,
+      `[account-mailer] Revert notification ${payload.reversion_id} exceeded max attempts. Deleting.`,
     );
-    await archiveQueueMessage(msgId);
+    await deleteQueueMessage(msgId);
     return;
   }
 
+  let sent = false;
   try {
     await sendRevertEmail(payload);
+    sent = true;
 
     const { data: marked, error: markError } = await admin.rpc(
       "mark_email_revert_notification_sent",
@@ -287,9 +325,27 @@ async function processQueueMessage(
       );
     }
 
-    await archiveQueueMessage(msgId);
+    await deleteQueueMessage(msgId);
     console.log(`[account-mailer] Sent revert notification ${payload.reversion_id}.`);
   } catch (err) {
+    if (sent) {
+      try {
+        await admin.rpc("mark_email_revert_notification_sent", {
+          p_reversion_id: payload.reversion_id,
+        });
+      } catch (markErr) {
+        console.error(
+          `[account-mailer] Sent revert notification ${payload.reversion_id} but failed to mark sent:`,
+          markErr,
+        );
+      }
+      await deleteQueueMessage(msgId);
+      console.error(
+        `[account-mailer] Revert notification ${payload.reversion_id} was sent; skipped retry after post-send failure.`,
+      );
+      return;
+    }
+
     const message = sanitizeErrorMessage(err);
     await admin.rpc("mark_email_revert_notification_failed", {
       p_reversion_id: payload.reversion_id,
@@ -308,6 +364,20 @@ declare const EdgeRuntime: {
 
 Deno.serve(
   withAutomationSecret(async () => {
+    try {
+      getSiteUrl();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("[account-mailer] Invalid mailer configuration:", message);
+      return new Response(
+        JSON.stringify({ error: "Mailer is not configured", details: message }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
     const { supabaseUrl, supabaseSecretKey } = getSupabaseConfig();
     const admin = createClient(supabaseUrl, supabaseSecretKey, {
       auth: { persistSession: false, autoRefreshToken: false },

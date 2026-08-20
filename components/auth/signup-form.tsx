@@ -7,6 +7,7 @@ import { AuthError } from "@/components/auth/auth-error";
 import { AuthField } from "@/components/auth/auth-field";
 import { OtpVerificationStep } from "@/components/auth/otp-verification-step";
 import { Button } from "@/components/ui/button";
+import { mapAuthError } from "@/lib/auth/errors";
 import { createClient } from "@/lib/supabase/client";
 
 function validateDisplayName(name: string): string | null {
@@ -15,16 +16,6 @@ function validateDisplayName(name: string): string | null {
     return "Display name must be between 1 and 80 characters.";
   }
   return null;
-}
-
-function mapAuthError(message: string): string {
-  if (/rate limit|too many/i.test(message)) {
-    return "Too many requests. Please wait a moment and try again.";
-  }
-  if (/expired|invalid/i.test(message)) {
-    return "That code is invalid or expired. Request a new code and try again.";
-  }
-  return message;
 }
 
 export function SignupForm() {
@@ -65,11 +56,15 @@ export function SignupForm() {
     }
 
     setLoading(true);
-    const sent = await sendOtp();
-    setLoading(false);
-
-    if (sent) {
-      setStep("otp");
+    try {
+      const sent = await sendOtp();
+      if (sent) {
+        setStep("otp");
+      }
+    } catch {
+      setError("Something went wrong. Try again.");
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -77,21 +72,26 @@ export function SignupForm() {
     setError(null);
     setLoading(true);
 
-    const supabase = createClient();
-    const { error: verifyError } = await supabase.auth.verifyOtp({
-      email: email.trim(),
-      token,
-      type: "email",
-    });
+    try {
+      const supabase = createClient();
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email: email.trim(),
+        token,
+        type: "email",
+      });
 
-    if (verifyError) {
-      setError(mapAuthError(verifyError.message));
+      if (verifyError) {
+        setError(mapAuthError(verifyError.message));
+        return;
+      }
+
+      router.refresh();
+      router.push("/editor");
+    } catch {
+      setError("Something went wrong. Try again.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    router.refresh();
-    router.push("/editor");
   }
 
   if (step === "otp") {

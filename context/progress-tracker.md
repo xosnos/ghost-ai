@@ -21,12 +21,18 @@ Update this file whenever the current phase, active feature, or implementation s
 
 The entries below record implementation state at the time each change landed. The current status and known gaps above take precedence where later work changed behavior.
 
+- **Spec 30 PR review follow-ups (2026-08-19)**:
+  - Made `POST /api/account/email/revert` a public route so signed-out revert completes; tightened public-route matching.
+  - Revert now clears pending GoTrue email-change state, updates the email identity, and deletes Auth sessions in the same RPC. Mailer deletes queue messages (no plaintext token archive), requires `SITE_URL` when hosted, and does not retry after a successful SMTP send.
+  - Account deletion paginates spec Storage listing; delete/settings/auth forms reset loading on rejection.
+
 - **Spec 30 implemented: Passwordless OTP Auth and Account Settings (2026-08-19)**:
   - Replaced password signup/login/reset with email OTP flows (`SignupForm`, `LoginForm`, shared `OtpVerificationStep`).
   - Added in-app settings modal (Profile / Email, delete account OTP) opened from the user menu; `/settings` redirects to `/editor?settings=1`.
   - Added `email_change_reversions` migration, Auth email-change trigger, `reassign_collaborator_email`, revert page/API, and `account-mailer` edge function.
   - Updated `proxy.ts` public routes, Auth templates/config, and user menu Settings link.
   - Verified: signup/login OTP via Mailpit, settings UI, revert email + RPC restore, spec 22 (25/25) and spec 27 (13/13) integration tests, `pnpm lint`, `pnpm build`.
+
 - **Spec 30 PR review fixes (2026-08-19)**:
   - Hardened `account-mailer` SMTP: require TLS and validate certificates in hosted environments; keep relaxed settings only for local Inbucket.
   - Made revert-email delivery durable via `email-revert` pgmq queue, delivery tracking columns, and a 30s cron recovery job (replacing fire-and-forget HTTP from the Auth trigger).
@@ -495,7 +501,7 @@ The entries below record implementation state at the time each change landed. Th
 - Tailwind v4 CSS-first config — design tokens defined as CSS custom properties in globals.css, mapped to Tailwind via @theme inline.
 - shadcn/ui components authored directly (no CLI); live in components/ui/.
 - ProjectSidebar is a fixed overlay (does not push page content) positioned below the navbar.
-- Auth uses Supabase Auth (not Clerk). Cookie-based sessions via @supabase/ssr. Routing proxy (`proxy.ts`) at project root handles session refresh and route protection. Public routes: /login, /signup, /auth/callback, /auth/revert-email. Passwordless email OTP for signup and login (spec 30); account settings at /settings.
+- Auth uses Supabase Auth (not Clerk). Cookie-based sessions via @supabase/ssr. Routing proxy (`proxy.ts`) at project root handles session refresh and route protection. Public routes: /login, /signup, /auth/callback, /auth/revert-email, /api/account/email/revert. Passwordless email OTP for signup and login (spec 30); account settings at /settings.
 - Editor page at /editor is a server component that fetches user then renders client EditorChrome with userEmail prop.
 - Auth route pages (`app/(auth)/*/page.tsx`) are Server Components that render client form components. Avoid `"use client"` on `page.tsx` itself — Next.js wraps client pages in `ClientPageRoot`, which requires `workStore` for `searchParams` instrumentation and can throw in WebContainer environments (Bolt/StackBlitz).
 - Database layer uses Bolt's integrated Supabase database (PostgreSQL) instead of Prisma. Schema is applied via the Supabase migration tool, not a Prisma schema file. All tables use RLS with owner-scoped policies.

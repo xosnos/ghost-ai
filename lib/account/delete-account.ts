@@ -3,9 +3,44 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { CANVAS_BUCKET, getCanvasStorageKey } from "@/lib/canvas-storage";
 import { listOwnedProjects } from "@/lib/projects/queries";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { SPECS_BUCKET } from "@/lib/specs/queries";
 
-const SPECS_BUCKET = "specs";
+const SPEC_LIST_PAGE_SIZE = 100;
+const SPEC_REMOVE_BATCH_SIZE = 100;
+
+async function listAllSpecPaths(admin: SupabaseClient, projectId: string): Promise<string[]> {
+  const paths: string[] = [];
+  let offset = 0;
+
+  while (true) {
+    const { data, error } = await admin.storage.from(SPECS_BUCKET).list(projectId, {
+      limit: SPEC_LIST_PAGE_SIZE,
+      offset,
+    });
+
+    if (error) {
+      throw new Error(`Failed to list spec storage for project ${projectId}: ${error.message}`);
+    }
+
+    if (!data?.length) {
+      break;
+    }
+
+    for (const file of data) {
+      if (file.name) {
+        paths.push(`${projectId}/${file.name}`);
+      }
+    }
+
+    if (data.length < SPEC_LIST_PAGE_SIZE) {
+      break;
+    }
+
+    offset += data.length;
+  }
+
+  return paths;
+}
 
 export async function deleteOwnedProjectStorage(
   admin: SupabaseClient,
@@ -25,17 +60,11 @@ export async function deleteOwnedProjectStorage(
       );
     }
 
-    const { data: specFiles, error: listError } = await admin.storage
-      .from(SPECS_BUCKET)
-      .list(projectId);
+    const specPaths = await listAllSpecPaths(admin, projectId);
 
-    if (listError) {
-      throw new Error(`Failed to list spec storage for project ${projectId}: ${listError.message}`);
-    }
-
-    if (specFiles?.length) {
-      const specPaths = specFiles.map((file) => `${projectId}/${file.name}`);
-      const { error: specError } = await admin.storage.from(SPECS_BUCKET).remove(specPaths);
+    for (let index = 0; index < specPaths.length; index += SPEC_REMOVE_BATCH_SIZE) {
+      const batch = specPaths.slice(index, index + SPEC_REMOVE_BATCH_SIZE);
+      const { error: specError } = await admin.storage.from(SPECS_BUCKET).remove(batch);
 
       if (specError) {
         throw new Error(
@@ -68,8 +97,4 @@ export async function deleteAccountForUser(
   if (deleteUserError) {
     throw new Error(`Failed to delete user: ${deleteUserError.message}`);
   }
-}
-
-export function getAdminClientOrThrow(): SupabaseClient {
-  return createAdminClient();
 }

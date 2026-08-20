@@ -44,7 +44,7 @@
 - Node and edge `selected` state is local to each collaborator. Broadcast canvas sync omits `select` changes so one person's click does not select the same node for everyone else. Remote selection is sent separately as Broadcast `selection:change` with the selected node IDs. Other clients draw a ring in that collaborator's presence color (the same color as their avatar and cursor). Local chrome (resize handles, color toolbar, node text border) stays on the local `selected` flag only.
 - Auth is handled via `@supabase/ssr` with cookie-based sessions and Next.js `proxy.ts` routing conventions.
 - Route protection: `proxy.ts` checks session on every request, redirects unauthenticated users to `/login`.
-- Public routes: `/login`, `/signup`, `/auth/callback`, `/auth/revert-email`. Session-protected routes include `/editor`, `/settings`, and workspace paths.
+- Public routes: `/login`, `/signup`, `/auth/callback`, `/auth/revert-email`, `/api/account/email/revert`. Session-protected routes include `/editor`, `/settings`, and workspace paths.
 - Collaborator management (`/api/projects/[projectId]/collaborators`): invite/remove are owner-only (enforced in the route handler). Listing requires project membership. `get_project_collaborators` returns the owner first (from `projects.owner_id`) then invited collaborators, with Auth profile enrichment. The owner is not a `project_collaborators` row and cannot be removed.
 
 ## Starter System Designs

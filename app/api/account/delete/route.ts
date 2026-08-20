@@ -12,9 +12,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = (await req.json()) as { email?: string; token?: string };
-  const typedEmail = body.email?.trim();
-  const token = body.token?.trim();
+  const body = (await req.json().catch(() => null)) as {
+    email?: string;
+    token?: string;
+  } | null;
+  const typedEmail = body?.email?.trim();
+  const token = body?.token?.trim();
 
   if (!typedEmail || !token) {
     return NextResponse.json({ error: "Email and code are required." }, { status: 400 });
@@ -49,7 +52,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Could not delete your account." }, { status: 500 });
   }
 
-  await supabase.auth.signOut();
+  try {
+    await supabase.auth.signOut({ scope: "local" });
+  } catch (err) {
+    console.error("[account/delete] sign-out after deletion failed", err);
+  }
 
   return NextResponse.json({ ok: true });
 }

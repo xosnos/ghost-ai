@@ -38,7 +38,7 @@ Users sign up with a display name and email, then enter a 6-digit code from a br
 - **AC-9:** A revert token is valid for 7 days, single use, and bound to that user. A newer email change invalidates any previous open revert. Success restores the old email, rewrites collaborator emails back, and revokes all sessions for that user.
 - **AC-10:** `project_collaborators.email` follows the person when Auth email changes and when revert restores it. Owner access stays `projects.owner_id` (user id). If `(project_id, new_email)` already exists, drop the stale old-email row for that project.
 - **AC-11:** Delete account requires a fresh OTP to the **current** email, then a typed confirmation (the user's current email). The server deletes canvas and spec Storage objects for owned projects, removes collaborator rows for that email on other people's projects, then `auth.admin.deleteUser`. Owned projects, task runs, and spec metadata cascade via existing FKs. The browser signs out.
-- **AC-12:** `proxy.ts` public routes are `/login`, `/signup`, `/auth/callback`, and `/auth/revert-email`. Authenticated users visiting `/login` or `/signup` still redirect to `/editor`. Authenticated users visiting `/auth/revert-email` are **not** redirected away.
+- **AC-12:** `proxy.ts` public routes are `/login`, `/signup`, `/auth/callback`, `/auth/revert-email`, and `/api/account/email/revert`. Authenticated users visiting `/login` or `/signup` still redirect to `/editor`. Authenticated users visiting `/auth/revert-email` or posting to `/api/account/email/revert` are **not** redirected away.
 - **AC-13:** Presence, share-dialog enrichment, and AI chat keep using `user_metadata.display_name` with the existing email-local-part fallback. Signup is what fills that field going forward.
 
 ## Decision
@@ -228,9 +228,8 @@ Body: `{ token }`. No session required.
 3. `SET LOCAL app.email_change_source = 'revert'`.
 4. Mark `consumed_at`.
 5. `reassign_collaborator_email(new_email, old_email)` (direction reversed).
-6. Admin `updateUserById` with `email: old_email` and `email_confirm: true` so Auth does not start another change OTP.
-7. Admin global sign-out / revoke sessions for that user (`auth.admin.signOut(userId, 'global')` or equivalent). JWT leftover until expiry is why this step is required (Supabase: deleting or changing a user does not by itself invalidate existing access tokens).
-8. Return 200. The page tells the user to sign in with the restored email.
+6. Restore `auth.users.email` to `old_email` in the same transaction as collaborator rewrite. Clear pending GoTrue email-change columns, update the email identity, delete `auth.one_time_tokens` and `auth.sessions` for that user, and set `email_confirm` equivalent (`email_confirmed_at`). Do not call `auth.admin.signOut(userId)` — that API expects a JWT, not a user id.
+7. Return 200. The page tells the user to sign in with the restored email.
 
 Idempotent on a second POST of the same token: still 400 generic (already consumed).
 
@@ -258,10 +257,16 @@ No transfer of owned projects. No "delete my collaborator access only" mode.
 Update `publicRoutes` in `proxy.ts`:
 
 ```ts
-const publicRoutes = ["/login", "/signup", "/auth/callback", "/auth/revert-email"];
+const publicRoutes = [
+  "/login",
+  "/signup",
+  "/auth/callback",
+  "/auth/revert-email",
+  "/api/account/email/revert",
+];
 ```
 
-Keep the authenticated-user redirect from `/login` and `/signup` to `/editor`. Exclude `/auth/revert-email` from that redirect (same idea as today's `/reset-password` exception).
+Keep the authenticated-user redirect from `/login` and `/signup` to `/editor`. Exclude `/auth/revert-email` and `/api/account/email/revert` from that redirect.
 
 `/settings` is protected like `/editor`.
 
@@ -292,7 +297,7 @@ The revert message HTML lives with the Edge Function (not a GoTrue template) so 
 | Delete confirmation | Body `email` must equal session email |
 | Delete OTP | Fresh Auth OTP to current email |
 | Storage cleanup | Owned `projects.id` → canvas key and specs prefix |
-| Session kill on revert/delete | Auth admin global sign-out |
+| Session kill on revert/delete | Revert: `DELETE FROM auth.sessions` in `execute_email_revert`. Delete: `auth.admin.deleteUser` then local `signOut` to clear cookies. |
 
 ## Edge cases
 

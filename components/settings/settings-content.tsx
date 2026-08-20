@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { mapAuthError } from "@/lib/auth/errors";
 import { isValidEmail, normalizeEmail } from "@/lib/projects/collaborators";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
@@ -34,19 +35,6 @@ const SECTIONS: {
   { id: "profile", label: "Profile", icon: User },
   { id: "email", label: "Email", icon: Mail },
 ];
-
-function mapAuthError(message: string): string {
-  if (/already registered|already exists|already been registered/i.test(message)) {
-    return "That email cannot be used.";
-  }
-  if (/rate limit|too many/i.test(message)) {
-    return "Too many requests. Please wait a moment and try again.";
-  }
-  if (/expired|invalid/i.test(message)) {
-    return "That code is invalid or expired. Request a new code and try again.";
-  }
-  return message;
-}
 
 function SettingsNav({
   active,
@@ -177,41 +165,51 @@ export function SettingsContent({
     }
 
     setEmailLoading(true);
-    const supabase = createClient();
-    const { error } = await supabase.auth.updateUser({ email: trimmed });
-    setEmailLoading(false);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.updateUser({ email: trimmed });
 
-    if (error) {
-      setEmailError(mapAuthError(error.message));
-      return;
+      if (error) {
+        setEmailError(mapAuthError(error.message));
+        return;
+      }
+
+      setEmailStep("otp");
+    } catch {
+      setEmailError("Something went wrong. Try again.");
+    } finally {
+      setEmailLoading(false);
     }
-
-    setEmailStep("otp");
   }
 
   async function handleVerifyEmailChange(token: string) {
     setEmailError(null);
     setEmailLoading(true);
 
-    const supabase = createClient();
-    const { error } = await supabase.auth.verifyOtp({
-      email: normalizeEmail(newEmail),
-      token,
-      type: "email_change",
-    });
-    setEmailLoading(false);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.verifyOtp({
+        email: normalizeEmail(newEmail),
+        token,
+        type: "email_change",
+      });
 
-    if (error) {
-      setEmailError(mapAuthError(error.message));
-      return;
+      if (error) {
+        setEmailError(mapAuthError(error.message));
+        return;
+      }
+
+      setEmailStep("form");
+      setNewEmail("");
+      setEmailSuccess(
+        "Your email was updated. Your previous inbox can revert this change for 7 days.",
+      );
+      router.refresh();
+    } catch {
+      setEmailError("Something went wrong. Try again.");
+    } finally {
+      setEmailLoading(false);
     }
-
-    setEmailStep("form");
-    setNewEmail("");
-    setEmailSuccess(
-      "Your email was updated. Your previous inbox can revert this change for 7 days.",
-    );
-    router.refresh();
   }
 
   async function resendEmailChangeCode(): Promise<boolean> {
@@ -244,40 +242,50 @@ export function SettingsContent({
     }
 
     setDeleteLoading(true);
-    const response = await fetch("/api/account/delete/otp", { method: "POST" });
-    setDeleteLoading(false);
+    try {
+      const response = await fetch("/api/account/delete/otp", { method: "POST" });
 
-    if (!response.ok) {
-      const body = (await response.json().catch(() => null)) as { error?: string } | null;
-      setDeleteError(body?.error ?? "Could not send a verification code.");
-      return;
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as { error?: string } | null;
+        setDeleteError(body?.error ?? "Could not send a verification code.");
+        return;
+      }
+
+      setDeleteStep("otp");
+    } catch {
+      setDeleteError("Network error. Check your connection and try again.");
+    } finally {
+      setDeleteLoading(false);
     }
-
-    setDeleteStep("otp");
   }
 
   async function handleVerifyDelete(token: string) {
     setDeleteError(null);
     setDeleteLoading(true);
 
-    const response = await fetch("/api/account/delete", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: normalizedCurrentEmail,
-        token,
-      }),
-    });
-    setDeleteLoading(false);
+    try {
+      const response = await fetch("/api/account/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: normalizedCurrentEmail,
+          token,
+        }),
+      });
 
-    if (!response.ok) {
-      const body = (await response.json().catch(() => null)) as { error?: string } | null;
-      setDeleteError(body?.error ?? "Could not delete your account.");
-      return;
+      if (!response.ok) {
+        const body = (await response.json().catch(() => null)) as { error?: string } | null;
+        setDeleteError(body?.error ?? "Could not delete your account.");
+        return;
+      }
+
+      router.push("/login");
+      router.refresh();
+    } catch {
+      setDeleteError("Network error. Check your connection and try again.");
+    } finally {
+      setDeleteLoading(false);
     }
-
-    router.push("/login");
-    router.refresh();
   }
 
   async function resendDeleteOtp(): Promise<boolean> {

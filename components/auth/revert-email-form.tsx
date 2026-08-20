@@ -20,20 +20,24 @@ export function RevertEmailForm({ token, oldEmail, newEmail }: RevertEmailFormPr
     setError(null);
     setLoading(true);
 
-    const response = await fetch("/api/account/email/revert", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token }),
-    });
+    try {
+      const response = await fetch("/api/account/email/revert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      });
 
-    setLoading(false);
+      if (!response.ok) {
+        setError("This revert link is invalid or expired.");
+        return;
+      }
 
-    if (!response.ok) {
-      setError("This revert link is invalid or expired.");
-      return;
+      setSuccess(true);
+    } catch {
+      setError("Network error. Check your connection and try again.");
+    } finally {
+      setLoading(false);
     }
-
-    setSuccess(true);
   }
 
   if (success) {

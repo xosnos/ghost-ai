@@ -1,11 +1,6 @@
 import "server-only";
 
-import { createHash } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
-
-export function hashRevertToken(token: string): string {
-  return createHash("sha256").update(token).digest("hex");
-}
 
 export interface EmailRevertPreview {
   oldEmail: string;
@@ -43,18 +38,15 @@ export async function executeEmailRevert(token: string): Promise<{
   });
 
   if (error) {
-    throw new Error("invalid_token");
+    if (/invalid_token/i.test(error.message)) {
+      throw new Error("invalid_token");
+    }
+    throw new Error(error.message);
   }
 
   const payload = data as { user_id?: string; old_email?: string };
   if (!payload.user_id || !payload.old_email) {
     throw new Error("invalid_token");
-  }
-
-  const { error: signOutError } = await admin.auth.admin.signOut(payload.user_id, "global");
-
-  if (signOutError) {
-    console.error("[account] global sign-out after revert failed:", signOutError.message);
   }
 
   return {
