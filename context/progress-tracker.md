@@ -22,6 +22,11 @@ Update this file whenever the current phase, active feature, or implementation s
 
 The entries below record implementation state at the time each change landed. The current status and known gaps above take precedence where later work changed behavior.
 
+- **Disable unused Vector Buckets in config (2026-08-20)**:
+  - The **Supabase Preview** GitHub check on `main` (`71a83ff`) failed with HTTP 402 `Please upgrade the project to a paid tier to enable vector buckets`. This is the GitHub integration applying `config.toml`, not the Actions `config push` job (that job succeeded).
+  - Cause: `supabase init` left `[storage.vector] enabled = true`. Architype does not declare vector buckets or use pgvector; Vector Buckets are Pro-only. The integration still tries to enable the feature.
+  - Set `[storage.vector] enabled = false` (same pattern as `[storage.analytics]`). Do not delete the section: the CLI can default vector to enabled when the key is omitted.
+
 - **Hosted Auth and deploy plan (2026-08-20)**:
   - Hosted OTP and revert mail send through Resend SMTP (`smtp.resend.com:465`, from `Architype <noreply@mail.architype.xosnos.com>`). Local Auth and revert mail stay on Inbucket. Spec 30 uses Resend as the SMTP transport only, not a Send Email Hook.
   - `[remotes.production]` holds the hosted project ref plus Auth `site_url` / `additional_redirect_urls` as `https://architype.xosnos.com` literals. SMTP `pass` is `env(RESEND_API_KEY)`.
