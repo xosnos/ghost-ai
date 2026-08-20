@@ -1,7 +1,14 @@
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import nodemailer from "npm:nodemailer@6.9.16";
 import { withAutomationSecret } from "../_shared/automation-auth.ts";
 
+const QUEUE_NAME = "email-revert";
+const VISIBILITY_TIMEOUT_SECONDS = 60;
+const QUEUE_FETCH_TIMEOUT_MS = 8_000;
+const MAX_ATTEMPTS = 10;
+
 interface RevertEmailPayload {
+  reversion_id: string;
   user_id: string;
   old_email: string;
   new_email: string;
@@ -9,8 +16,42 @@ interface RevertEmailPayload {
   expires_at: string;
 }
 
+interface QueueMessage {
+  msg_id: number;
+  read_ct: number;
+  message: RevertEmailPayload;
+}
+
+interface SupabaseConfig {
+  supabaseUrl: string;
+  supabaseSecretKey: string;
+}
+
+function getSupabaseConfig(): SupabaseConfig {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  if (!supabaseUrl) {
+    throw new Error("Missing SUPABASE_URL environment variable");
+  }
+
+  const rawSecretKeys = Deno.env.get("SUPABASE_SECRET_KEYS");
+  if (!rawSecretKeys) {
+    throw new Error("Missing SUPABASE_SECRET_KEYS environment variable");
+  }
+
+  const supabaseSecretKey = (JSON.parse(rawSecretKeys) as Record<string, string>).default;
+  if (!supabaseSecretKey) {
+    throw new Error('SUPABASE_SECRET_KEYS does not contain a "default" key');
+  }
+
+  return { supabaseUrl, supabaseSecretKey };
+}
+
 function getSiteUrl(): string {
   return Deno.env.get("SITE_URL") ?? "http://127.0.0.1:3000";
+}
+
+function isLocalSmtpHost(host: string): boolean {
+  return host === "inbucket" || host === "127.0.0.1" || host === "localhost";
 }
 
 function buildRevertEmailHtml(payload: RevertEmailPayload, siteUrl: string): string {
@@ -49,24 +90,30 @@ function buildRevertEmailHtml(payload: RevertEmailPayload, siteUrl: string): str
 </html>`;
 }
 
-async function sendRevertEmail(payload: RevertEmailPayload): Promise<void> {
+function createSmtpTransporter() {
   const smtpHost = Deno.env.get("ACCOUNT_SMTP_HOST") ?? "inbucket";
   const smtpPort = Number(Deno.env.get("ACCOUNT_SMTP_PORT") ?? "1025");
   const smtpUser = Deno.env.get("ACCOUNT_SMTP_USER");
   const smtpPass = Deno.env.get("ACCOUNT_SMTP_PASS");
+  const isLocalDev = isLocalSmtpHost(smtpHost);
+  const secure =
+    Deno.env.get("ACCOUNT_SMTP_SECURE") === "true" || smtpPort === 465;
+
+  return nodemailer.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure,
+    auth: smtpUser && smtpPass ? { user: smtpUser, pass: smtpPass } : undefined,
+    requireTLS: !secure && !isLocalDev,
+    ...(isLocalDev ? { tls: { rejectUnauthorized: false } } : {}),
+  });
+}
+
+async function sendRevertEmail(payload: RevertEmailPayload): Promise<void> {
   const smtpFrom =
     Deno.env.get("ACCOUNT_SMTP_FROM") ?? "Architype <admin@email.com>";
   const siteUrl = getSiteUrl();
-
-  const transporter = nodemailer.createTransport({
-    host: smtpHost,
-    port: smtpPort,
-    secure: false,
-    auth: smtpUser && smtpPass ? { user: smtpUser, pass: smtpPass } : undefined,
-    tls: {
-      rejectUnauthorized: false,
-    },
-  });
+  const transporter = createSmtpTransporter();
 
   await transporter.sendMail({
     from: smtpFrom,
@@ -76,50 +123,236 @@ async function sendRevertEmail(payload: RevertEmailPayload): Promise<void> {
   });
 }
 
-Deno.serve(
-  withAutomationSecret(async (req) => {
-    if (req.method !== "POST") {
-      return new Response(JSON.stringify({ error: "Method not allowed" }), {
-        status: 405,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
+async function readQueueMessages(
+  queueName: string,
+  sleepSeconds: number,
+  n: number,
+): Promise<QueueMessage[]> {
+  const { supabaseUrl, supabaseSecretKey } = getSupabaseConfig();
+  const endpoints = [
+    `${supabaseUrl.replace(/\/$/, "")}/rest/v1/rpc/read`,
+    `${supabaseUrl.replace(/\/$/, "")}/rpc/read`,
+  ];
 
-    let payload: RevertEmailPayload;
+  let lastError: Error | null = null;
+
+  for (const endpoint of endpoints) {
     try {
-      payload = await req.json();
+      const resp = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: supabaseSecretKey,
+          Authorization: `Bearer ${supabaseSecretKey}`,
+          "Accept-Profile": "pgmq_public",
+          "Content-Profile": "pgmq_public",
+        },
+        body: JSON.stringify({
+          queue_name: queueName,
+          sleep_seconds: sleepSeconds,
+          n,
+        }),
+        signal: AbortSignal.timeout(QUEUE_FETCH_TIMEOUT_MS),
+      });
+
+      if (resp.ok) {
+        return (await resp.json()) as QueueMessage[];
+      }
+
+      const errText = await resp.text();
+      lastError = new Error(`Endpoint ${endpoint} failed (${resp.status}): ${errText}`);
+    } catch (err: unknown) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+    }
+  }
+
+  throw lastError || new Error("All queue read endpoints failed");
+}
+
+async function archiveQueueMessage(msgId: number): Promise<void> {
+  const { supabaseUrl, supabaseSecretKey } = getSupabaseConfig();
+  const endpoints = [
+    `${supabaseUrl.replace(/\/$/, "")}/rest/v1/rpc/archive`,
+    `${supabaseUrl.replace(/\/$/, "")}/rpc/archive`,
+  ];
+
+  for (const endpoint of endpoints) {
+    try {
+      const resp = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          apikey: supabaseSecretKey,
+          Authorization: `Bearer ${supabaseSecretKey}`,
+          "Accept-Profile": "pgmq_public",
+          "Content-Profile": "pgmq_public",
+        },
+        body: JSON.stringify({
+          queue_name: QUEUE_NAME,
+          message_id: msgId,
+        }),
+        signal: AbortSignal.timeout(QUEUE_FETCH_TIMEOUT_MS),
+      });
+
+      if (resp.ok) {
+        return;
+      }
     } catch {
-      return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+      // Try the next endpoint.
+    }
+  }
+
+  console.warn(`[account-mailer] Failed to archive message ${msgId}`);
+}
+
+function sanitizeErrorMessage(err: unknown): string {
+  if (err instanceof Error) {
+    return (err.message || "Failed to send email").slice(0, 500);
+  }
+
+  return "Failed to send email";
+}
+
+async function isRevertNotificationAlreadySent(
+  admin: SupabaseClient,
+  reversionId: string,
+): Promise<boolean> {
+  const { data, error } = await admin
+    .from("email_change_reversions")
+    .select("notification_sent_at")
+    .eq("id", reversionId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to load revert notification state: ${error.message}`);
+  }
+
+  return Boolean(data?.notification_sent_at);
+}
+
+async function processQueueMessage(
+  admin: SupabaseClient,
+  msg: QueueMessage,
+): Promise<void> {
+  const payload = msg.message;
+  const msgId = msg.msg_id;
+  const readCt = msg.read_ct;
+
+  if (
+    !payload.reversion_id ||
+    !payload.old_email ||
+    !payload.new_email ||
+    !payload.raw_token
+  ) {
+    console.error("[account-mailer] Invalid queue payload. Archiving.");
+    await archiveQueueMessage(msgId);
+    return;
+  }
+
+  if (await isRevertNotificationAlreadySent(admin, payload.reversion_id)) {
+    console.log(
+      `[account-mailer] Revert notification ${payload.reversion_id} already sent. Archiving duplicate.`,
+    );
+    await archiveQueueMessage(msgId);
+    return;
+  }
+
+  if (readCt > MAX_ATTEMPTS) {
+    await admin.rpc("mark_email_revert_notification_failed", {
+      p_reversion_id: payload.reversion_id,
+      p_error: `Exceeded max delivery attempts (${MAX_ATTEMPTS})`,
+    });
+    console.error(
+      `[account-mailer] Revert notification ${payload.reversion_id} exceeded max attempts. Archiving.`,
+    );
+    await archiveQueueMessage(msgId);
+    return;
+  }
+
+  try {
+    await sendRevertEmail(payload);
+
+    const { data: marked, error: markError } = await admin.rpc(
+      "mark_email_revert_notification_sent",
+      { p_reversion_id: payload.reversion_id },
+    );
+
+    if (markError) {
+      throw new Error(`Failed to mark notification sent: ${markError.message}`);
     }
 
-    if (
-      !payload.old_email ||
-      !payload.new_email ||
-      !payload.raw_token ||
-      !payload.user_id
-    ) {
-      return new Response(JSON.stringify({ error: "Missing required fields" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+    if (!marked) {
+      console.log(
+        `[account-mailer] Revert notification ${payload.reversion_id} was already marked sent.`,
+      );
     }
 
+    await archiveQueueMessage(msgId);
+    console.log(`[account-mailer] Sent revert notification ${payload.reversion_id}.`);
+  } catch (err) {
+    const message = sanitizeErrorMessage(err);
+    await admin.rpc("mark_email_revert_notification_failed", {
+      p_reversion_id: payload.reversion_id,
+      p_error: message,
+    });
+    console.error(
+      `[account-mailer] Failed to send revert notification ${payload.reversion_id} (attempt ${readCt}):`,
+      message,
+    );
+  }
+}
+
+declare const EdgeRuntime: {
+  waitUntil(promise: Promise<unknown>): void;
+} | undefined;
+
+Deno.serve(
+  withAutomationSecret(async () => {
+    const { supabaseUrl, supabaseSecretKey } = getSupabaseConfig();
+    const admin = createClient(supabaseUrl, supabaseSecretKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+
+    let messageList: QueueMessage[] = [];
     try {
-      await sendRevertEmail(payload);
-      return new Response(JSON.stringify({ ok: true }), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
+      messageList = await readQueueMessages(
+        QUEUE_NAME,
+        VISIBILITY_TIMEOUT_SECONDS,
+        1,
+      );
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      console.error("[account-mailer] send failed:", message);
-      return new Response(JSON.stringify({ error: "Failed to send email" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+      console.error("[account-mailer] Error reading from queue:", message);
+      return new Response(
+        JSON.stringify({ error: "Failed to read from queue", details: message }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
     }
+
+    if (messageList.length === 0) {
+      return new Response(
+        JSON.stringify({ status: "no_messages", message: "Queue is empty" }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    const processPromise = processQueueMessage(admin, messageList[0]).catch((err) => {
+      console.error("[account-mailer] Background queue processing failed:", err);
+    });
+
+    if (typeof EdgeRuntime !== "undefined" && typeof EdgeRuntime.waitUntil === "function") {
+      EdgeRuntime.waitUntil(processPromise);
+    }
+
+    return new Response(JSON.stringify({ status: "accepted" }), {
+      status: 202,
+      headers: { "Content-Type": "application/json" },
+    });
   }),
 );

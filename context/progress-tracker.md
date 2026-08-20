@@ -27,6 +27,10 @@ The entries below record implementation state at the time each change landed. Th
   - Added `email_change_reversions` migration, Auth email-change trigger, `reassign_collaborator_email`, revert page/API, and `account-mailer` edge function.
   - Updated `proxy.ts` public routes, Auth templates/config, and user menu Settings link.
   - Verified: signup/login OTP via Mailpit, settings UI, revert email + RPC restore, spec 22 (25/25) and spec 27 (13/13) integration tests, `pnpm lint`, `pnpm build`.
+- **Spec 30 PR review fixes (2026-08-19)**:
+  - Hardened `account-mailer` SMTP: require TLS and validate certificates in hosted environments; keep relaxed settings only for local Inbucket.
+  - Made revert-email delivery durable via `email-revert` pgmq queue, delivery tracking columns, and a 30s cron recovery job (replacing fire-and-forget HTTP from the Auth trigger).
+  - Account deletion now fails closed when canvas or spec Storage cleanup returns an error.
 
 - **Spec 30 proposed: Passwordless OTP Auth and Account Settings (2026-08-19)**:
   - Wrote `context/feature-specs/30-otp-auth-settings.md` (status Proposed). Password signup/login/reset are replaced by email OTP; signup collects `user_metadata.display_name`; `/settings` covers email change (OTP on the new inbox, 7-day hashed revert from the old inbox) and account deletion.

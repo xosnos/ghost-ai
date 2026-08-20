@@ -15,13 +15,33 @@ export async function deleteOwnedProjectStorage(
     const canvasKey = getCanvasStorageKey(projectId);
     const canvasPrefixedKey = `${CANVAS_BUCKET}/${projectId}.json`;
 
-    await admin.storage.from(CANVAS_BUCKET).remove([canvasKey, canvasPrefixedKey]);
+    const { error: canvasError } = await admin.storage
+      .from(CANVAS_BUCKET)
+      .remove([canvasKey, canvasPrefixedKey]);
 
-    const { data: specFiles } = await admin.storage.from(SPECS_BUCKET).list(projectId);
+    if (canvasError) {
+      throw new Error(
+        `Failed to delete canvas storage for project ${projectId}: ${canvasError.message}`,
+      );
+    }
+
+    const { data: specFiles, error: listError } = await admin.storage
+      .from(SPECS_BUCKET)
+      .list(projectId);
+
+    if (listError) {
+      throw new Error(`Failed to list spec storage for project ${projectId}: ${listError.message}`);
+    }
 
     if (specFiles?.length) {
       const specPaths = specFiles.map((file) => `${projectId}/${file.name}`);
-      await admin.storage.from(SPECS_BUCKET).remove(specPaths);
+      const { error: specError } = await admin.storage.from(SPECS_BUCKET).remove(specPaths);
+
+      if (specError) {
+        throw new Error(
+          `Failed to delete spec storage for project ${projectId}: ${specError.message}`,
+        );
+      }
     }
   }
 }
