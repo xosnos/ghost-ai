@@ -43,7 +43,7 @@ Users sign up with a display name and email, then enter a 6-digit code from a br
 
 ## Decision
 
-Stay on Supabase Auth. Do not add Clerk, magic-link skip, OAuth, passkeys, or a third-party ESP (no Resend). OTP mail uses Auth's mailer and committed templates. The revert message is app-sent because Auth's `email_changed` notification cannot carry our secret token.
+Stay on Supabase Auth. Do not add Clerk, magic-link skip, OAuth, or passkeys. OTP mail uses Auth's mailer and committed templates. Hosted delivery uses Resend as the SMTP transport only (not a Send Email Hook and not a second ESP). The revert message is app-sent because Auth's `email_changed` notification cannot carry our secret token.
 
 **Chosen option:** Email OTP plus a hashed 7-day revert token issued from a Postgres trigger on `auth.users.email`.
 
@@ -79,8 +79,21 @@ content_path = "./supabase/templates/email_change.html"
 
 - Do not enable `[auth.email.notification.email_changed]`.
 - Uncomment `[local_smtp] smtp_port = 54325` so the revert mailer can reach Inbucket locally.
+- Keep `[auth.email.smtp]` disabled in the base config so local Auth stays on Inbucket.
+- Enable hosted SMTP only on the production remote:
 
-Hosted projects: copy the same HTML into the dashboard Email Templates (CLI `content_path` does not apply there). Hosted revert mail needs SMTP (`[auth.email.smtp]` or Vault-backed env on the mailer function).
+```toml
+[remotes.production.auth.email.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "env(RESEND_API_KEY)"
+admin_email = "noreply@mail.architype.xosnos.com"
+sender_name = "Architype"
+```
+
+`supabase --yes config push` on merge to `main` applies `content_path` HTML plus this SMTP block to hosted Auth. Do not paste templates into the dashboard by hand.
 
 ## Client auth flows
 
@@ -205,7 +218,7 @@ Sends one HTML email to `old_email`:
 SMTP:
 
 - Local: Inbucket SMTP on the uncommented `smtp_port` (54325), from `Architype <admin@email.com>` or the local_smtp sender.
-- Hosted: `ACCOUNT_SMTP_HOST`, `ACCOUNT_SMTP_PORT`, `ACCOUNT_SMTP_USER`, `ACCOUNT_SMTP_PASS`, `ACCOUNT_SMTP_FROM` (Edge Function secrets). Do not introduce Resend.
+- Hosted: Resend SMTP (`smtp.resend.com:465`, user `resend`, password `RESEND_API_KEY`, from `Architype <noreply@mail.architype.xosnos.com>`). Auth uses `[remotes.production.auth.email.smtp]`. `account-mailer` uses the same credentials as Edge Function secrets `ACCOUNT_SMTP_*`, set on the hosted project (not by the config-push workflow).
 
 `site_url` comes from Auth `site_url` / `NEXT_PUBLIC` app origin. Local default `http://127.0.0.1:3000`.
 

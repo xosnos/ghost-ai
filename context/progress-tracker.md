@@ -12,6 +12,7 @@ Update this file whenever the current phase, active feature, or implementation s
 ## Current Goal
 
 - Spec 30 complete: passwordless OTP signup/login, settings modal (email change with revert, account delete), branded OTP templates, and `account-mailer` edge function.
+- Hosted deploy is settled: GitHub integration applies migrations and declared Edge Functions on `main`; Actions only `config push`es Auth config. Local Auth stays on Inbucket.
 
 ## Acceptance Gaps
 
@@ -20,6 +21,12 @@ Update this file whenever the current phase, active feature, or implementation s
 ## Historical Implementation Log
 
 The entries below record implementation state at the time each change landed. The current status and known gaps above take precedence where later work changed behavior.
+
+- **Hosted Auth and deploy plan (2026-08-20)**:
+  - Hosted OTP and revert mail send through Resend SMTP (`smtp.resend.com:465`, from `Architype <noreply@mail.architype.xosnos.com>`). Local Auth and revert mail stay on Inbucket. Spec 30 uses Resend as the SMTP transport only, not a Send Email Hook.
+  - `[remotes.production]` holds the hosted project ref plus Auth `site_url` / `additional_redirect_urls` as `https://architype.xosnos.com` literals. SMTP `pass` is `env(RESEND_API_KEY)`.
+  - The Supabase GitHub integration (**Deploy to production**) applies new migrations and Edge Functions declared in `config.toml`. Seed never runs on hosted. There is no `supabase-ci.yml`; PR migration checks belong to that integration.
+  - `.github/workflows/deploy-supabase.yml` only runs `supabase --yes config push` when `config.toml` or `supabase/templates/**` change on `main`. It does not `db push`, deploy functions, or set `account-mailer` secrets. GitHub secrets: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_ID`, `RESEND_API_KEY`. `account-mailer` `SITE_URL` and `ACCOUNT_SMTP_*` are set on the hosted project.
 
 - **Spec 30 PR review follow-ups (2026-08-20)**:
   - `account-mailer` now checks errors from `mark_email_revert_notification_failed` before deleting expired/exhausted queue messages; catch-path failures are logged when the failure-state RPC itself errors.
@@ -539,7 +546,6 @@ The entries below record implementation state at the time each change landed. Th
 - Fixed `Failed to delete project` error. Root cause: the `projects` DELETE RLS policy (`auth.uid() = owner_id`) and the `project_collaborators` DELETE RLS policy (`is_project_owner(project_id)`) create a cross-table RLS recursion during CASCADE delete. When PostgREST issues `DELETE FROM projects WHERE id = ?`, the CASCADE fires on `project_collaborators`, which triggers the `is_project_owner` function, which queries `projects` again under RLS — causing the policy evaluation to fail. Fix: created a new `delete_project(project_uuid uuid, owner_uuid uuid)` SECURITY DEFINER function that bypasses RLS entirely. It verifies ownership using the passed owner UUID (not `auth.uid()`, which returns NULL in SECURITY DEFINER functions via PostgREST RPC), then deletes the project row — CASCADE automatically removes collaborators. The route handler passes `user.id` as `owner_uuid` after verifying ownership via `getCurrentUser()`. Applied via migration `add_delete_project_function`. Build passes.
 
 - Fixed `Could not find the function public.add_project_collaborator(collaborator_email, project_uuid) in the schema cache` error. Root cause: the recent migration `20260817183000_secure_owner_rpcs_and_worker_secrets.sql` updated the RPC signatures for `add_project_collaborator`, `delete_project`, and `remove_project_collaborator` to take `(project_uuid, collaborator_email)` instead of accepting a client supplied `owner_uuid`, but the migration had not been executed against the local running Postgres instance. PostgREST could not find matching 2-parameter functions in its schema cache and returned a 500 status. Fix: ran `supabase db reset` to apply all migrations and reload the PostgREST schema cache. Build and schema verification pass.
-
 
 ## Session Notes
 

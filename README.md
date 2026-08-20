@@ -41,7 +41,7 @@ pnpm install
 supabase start
 ```
 
-Copy `.env.example` to `.env.local`. Fill the Supabase URL, anon key, and service role key from `supabase status`. Set `AUTOMATION_SECRET=local-dev-automation-secret` so it matches the Vault value from `supabase/seed.sql`.
+Copy `.env.example` to `.env.local`. Fill the Supabase URL, anon key, and service role key from `supabase status`. Set `AUTOMATION_SECRET=local-dev-automation-secret` so it matches the Vault value from `supabase/seed.sql`. Keep the `RESEND_API_KEY` placeholder so the CLI can load `[remotes.production.auth.email.smtp]` without a real sending key.
 
 Copy `.env.example` to `supabase/functions/.env`. Set `OPENROUTER_API_KEY`. For local development, keep `AUTOMATION_SECRET=local-dev-automation-secret` so it matches the value seeded into Supabase Vault.
 
@@ -51,7 +51,7 @@ Start the app:
 pnpm dev
 ```
 
-Open http://localhost:3000. Unauthenticated users are redirected to `/login`.
+Open <http://localhost:3000>. Unauthenticated users are redirected to `/login`.
 
 ## Environment variables
 
@@ -62,8 +62,9 @@ Open http://localhost:3000. Unauthenticated users are redirected to `/login`.
 | `SUPABASE_SECRET_KEY` | Next.js server | Admin enrichment, task enqueueing, and worker invocation (server-only) |
 | `AUTOMATION_SECRET` | Next.js server and Edge Function | Authenticates worker fast path and Cron calls |
 | `OPENROUTER_API_KEY` | Edge Function | AI model access |
+| `RESEND_API_KEY` | Supabase CLI / GitHub Actions | Resend sending key used as hosted Auth SMTP password (placeholder locally) |
 
-Never expose the secret key, automation secret, or OpenRouter key to browser code.
+Never expose the secret key, automation secret, OpenRouter key, or Resend key to browser code. Hosted Auth URLs live in `supabase/config.toml`.
 
 ## Checks
 
@@ -83,6 +84,7 @@ pnpm build          # Next.js production build check
 - `lib/`: Supabase clients, access checks, and data helpers
 - `supabase/functions/`: AI queue worker and generation handlers
 - `supabase/migrations/`: database, RLS, Storage, Queue, and Cron changes
+- `.github/workflows/`: hosted Auth config push on `main`
 - `context/feature-specs/`: feature specifications 01 through 29
 - `context/`: product, architecture, UI, standards, and progress documentation
 
@@ -93,5 +95,28 @@ Before enabling AI generation in a hosted Supabase project:
 1. Set a unique Vault secret named `automations`.
 2. Set the same value as the Edge Function secret `AUTOMATION_SECRET`.
 3. Set Vault secret `ai_worker_url` to the hosted `ai-worker` function URL.
-4. Set `OPENROUTER_API_KEY` as an Edge Function secret.
-5. Confirm the `ai-worker-recovery` Cron job receives HTTP 202 responses.
+4. Set Vault secret `account_mailer_url` to the hosted `account-mailer` function URL.
+5. Set `OPENROUTER_API_KEY` as an Edge Function secret. Set `SITE_URL` and Resend `ACCOUNT_SMTP_*` as Edge Function secrets for `account-mailer`.
+6. Confirm the `ai-worker-recovery` Cron job receives HTTP 202 responses.
+
+### Hosted Supabase deploy
+
+The [Supabase GitHub integration](https://supabase.com/docs/guides/deployment/branching/github-integration) deploys from `main` when **Deploy to production** is enabled:
+
+- New migrations in `supabase/migrations/`
+- Edge Functions declared in `supabase/config.toml` (`ai-worker`, `account-mailer`)
+- Storage buckets declared in `config.toml` (Architype creates buckets in migrations instead)
+
+Auth, API, templates, and `seed.sql` are **not** applied by that integration. Working directory is `.` (`supabase/` is at the repo root). Do not also run `supabase db push` or `supabase functions deploy` on `main`; those race the integration. `supabase functions deploy --prune` is not part of the integration; run it once from a machine if a dashboard-only function must be deleted.
+
+Merges to `main` that change `supabase/config.toml` or `supabase/templates/**` (or a manual `workflow_dispatch`) run `.github/workflows/deploy-supabase.yml`, which only runs `supabase --yes config push` (Auth templates, Resend SMTP, JWT flags, and remotes Auth URLs from `config.toml`). Enable a required GitHub check from the integration (or Automatic branching) if you want PRs blocked on migration failures.
+
+Add these repository **secrets** (not variables) on the GitHub repo. `SUPABASE_DB_PASSWORD`, `PRODUCTION_SITE_URL`, and `PRODUCTION_ADDITIONAL_REDIRECT_URL` are not used and can be removed if they are still set.
+
+| Secret | Purpose |
+| --- | --- |
+| `SUPABASE_ACCESS_TOKEN` | Personal access token from the [Supabase account tokens](https://supabase.com/dashboard/account/tokens) page |
+| `SUPABASE_PROJECT_ID` | Hosted project ref passed to `config push --project-ref` |
+| `RESEND_API_KEY` | Resend sending API key interpolated as hosted Auth SMTP password |
+
+Local CLI needs the `RESEND_API_KEY` placeholder in `.env.local` (copy from `.env.example`) so remotes SMTP config can load. Keep the real Resend key only in GitHub secrets.
